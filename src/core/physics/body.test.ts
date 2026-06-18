@@ -52,4 +52,34 @@ describe('body physics', () => {
     const b = stepBody(createBody(50, 80, 10, 10), [ground], GRAVITY, DT)
     expect(a).toEqual(b)
   })
+
+  it('one-way platform: passes through when rising', () => {
+    const platform = { ...aabb(0, 100, 200, 10), oneWay: true }
+    // Body below the platform, moving up fast.
+    let body = createBody(50, 108, 10, 10)
+    body = { ...body, vel: { x: 0, y: -600 } }
+    const next = stepBody(body, [platform], 0, DT)
+    // Not blocked: keeps rising (vy stays negative, moved up).
+    expect(next.vel.y).toBeLessThan(0)
+    expect(next.pos.y).toBeLessThan(108)
+    expect(next.grounded).toBe(false)
+  })
+
+  it('one-way platform: lands on top when falling from above', () => {
+    const platform = { ...aabb(0, 100, 200, 10), oneWay: true }
+    // Body above the platform, falling onto it.
+    let body = createBody(50, 85, 10, 10)
+    body = { ...body, vel: { x: 0, y: 500 } }
+    const next = stepBody(body, [platform], GRAVITY, DT)
+    expect(next.grounded).toBe(true)
+    expect(next.pos.y).toBe(90) // platform.y - height
+  })
+
+  it('one-way platform: never blocks horizontal movement', () => {
+    const platform = { ...aabb(100, 0, 20, 200), oneWay: true }
+    let body = createBody(80, 50, 10, 10)
+    body = { ...body, vel: { x: 900, y: 0 } }
+    const next = stepBody(body, [platform], 0, DT)
+    expect(next.vel.x).toBe(900) // passes through, not stopped
+  })
 })

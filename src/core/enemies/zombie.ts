@@ -1,6 +1,5 @@
-import type { AABB } from '@core/math/aabb'
 import { vec2 } from '@core/math/vector'
-import { createBody, stepBody } from '@core/physics/body'
+import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
 
 /**
@@ -30,7 +29,7 @@ export const createZombie = (x: number, groundY: number): Enemy => ({
 export const stepZombie = (
   e: Enemy,
   target: EnemyTarget,
-  solids: readonly AABB[],
+  solids: readonly Solid[],
   dt: number,
 ): Enemy => {
   if (e.state === 'dead') return e

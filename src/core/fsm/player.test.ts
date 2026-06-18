@@ -94,11 +94,10 @@ describe('player', () => {
     expect(next.body.pos.y).toBe(climbing.body.pos.y)
   })
 
-  it('jumps off the ladder', () => {
+  it('keeps climbing when jump is pressed on a ladder (up has priority)', () => {
     const climbing = stepPlayer(grounded(), input({ up: true }), ladderWorld, DT)
-    const next = stepPlayer(climbing, input({ jump: true }), ladderWorld, DT)
-    expect(next.state).toBe('jump')
-    expect(next.body.vel.y).toBeLessThan(0)
+    const next = stepPlayer(climbing, input({ up: true, jump: true }), ladderWorld, DT)
+    expect(next.state).toBe('climb')
   })
 
   it('no climb without a ladder', () => {

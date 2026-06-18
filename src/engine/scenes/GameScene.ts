@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { aabb, type AABB } from '@core/math/aabb'
+import type { Solid } from '@core/physics/body'
 import { lerp } from '@core/math/vector'
 import { createStepper, type Stepper } from '@core/sim/loop'
 import {
@@ -54,7 +55,7 @@ export class GameScene extends Phaser.Scene {
   private over = false
   private lastArmor: ArmorState = 'armored'
 
-  private solids: AABB[] = []
+  private solids: Solid[] = []
   private ladders: AABB[] = []
   private bounds!: { minX: number; maxX: number }
 
@@ -80,13 +81,18 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     const { width } = this.scale
 
+    const height = this.scale.height
     this.solids = [
-      aabb(0, GROUND_Y, width, 40), // ground
-      aabb(300, 320, 160, 20), // floating platform
-      aabb(620, 250, 30, 160), // wall
+      aabb(0, GROUND_Y, width, 40), // ground (solid)
+      { ...aabb(300, 320, 160, 20), oneWay: true }, // floating platform (jump/climb up through it)
+      aabb(620, 250, 30, 160), // wall (solid)
+      aabb(-40, -200, 40, height + 400), // left world boundary (keeps the player on screen)
+      aabb(width, -200, 40, height + 400), // right world boundary
     ]
     for (const s of this.solids) {
-      this.add.rectangle(s.x, s.y, s.w, s.h, 0x3a5a40).setOrigin(0, 0)
+      // Skip the off-screen boundary walls; draw the rest (one-way lighter).
+      if (s.x + s.w <= 0 || s.x >= width) continue
+      this.add.rectangle(s.x, s.y, s.w, s.h, s.oneWay ? 0x6b8f5a : 0x3a5a40).setOrigin(0, 0)
     }
 
     this.ladders = [aabb(360, 320, 16, 90)]
@@ -117,23 +123,31 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0, 0)
 
     this.add
-      .text(this.scale.width / 2, 24, 'GREYBOX — A-D move, W climb, Space jump, X throw', {
-        fontFamily: 'monospace',
-        fontSize: '14px',
-        color: '#ffffff',
-      })
+      .text(
+        this.scale.width / 2,
+        24,
+        'GREYBOX — ←/→ move, ↑ jump/climb, ↓ crouch/down, Space throw',
+        {
+          fontFamily: 'monospace',
+          fontSize: '14px',
+          color: '#ffffff',
+        },
+      )
       .setOrigin(0.5)
 
     const kb = this.input.keyboard!
     const k = (code: number) => kb.addKey(code)
     const K = Phaser.Input.Keyboard.KeyCodes
+    // Controls: arrows move; Up jumps (or climbs on a ladder); Down crouches
+    // (or climbs down); Space throws. Up is mapped to both `up` and `jump` — the
+    // FSM climbs when on a ladder and jumps otherwise.
     this.keys = {
       left: [k(K.LEFT), k(K.A)],
       right: [k(K.RIGHT), k(K.D)],
       up: [k(K.UP), k(K.W)],
-      jump: [k(K.SPACE), k(K.Z)],
+      jump: [k(K.UP), k(K.W)],
       down: [k(K.DOWN), k(K.S)],
-      attack: [k(K.X)],
+      attack: [k(K.SPACE)],
     }
 
     // Pause/resume driven by the UI; cleaned up when the scene shuts down.

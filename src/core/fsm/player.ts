@@ -1,6 +1,6 @@
-import { aabb, intersects, type AABB } from '@core/math/aabb'
+import { aabb, intersects } from '@core/math/aabb'
 import { vec2 } from '@core/math/vector'
-import { createBody, stepBody, type Body } from '@core/physics/body'
+import { createBody, stepBody, type Body, type Solid } from '@core/physics/body'
 import { createArmor, hit, tick, type Armor } from '@core/rules/armor'
 
 /**
@@ -20,9 +20,9 @@ export interface PlayerInput {
 }
 
 export interface PlayerWorld {
-  readonly solids: readonly AABB[]
+  readonly solids: readonly Solid[]
   /** Climbable regions (ladders). */
-  readonly ladders?: readonly AABB[]
+  readonly ladders?: readonly Solid[]
   /** True when a hit lands on the player this step. */
   readonly damaged?: boolean
 }
@@ -42,7 +42,8 @@ export interface Player {
 // Tunables (set during the greybox feel pass). Pixels and seconds.
 export const GRAVITY = 1500
 export const WALK_SPEED = 120
-export const JUMP_IMPULSE = 400
+// Jump high enough to clear a ~90px platform (h = v^2 / 2g ≈ 104px).
+export const JUMP_IMPULSE = 560
 export const CLIMB_SPEED = 90
 export const HURT_SECONDS = 0.4
 export const THROW_SECONDS = 0.25
@@ -118,9 +119,8 @@ export const stepPlayer = (
   const wasClimbing = player.state === 'climb'
 
   // Climbing: attached while overlapping a ladder and either pressing up/down or
-  // already climbing. Jumping detaches.
-  const wantsClimb = onLadder && !hurting && (input.up || input.down || wasClimbing)
-  const climbing = wantsClimb && !input.jump
+  // already climbing. On a ladder, up/down take priority over jump.
+  const climbing = onLadder && !hurting && (input.up || input.down || wasClimbing)
 
   const crouching = grounded && input.down && !climbing && !hurting
 
@@ -142,9 +142,7 @@ export const stepPlayer = (
     if (grounded) {
       vx = crouching ? 0 : (input.right ? WALK_SPEED : 0) - (input.left ? WALK_SPEED : 0)
     }
-    const jumpFromGround = input.jump && grounded && !crouching
-    const jumpOffLadder = input.jump && wantsClimb
-    if (jumpFromGround || jumpOffLadder) vy = -JUMP_IMPULSE
+    if (input.jump && grounded && !crouching) vy = -JUMP_IMPULSE
   }
 
   // Throw window (visual): triggered by attack when able to act.

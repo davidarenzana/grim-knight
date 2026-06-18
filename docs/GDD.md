@@ -80,8 +80,11 @@ weapon yields the **true ending**.
 
 ## 9. Controls (default)
 
-- Arrows / A-D: move · Down: crouch · Up: climb / enter
-- Space / Z: jump · X: attack · Esc / P: pause
+- Left / Right (or A / D): move
+- Up (or W): jump — or climb up when on a ladder
+- Down (or S): crouch — or climb down when on a ladder
+- Space: throw the active weapon
+- Pause: via the HUD button (Esc/P planned)
 
 ## 10. Build order (see `docs/PLAN.md`)
 

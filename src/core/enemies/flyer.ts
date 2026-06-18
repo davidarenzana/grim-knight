@@ -1,5 +1,5 @@
-import type { AABB } from '@core/math/aabb'
 import { vec2 } from '@core/math/vector'
+import type { Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
 
 /**
@@ -28,7 +28,7 @@ export const createFlyer = (x: number, y: number): Enemy => ({
 export const stepFlyer = (
   e: Enemy,
   target: EnemyTarget,
-  _solids: readonly AABB[],
+  _solids: readonly Solid[],
   dt: number,
 ): Enemy => {
   if (e.state === 'dead') return e

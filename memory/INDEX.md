@@ -9,3 +9,4 @@ One line per file. Read this first; open only what you need. Keeping it in sync 
 - [decisions/](./decisions/) — numbered ADRs (architecture decision records).
   - [0001-engine-core-ui-split.md](./decisions/0001-engine-core-ui-split.md) — why pure core + Phaser + Vue.
   - [0002-fixed-timestep-sim.md](./decisions/0002-fixed-timestep-sim.md) — fixed-timestep simulation + interpolation.
+  - [0003-one-way-platforms.md](./decisions/0003-one-way-platforms.md) — semi-solid platforms (pass up, land on top).

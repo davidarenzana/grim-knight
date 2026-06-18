@@ -60,6 +60,13 @@
 - `GameScene`: spawner-driven finite wave (zombie/flyer/ogre), per-kind colors, win when spawner finished + all dead.
 - `combat.ts` now imports the shared `Enemy`; works across all kinds. 99 tests green; typecheck/lint/build green.
 
+### Playtest fixes (after first manual test)
+
+- One-way/semi-solid platforms (`Solid { oneWay }`) so ladders work through platforms and jumps land on top. ADR 0003.
+- Jump impulse 400→560 (clears a ~90px platform). Ladder climbing fixed (up passes through one-way platform).
+- Controls remapped: ←/→ move · ↑ jump (climb on ladder) · ↓ crouch (climb down) · Space throw.
+- World boundary walls (left/right of screen) so knockback can't push the player off-screen into the void. (Until camera scroll exists.)
+
 ## In progress 🔧
 
 - Phase 4 continues: first boss + level model (scroll/timer) + ranged enemy (plant) needing enemy projectiles.

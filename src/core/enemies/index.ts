@@ -1,4 +1,4 @@
-import type { AABB } from '@core/math/aabb'
+import type { Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
 import { stepZombie } from './zombie'
 import { stepFlyer } from './flyer'
@@ -13,7 +13,7 @@ export * from './ogre'
 export const stepEnemy = (
   e: Enemy,
   target: EnemyTarget,
-  solids: readonly AABB[],
+  solids: readonly Solid[],
   dt: number,
 ): Enemy => {
   switch (e.kind) {
