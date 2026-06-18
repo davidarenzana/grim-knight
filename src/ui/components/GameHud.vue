@@ -16,6 +16,7 @@ const bossPct = computed(() =>
       <span>ARMOR {{ game.armor }}</span>
       <span>SCORE {{ game.score }}</span>
       <span>TIME {{ Math.ceil(game.secondsLeft) }}</span>
+      <span>STAGE {{ game.level }}-{{ game.loop }}</span>
     </div>
     <button class="pause" @click="game.pause()">⏸ Pause</button>
 

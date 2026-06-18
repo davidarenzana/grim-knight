@@ -4,8 +4,9 @@ import { LEVELS } from './level'
 const SCREEN_W = 800
 
 describe('levels', () => {
-  it('there is at least one level', () => {
-    expect(LEVELS.length).toBeGreaterThan(0)
+  it('has the six stages with unique names', () => {
+    expect(LEVELS).toHaveLength(6)
+    expect(new Set(LEVELS.map((l) => l.name)).size).toBe(6)
   })
 
   it('each level is wider than the screen (so the camera scrolls)', () => {

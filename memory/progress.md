@@ -85,15 +85,24 @@
   advances to the next via `scene.restart({ levelIndex, session })` (lives/score carried); last level → `game:won`.
   HUD shows TIME; `game:level-changed` emitted. Specs `level-model.md`. 125 tests green.
 
+### Phase 4 — Full structure rollout ✅ complete
+
+- All 6 levels authored as `LevelDef` data (Graveyard, Haunted Forest, Swamp Caverns, Iron Fortress,
+  Frozen Spires, Demon Keep), each ending in a boss. Validated by `level.test.ts` (6 unique names, bounds, boss).
+- **Double loop**: clearing the last stage on loop 1 restarts at level 1 on loop 2 (harder: timer ×0.75,
+  spawns compressed ×0.65); clearing loop 2 → `game:won` ("True Victory"). `loop` carried via `scene.restart`.
+- HUD shows STAGE level-loop; win screen shows the true ending on loop 2.
+
 ## In progress 🔧
 
-- (Phase 4 nearly done — playable across 2 greybox levels with camera scroll, boss, timer.)
+- (Phases 0–4 done. Game is feature-complete in greybox: 6 stages × 2 loops, all enemy types + boss.)
 
-## Next ⏭️
+## Next ⏭️ (Phase 5 — art & juice, and polish)
 
-- Author the remaining levels (3–6) as `LevelDef` data; richer geometry/spawns. (Parallelizable: one agent per level.)
-- Double loop (replay harder after the last level) + scoring polish + extra lives at thresholds.
-- Audio (SFX/music) and the Phase 5 art pass (replace greybox with CC0/own assets). Camera/level code stays.
+- Audio (SFX/music) via Phaser; then the art pass: replace greybox rectangles with CC0/own sprites + tilemaps.
+- Juice: animations, hit flashes, particles, screen shake, transitions. Core/level/camera code stays.
+- Polish: weapon variety (dagger/torch/axe), chests/pickups, extra lives at score thresholds, high-score table.
+- Phase 6: production build optimization (code-split Phaser chunk) + static deploy.
 
 ## Recent decisions
 

@@ -8,7 +8,8 @@ const won = computed(() => game.screen === 'won')
 
 <template>
   <div class="overlay">
-    <h2>{{ won ? 'Victory!' : 'Game Over' }}</h2>
+    <h2>{{ won ? (game.loop >= 2 ? 'True Victory!' : 'Victory!') : 'Game Over' }}</h2>
+    <p v-if="won && game.loop >= 2">You cleared the second quest.</p>
     <p>Score: {{ game.score }}</p>
     <button @click="game.restart()">Retry</button>
     <button @click="game.quitToMenu()">Menu</button>

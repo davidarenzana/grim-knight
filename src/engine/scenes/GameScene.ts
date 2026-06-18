@@ -79,6 +79,7 @@ export class GameScene extends Phaser.Scene {
 
   // Level state (carried across stage transitions via scene.restart).
   private levelIndex = 0
+  private loop = 1
   private carriedSession: Session | null = null
   private start = { x: 80, y: 362 }
   private stageSeconds = 99
@@ -103,9 +104,10 @@ export class GameScene extends Phaser.Scene {
     super('GameScene')
   }
 
-  /** Receives the level index and carried session across stage transitions. */
-  init(data: { levelIndex?: number; session?: Session }): void {
+  /** Receives the level index, loop number and carried session across transitions. */
+  init(data: { levelIndex?: number; loop?: number; session?: Session }): void {
     this.levelIndex = data.levelIndex ?? 0
+    this.loop = data.loop ?? 1
     this.carriedSession = data.session ?? null
   }
 
@@ -113,7 +115,10 @@ export class GameScene extends Phaser.Scene {
     const height = this.scale.height
     const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
     this.start = { ...level.playerStart }
-    this.stageSeconds = level.durationSeconds
+    // Loop 2 (the classic "second quest") is harder: less time, faster waves.
+    const timeScale = this.loop >= 2 ? 0.75 : 1
+    const spawnScale = this.loop >= 2 ? 0.65 : 1
+    this.stageSeconds = Math.round(level.durationSeconds * timeScale)
 
     // Level geometry plus invisible world-boundary walls (left/right).
     this.solids = [
@@ -145,7 +150,7 @@ export class GameScene extends Phaser.Scene {
     this.lastSecond = -1
     this.lastBossHp = -1
     this.bossCleared = false
-    this.spawner = createSpawner(level.spawns)
+    this.spawner = createSpawner(level.spawns.map((s) => ({ ...s, at: s.at * spawnScale })))
 
     this.knight = this.add
       .rectangle(this.player.body.pos.x, this.player.body.pos.y, PLAYER_W, PLAYER_H, 0xd9d9d9)
@@ -193,7 +198,7 @@ export class GameScene extends Phaser.Scene {
     bus.emit('game:lives-changed', { lives: this.session.lives })
     bus.emit('game:score-changed', { score: this.session.score })
     bus.emit('game:weapon-changed', { weapon: LANCE.id })
-    bus.emit('game:level-changed', { level: this.levelIndex + 1, loop: 1 })
+    bus.emit('game:level-changed', { level: this.levelIndex + 1, loop: this.loop })
   }
 
   private held(keys: Phaser.Input.Keyboard.Key[]): boolean {
@@ -359,11 +364,20 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Stage cleared: advance to the next level (carrying the session), or win the game. */
+  /**
+   * Stage cleared: advance to the next level, start the harder second loop after
+   * the last stage of loop 1, or win the game after clearing loop 2. Session carried.
+   */
   private onWin(): void {
     this.over = true
     if (this.levelIndex < LEVELS.length - 1) {
-      this.scene.restart({ levelIndex: this.levelIndex + 1, session: this.session })
+      this.scene.restart({
+        levelIndex: this.levelIndex + 1,
+        loop: this.loop,
+        session: this.session,
+      })
+    } else if (this.loop < 2) {
+      this.scene.restart({ levelIndex: 0, loop: this.loop + 1, session: this.session })
     } else {
       this.session = win(this.session)
       bus.emit('game:won', { score: this.session.score })
