@@ -67,14 +67,18 @@
 - Controls remapped: ←/→ move · ↑ jump (climb on ladder) · ↓ crouch (climb down) · Space throw.
 - World boundary walls (left/right of screen) so knockback can't push the player off-screen into the void. (Until camera scroll exists.)
 
+- Plant enemy (ranged) + enemy projectiles: `core/enemies/plant.ts` (stationary, fires on `age` cadence),
+  `stepEnemy` now returns `{ enemy, fired }`, `core/rules/combat.ts` gains `resolveEnemyProjectiles`,
+  `weapon.ts` extracts `advanceProjectiles`. Wired into `GameScene` (plant in the wave, red enemy projectiles,
+  damage = enemy contact OR enemy projectile). Spec `enemy-plant.md`. 110 tests green.
+
 ## In progress 🔧
 
-- Phase 4 continues: first boss + level model (scroll/timer) + ranged enemy (plant) needing enemy projectiles.
+- Phase 4 continues: first boss + level model (scroll/timer).
 
 ## Next ⏭️
 
-- Plant enemy (ranged) → extend combat with enemy projectiles damaging the player.
-- First boss (`core/enemies/boss-*.ts` or `core/bosses/`) with an attack pattern + HP bar.
+- First boss (`core/bosses/` or `core/enemies/`) with an attack pattern + HP bar (emit boss HP to HUD).
 - Level model (`core/level/`): scroll, per-stage timer (emit `game:time-changed`), stage transitions.
 - Then 6-level rollout + double loop + audio. (Good point to parallelize: one agent per enemy/boss/level spec.)
 

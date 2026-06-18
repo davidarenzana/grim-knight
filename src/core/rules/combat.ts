@@ -44,3 +44,24 @@ export const resolveCombat = (
 
   return { projectiles: survivors, enemies: next, playerHit, kills }
 }
+
+export interface EnemyProjectileResult {
+  /** Enemy projectiles still in flight (those that did not hit the player). */
+  readonly projectiles: readonly Projectile[]
+  /** True when an enemy projectile hit the player. */
+  readonly playerHit: boolean
+}
+
+/** Resolve enemy projectiles against the player: the first hit is consumed and flags damage. */
+export const resolveEnemyProjectiles = (
+  playerBox: AABB,
+  projectiles: readonly Projectile[],
+): EnemyProjectileResult => {
+  const survivors: Projectile[] = []
+  let playerHit = false
+  for (const p of projectiles) {
+    if (intersects(projBox(p), playerBox)) playerHit = true
+    else survivors.push(p)
+  }
+  return { projectiles: survivors, playerHit }
+}

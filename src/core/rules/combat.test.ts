@@ -3,7 +3,7 @@ import { aabb } from '@core/math/aabb'
 import { hitEnemy, type Enemy } from '@core/enemies/enemy'
 import { createZombie } from '@core/enemies/zombie'
 import type { Projectile } from '@core/weapons/weapon'
-import { resolveCombat } from './combat'
+import { resolveCombat, resolveEnemyProjectiles } from './combat'
 
 const GROUND_Y = 200
 const FAR = aabb(-1000, -1000, 1, 1) // player box well out of the way
@@ -64,5 +64,27 @@ describe('combat', () => {
     const z = createZombie(100, GROUND_Y)
     const res = resolveCombat(FAR, [], [z])
     expect(res.playerHit).toBe(false)
+  })
+})
+
+describe('resolveEnemyProjectiles', () => {
+  const playerBox = aabb(100, 100, 24, 48)
+  const proj = (x: number, y: number): Projectile => ({
+    pos: { x, y },
+    vel: { x: -200, y: 0 },
+    w: 12,
+    h: 12,
+  })
+
+  it('a projectile overlapping the player hits and is consumed', () => {
+    const res = resolveEnemyProjectiles(playerBox, [proj(105, 110)])
+    expect(res.playerHit).toBe(true)
+    expect(res.projectiles).toHaveLength(0)
+  })
+
+  it('a missing projectile survives and does not hit', () => {
+    const res = resolveEnemyProjectiles(playerBox, [proj(500, 110)])
+    expect(res.playerHit).toBe(false)
+    expect(res.projectiles).toHaveLength(1)
   })
 })

@@ -63,10 +63,18 @@ export const fire = (
   return { cooldownLeft: def.cooldown, projectiles: [...w.projectiles, projectile] }
 }
 
-/** Advance projectiles and cooldown by `dt`, culling out-of-bounds projectiles. */
-export const stepWeapon = (w: WeaponState, dt: number, bounds: Bounds): WeaponState => {
-  const projectiles = w.projectiles
+/** Move projectiles by `dt` and cull those out of horizontal bounds. Reusable for any projectile list. */
+export const advanceProjectiles = (
+  projectiles: readonly Projectile[],
+  dt: number,
+  bounds: Bounds,
+): Projectile[] =>
+  projectiles
     .map((p) => ({ ...p, pos: vec2(p.pos.x + p.vel.x * dt, p.pos.y + p.vel.y * dt) }))
     .filter((p) => p.pos.x + p.w > bounds.minX && p.pos.x < bounds.maxX)
-  return { cooldownLeft: Math.max(0, w.cooldownLeft - dt), projectiles }
-}
+
+/** Advance projectiles and cooldown by `dt`, culling out-of-bounds projectiles. */
+export const stepWeapon = (w: WeaponState, dt: number, bounds: Bounds): WeaponState => ({
+  cooldownLeft: Math.max(0, w.cooldownLeft - dt),
+  projectiles: advanceProjectiles(w.projectiles, dt, bounds),
+})

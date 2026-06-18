@@ -11,17 +11,26 @@ import {
   PLAYER_W,
   PLAYER_H,
 } from '@core/fsm/player'
-import { createWeapon, fire, stepWeapon, LANCE, type WeaponState } from '@core/weapons/weapon'
+import {
+  createWeapon,
+  fire,
+  stepWeapon,
+  advanceProjectiles,
+  LANCE,
+  type WeaponState,
+  type Projectile,
+} from '@core/weapons/weapon'
 import {
   createZombie,
   createFlyer,
   createOgre,
+  createPlant,
   stepEnemy,
   type Enemy,
   type EnemyKind,
 } from '@core/enemies'
 import { createSpawner, isFinished, stepSpawner, type Spawner } from '@core/level/spawner'
-import { resolveCombat } from '@core/rules/combat'
+import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
 import { addScore, createSession, loseLife, win, type Session } from '@core/rules/session'
 import type { ArmorState } from '@core/rules/armor'
 import { bus } from '@shared/events'
@@ -36,6 +45,7 @@ const ENEMY_COLOR: Record<EnemyKind, number> = {
   zombie: 0x6b8e23,
   flyer: 0x9b59b6,
   ogre: 0x8b1a1a,
+  plant: 0x2e8b57,
 }
 
 /**
@@ -50,6 +60,7 @@ export class GameScene extends Phaser.Scene {
   private prev!: Player
   private weapon!: WeaponState
   private enemies: Enemy[] = []
+  private enemyProjectiles: Projectile[] = []
   private spawner!: Spawner
   private session!: Session
   private over = false
@@ -61,6 +72,7 @@ export class GameScene extends Phaser.Scene {
 
   private knight!: Phaser.GameObjects.Rectangle
   private projRects: Phaser.GameObjects.Rectangle[] = []
+  private enemyProjRects: Phaser.GameObjects.Rectangle[] = []
   private enemyRects: Phaser.GameObjects.Rectangle[] = []
   private keys!: {
     left: Phaser.Input.Keyboard.Key[]
@@ -109,13 +121,15 @@ export class GameScene extends Phaser.Scene {
     this.over = false
     this.lastArmor = 'armored'
     this.enemies = []
+    this.enemyProjectiles = []
     // A finite, winnable greybox wave: clear them all to win.
     this.spawner = createSpawner([
       { at: 0.5, kind: 'zombie', x: 260, y: GROUND_Y },
       { at: 1.5, kind: 'flyer', x: 760, y: 120 },
-      { at: 3.0, kind: 'zombie', x: 720, y: GROUND_Y },
-      { at: 4.5, kind: 'ogre', x: 760, y: GROUND_Y },
-      { at: 6.0, kind: 'flyer', x: 40, y: 100 },
+      { at: 2.5, kind: 'plant', x: 470, y: GROUND_Y },
+      { at: 3.5, kind: 'zombie', x: 720, y: GROUND_Y },
+      { at: 5.0, kind: 'ogre', x: 760, y: GROUND_Y },
+      { at: 6.5, kind: 'flyer', x: 40, y: 100 },
     ])
 
     this.knight = this.add
@@ -188,6 +202,7 @@ export class GameScene extends Phaser.Scene {
     const pos = lerp(this.prev.body.pos, this.player.body.pos, alpha)
     this.knight.setPosition(pos.x, pos.y)
     this.renderProjectiles()
+    this.renderEnemyProjectiles()
     this.renderEnemies()
   }
 
@@ -203,7 +218,10 @@ export class GameScene extends Phaser.Scene {
 
     const b0 = this.player.body
     const target = { x: b0.pos.x + b0.w / 2, y: b0.pos.y + b0.h / 2 }
-    this.enemies = this.enemies.map((e) => stepEnemy(e, target, this.solids, FIXED_DT))
+    const stepped = this.enemies.map((e) => stepEnemy(e, target, this.solids, FIXED_DT))
+    this.enemies = stepped.map((r) => r.enemy)
+    for (const r of stepped) if (r.fired.length) this.enemyProjectiles.push(...r.fired)
+    this.enemyProjectiles = advanceProjectiles(this.enemyProjectiles, FIXED_DT, this.bounds)
 
     if (input.attack) {
       const b = this.player.body
@@ -224,10 +242,15 @@ export class GameScene extends Phaser.Scene {
       bus.emit('game:score-changed', { score: this.session.score })
     }
 
+    // Enemy projectiles vs the player.
+    const ep = resolveEnemyProjectiles(playerBox, this.enemyProjectiles)
+    this.enemyProjectiles = [...ep.projectiles]
+    const damaged = result.playerHit || ep.playerHit
+
     this.player = stepPlayer(
       this.player,
       input,
-      { solids: this.solids, ladders: this.ladders, damaged: result.playerHit },
+      { solids: this.solids, ladders: this.ladders, damaged },
       FIXED_DT,
     )
 
@@ -258,6 +281,8 @@ export class GameScene extends Phaser.Scene {
         return createOgre(x, y)
       case 'flyer':
         return createFlyer(x, y)
+      case 'plant':
+        return createPlant(x, y)
     }
   }
 
@@ -289,6 +314,18 @@ export class GameScene extends Phaser.Scene {
     }
     this.projRects.forEach((rect, i) => {
       const p = projectiles[i]
+      if (p) rect.setVisible(true).setPosition(p.pos.x, p.pos.y).setSize(p.w, p.h)
+      else rect.setVisible(false)
+    })
+  }
+
+  /** Sync the enemy-projectile rectangle pool. */
+  private renderEnemyProjectiles(): void {
+    while (this.enemyProjRects.length < this.enemyProjectiles.length) {
+      this.enemyProjRects.push(this.add.rectangle(0, 0, 1, 1, 0xff4444).setOrigin(0, 0))
+    }
+    this.enemyProjRects.forEach((rect, i) => {
+      const p = this.enemyProjectiles[i]
       if (p) rect.setVisible(true).setPosition(p.pos.x, p.pos.y).setSize(p.w, p.h)
       else rect.setVisible(false)
     })
