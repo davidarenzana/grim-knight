@@ -66,6 +66,7 @@
 - Jump impulse 400→560 (clears a ~90px platform). Ladder climbing fixed (up passes through one-way platform).
 - Controls remapped: ←/→ move · ↑ jump (climb on ladder) · ↓ crouch (climb down) · Space throw.
 - World boundary walls (left/right of screen) so knockback can't push the player off-screen into the void. (Until camera scroll exists.)
+- Air control: steering input now works mid-air (change direction in the air); momentum preserved when no input. Lowered the tall wall to a jumpable crate.
 
 - Plant enemy (ranged) + enemy projectiles: `core/enemies/plant.ts` (stationary, fires on `age` cadence),
   `stepEnemy` now returns `{ enemy, fired }`, `core/rules/combat.ts` gains `resolveEnemyProjectiles`,

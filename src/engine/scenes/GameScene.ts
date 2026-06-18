@@ -97,7 +97,7 @@ export class GameScene extends Phaser.Scene {
     this.solids = [
       aabb(0, GROUND_Y, width, 40), // ground (solid)
       { ...aabb(300, 320, 160, 20), oneWay: true }, // floating platform (jump/climb up through it)
-      aabb(620, 250, 30, 160), // wall (solid)
+      aabb(620, 360, 40, 50), // low crate (solid) — jump over or onto it
       aabb(-40, -200, 40, height + 400), // left world boundary (keeps the player on screen)
       aabb(width, -200, 40, height + 400), // right world boundary
     ]

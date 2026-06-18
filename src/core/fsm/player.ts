@@ -139,9 +139,14 @@ export const stepPlayer = (
     vx = 0
     vy = input.up ? -CLIMB_SPEED : input.down ? CLIMB_SPEED : 0
   } else {
-    if (grounded) {
-      vx = crouching ? 0 : (input.right ? WALK_SPEED : 0) - (input.left ? WALK_SPEED : 0)
-    }
+    // Horizontal control on the ground and in the air: steering input always
+    // takes effect (mid-air direction changes), but with no input an airborne
+    // body keeps its horizontal momentum while a grounded one stops.
+    const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0)
+    if (crouching) vx = 0
+    else if (dir !== 0) vx = dir * WALK_SPEED
+    else if (grounded) vx = 0
+    // airborne with no steering input keeps its current vx (momentum)
     if (input.jump && grounded && !crouching) vy = -JUMP_IMPULSE
   }
 

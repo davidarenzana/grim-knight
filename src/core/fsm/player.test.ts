@@ -55,6 +55,23 @@ describe('player', () => {
     expect(p.state).toBe('idle')
   })
 
+  it('can change direction in mid-air', () => {
+    const jumped = stepPlayer(grounded(), input({ jump: true }), WORLD, DT)
+    expect(jumped.body.grounded).toBe(false)
+    const steered = stepPlayer(jumped, input({ left: true }), WORLD, DT)
+    expect(steered.body.vel.x).toBeLessThan(0)
+  })
+
+  it('keeps horizontal momentum in the air with no input', () => {
+    // Run right on the ground, then jump: momentum should carry while airborne.
+    let p = stepPlayer(grounded(), input({ right: true }), WORLD, DT)
+    p = stepPlayer(p, input({ right: true, jump: true }), WORLD, DT)
+    const airborneVx = p.body.vel.x
+    expect(p.body.grounded).toBe(false)
+    const next = stepPlayer(p, NO_INPUT, WORLD, DT)
+    expect(next.body.vel.x).toBe(airborneVx) // momentum preserved
+  })
+
   it('crouches', () => {
     const start = grounded()
     const next = stepPlayer(start, input({ down: true }), WORLD, DT)
