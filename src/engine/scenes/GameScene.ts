@@ -11,7 +11,15 @@ import {
   PLAYER_H,
 } from '@core/fsm/player'
 import { createWeapon, fire, stepWeapon, LANCE, type WeaponState } from '@core/weapons/weapon'
-import { createZombie, stepZombie, type Enemy } from '@core/enemies/zombie'
+import {
+  createZombie,
+  createFlyer,
+  createOgre,
+  stepEnemy,
+  type Enemy,
+  type EnemyKind,
+} from '@core/enemies'
+import { createSpawner, isFinished, stepSpawner, type Spawner } from '@core/level/spawner'
 import { resolveCombat } from '@core/rules/combat'
 import { addScore, createSession, loseLife, win, type Session } from '@core/rules/session'
 import type { ArmorState } from '@core/rules/armor'
@@ -22,6 +30,12 @@ const GROUND_Y = 410
 const START_X = 80
 const START_Y = GROUND_Y - PLAYER_H
 const SCORE_PER_KILL = 100
+
+const ENEMY_COLOR: Record<EnemyKind, number> = {
+  zombie: 0x6b8e23,
+  flyer: 0x9b59b6,
+  ogre: 0x8b1a1a,
+}
 
 /**
  * Main game scene. It RENDERS the state produced by the pure `core/` simulation
@@ -35,6 +49,7 @@ export class GameScene extends Phaser.Scene {
   private prev!: Player
   private weapon!: WeaponState
   private enemies: Enemy[] = []
+  private spawner!: Spawner
   private session!: Session
   private over = false
   private lastArmor: ArmorState = 'armored'
@@ -87,11 +102,15 @@ export class GameScene extends Phaser.Scene {
     this.session = createSession()
     this.over = false
     this.lastArmor = 'armored'
-    this.enemies = [
-      createZombie(250, GROUND_Y),
-      createZombie(520, GROUND_Y),
-      createZombie(720, GROUND_Y),
-    ]
+    this.enemies = []
+    // A finite, winnable greybox wave: clear them all to win.
+    this.spawner = createSpawner([
+      { at: 0.5, kind: 'zombie', x: 260, y: GROUND_Y },
+      { at: 1.5, kind: 'flyer', x: 760, y: 120 },
+      { at: 3.0, kind: 'zombie', x: 720, y: GROUND_Y },
+      { at: 4.5, kind: 'ogre', x: 760, y: GROUND_Y },
+      { at: 6.0, kind: 'flyer', x: 40, y: 100 },
+    ])
 
     this.knight = this.add
       .rectangle(this.player.body.pos.x, this.player.body.pos.y, PLAYER_W, PLAYER_H, 0xd9d9d9)
@@ -163,8 +182,14 @@ export class GameScene extends Phaser.Scene {
     if (this.over) return
     this.prev = this.player
 
-    const targetX = this.player.body.pos.x + this.player.body.w / 2
-    this.enemies = this.enemies.map((e) => stepZombie(e, targetX, this.solids, FIXED_DT))
+    // Spawn due enemies, then steer every enemy toward the player.
+    const spawn = stepSpawner(this.spawner, FIXED_DT)
+    this.spawner = spawn.spawner
+    for (const ev of spawn.due) this.enemies.push(this.spawnEnemy(ev.kind, ev.x, ev.y))
+
+    const b0 = this.player.body
+    const target = { x: b0.pos.x + b0.w / 2, y: b0.pos.y + b0.h / 2 }
+    this.enemies = this.enemies.map((e) => stepEnemy(e, target, this.solids, FIXED_DT))
 
     if (input.attack) {
       const b = this.player.body
@@ -202,7 +227,24 @@ export class GameScene extends Phaser.Scene {
       return
     }
 
-    if (this.enemies.every((e) => e.state === 'dead')) this.onWin()
+    if (
+      isFinished(this.spawner) &&
+      this.enemies.length > 0 &&
+      this.enemies.every((e) => e.state === 'dead')
+    ) {
+      this.onWin()
+    }
+  }
+
+  private spawnEnemy(kind: EnemyKind, x: number, y: number): Enemy {
+    switch (kind) {
+      case 'zombie':
+        return createZombie(x, y)
+      case 'ogre':
+        return createOgre(x, y)
+      case 'flyer':
+        return createFlyer(x, y)
+    }
   }
 
   private onPlayerDead(): void {
@@ -238,15 +280,19 @@ export class GameScene extends Phaser.Scene {
     })
   }
 
-  /** Sync the enemy rectangle pool; dead enemies are hidden. */
+  /** Sync the enemy rectangle pool; dead enemies are hidden, colored per kind. */
   private renderEnemies(): void {
     while (this.enemyRects.length < this.enemies.length) {
-      this.enemyRects.push(this.add.rectangle(0, 0, 1, 1, 0x6b8e23).setOrigin(0, 0))
+      this.enemyRects.push(this.add.rectangle(0, 0, 1, 1, 0xffffff).setOrigin(0, 0))
     }
     this.enemyRects.forEach((rect, i) => {
       const e = this.enemies[i]
       if (e && e.state !== 'dead') {
-        rect.setVisible(true).setPosition(e.body.pos.x, e.body.pos.y).setSize(e.body.w, e.body.h)
+        rect
+          .setVisible(true)
+          .setFillStyle(ENEMY_COLOR[e.kind])
+          .setPosition(e.body.pos.x, e.body.pos.y)
+          .setSize(e.body.w, e.body.h)
       } else {
         rect.setVisible(false)
       }

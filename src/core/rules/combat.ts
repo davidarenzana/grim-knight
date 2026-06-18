@@ -1,5 +1,5 @@
 import { aabb, intersects, type AABB } from '@core/math/aabb'
-import { hitEnemy, type Enemy } from '@core/enemies/zombie'
+import { hitEnemy, type Enemy } from '@core/enemies/enemy'
 import type { Projectile } from '@core/weapons/weapon'
 
 /**

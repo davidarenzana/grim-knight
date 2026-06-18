@@ -12,5 +12,6 @@
   completed. Classic genre mechanic.
 - **Level / stage**: a playable scrolling segment with enemies, a boss and a timer.
 - **Boss**: end-of-stage enemy with its own pattern.
-- **Spawn**: enemy spawn point/rule in a level.
+- **Spawn / spawner**: enemy spawn point/rule. `core/level/spawner.ts` schedules timed `SpawnEvent`s; the engine instantiates them.
+- **Enemy kinds**: `zombie` (rising ground walker), `flyer` (flying chaser, no gravity, sine bob), `ogre` (heavy slow walker, more HP). Shared model in `core/enemies/enemy.ts`; per-kind step routed by `stepEnemy` in `core/enemies/index.ts`.
 - **Greybox**: placeholder art using shapes/rectangles before integrating final assets.

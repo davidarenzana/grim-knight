@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { aabb } from '@core/math/aabb'
-import { createZombie, hitEnemy, type Enemy } from '@core/enemies/zombie'
+import { hitEnemy, type Enemy } from '@core/enemies/enemy'
+import { createZombie } from '@core/enemies/zombie'
 import type { Projectile } from '@core/weapons/weapon'
 import { resolveCombat } from './combat'
 

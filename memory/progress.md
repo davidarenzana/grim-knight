@@ -51,15 +51,25 @@
 - `src/ui/stores/game.test.ts`: smoke tests for the bus↔store bridge (Pinia, headless).
 - 84 Vitest tests green; typecheck/lint/build green; dev server boots (HTTP 200). **Playable greybox loop end-to-end.**
 
+### Phase 4 (in progress) — Full structure rollout
+
+- Generalized enemy model: `core/enemies/enemy.ts` (shared `Enemy`, `EnemyKind`, `EnemyTarget`, `hitEnemy`).
+  Per-kind step routed by `stepEnemy` in `core/enemies/index.ts`. `stepX(e, target{x,y}, solids, dt)` signature.
+- New enemies: `flyer.ts` (flying chaser, no gravity, sine bob), `ogre.ts` (heavy walker, 3 HP). Specs + tests.
+- `core/level/spawner.ts`: timed `SpawnEvent` scheduler (`createSpawner`/`stepSpawner`/`isFinished`). Spec `spawner.md`.
+- `GameScene`: spawner-driven finite wave (zombie/flyer/ogre), per-kind colors, win when spawner finished + all dead.
+- `combat.ts` now imports the shared `Enemy`; works across all kinds. 99 tests green; typecheck/lint/build green.
+
 ## In progress 🔧
 
-- (nothing active — Phases 0–3 done)
+- Phase 4 continues: first boss + level model (scroll/timer) + ranged enemy (plant) needing enemy projectiles.
 
-## Next ⏭️ (Phase 4)
+## Next ⏭️
 
-- More enemy types (flyer, plant, ogre) reusing the zombie/combat pattern; wave/continuous spawning.
-- First boss; level model (`core/level/`) with scroll, spawns and a stage timer (emit `game:time-changed`).
-- HUD timer wiring; then the 6-level rollout + double loop + audio.
+- Plant enemy (ranged) → extend combat with enemy projectiles damaging the player.
+- First boss (`core/enemies/boss-*.ts` or `core/bosses/`) with an attack pattern + HP bar.
+- Level model (`core/level/`): scroll, per-stage timer (emit `game:time-changed`), stage transitions.
+- Then 6-level rollout + double loop + audio. (Good point to parallelize: one agent per enemy/boss/level spec.)
 
 ## Recent decisions
 
