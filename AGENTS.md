@@ -83,17 +83,16 @@ was learned.
 ## 7. Quick conventions
 
 - Commits: **Conventional Commits** (`feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`).
-- Test files next to the code: `file.test.ts`. DOM tests: `*.dom.test.ts` (jsdom environment).
+- Test files next to the code: `file.test.ts`. DOM tests opt into jsdom with a `// @vitest-environment jsdom` docblock (default env is `node`).
 - No `Math.random()` in `core/`: use `createRng(seed)` (reproducible determinism).
 - Import aliases: `@core/*`, `@engine/*`, `@ui/*`, `@shared/*`, `@/*`.
 
 ## 8. Current status
 
-Phases 0–3 done. Playable greybox loop end-to-end: player FSM (idle/run/jump/crouch/climb/throw/hurt/die)
-
-- 2-hit armor + lance, zombies + combat + lives/score/game-over/win, all wired into `GameScene` and the
-  Vue HUD via the bus. 84 tests green. Next: Phase 4 (more enemies, boss, level model, double loop, audio).
-  Live detail in `memory/progress.md`.
+Phases 0–3 done. Playable greybox loop end-to-end: player FSM (idle/run/jump/crouch/climb/throw/hurt/die),
+2-hit armor and lance weapon, plus zombies, combat and lives/score/game-over/win — all wired into
+`GameScene` and the Vue HUD via the bus. 84 tests green. Next: Phase 4 (more enemies, boss, level model,
+double loop, audio). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 
