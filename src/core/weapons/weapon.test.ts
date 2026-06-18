@@ -55,4 +55,24 @@ describe('weapon', () => {
     const stepped = stepWeapon(w, 0.5, BOUNDS)
     expect(stepped.projectiles).toHaveLength(0)
   })
+
+  it('culls projectiles that hit a solid wall', () => {
+    const wall = { x: 100, y: 0, w: 20, h: 200 }
+    const w: WeaponState = {
+      cooldownLeft: 0,
+      projectiles: [{ pos: { x: 96, y: 50 }, vel: { x: 360, y: 0 }, w: 16, h: 4 }],
+    }
+    const stepped = stepWeapon(w, 0.05, BOUNDS, [wall])
+    expect(stepped.projectiles).toHaveLength(0)
+  })
+
+  it('lets projectiles pass through one-way platforms', () => {
+    const platform = { x: 100, y: 0, w: 200, h: 20, oneWay: true }
+    const w: WeaponState = {
+      cooldownLeft: 0,
+      projectiles: [{ pos: { x: 150, y: 5 }, vel: { x: 360, y: 0 }, w: 16, h: 4 }],
+    }
+    const stepped = stepWeapon(w, 0.05, BOUNDS, [platform])
+    expect(stepped.projectiles).toHaveLength(1)
+  })
 })

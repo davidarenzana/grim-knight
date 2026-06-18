@@ -1,3 +1,5 @@
+import { aabb, intersects } from '@core/math/aabb'
+import type { Solid } from '@core/physics/body'
 import { vec2, type Vec2 } from '@core/math/vector'
 
 /**
@@ -63,18 +65,33 @@ export const fire = (
   return { cooldownLeft: def.cooldown, projectiles: [...w.projectiles, projectile] }
 }
 
-/** Move projectiles by `dt` and cull those out of horizontal bounds. Reusable for any projectile list. */
+/**
+ * Move projectiles by `dt`; cull those out of horizontal bounds or hitting a
+ * solid wall. One-way platforms are ignored (projectiles pass through them).
+ * Reusable for any projectile list.
+ */
 export const advanceProjectiles = (
   projectiles: readonly Projectile[],
   dt: number,
   bounds: Bounds,
+  solids: readonly Solid[] = [],
 ): Projectile[] =>
   projectiles
     .map((p) => ({ ...p, pos: vec2(p.pos.x + p.vel.x * dt, p.pos.y + p.vel.y * dt) }))
-    .filter((p) => p.pos.x + p.w > bounds.minX && p.pos.x < bounds.maxX)
+    .filter(
+      (p) =>
+        p.pos.x + p.w > bounds.minX &&
+        p.pos.x < bounds.maxX &&
+        !solids.some((s) => !s.oneWay && intersects(aabb(p.pos.x, p.pos.y, p.w, p.h), s)),
+    )
 
-/** Advance projectiles and cooldown by `dt`, culling out-of-bounds projectiles. */
-export const stepWeapon = (w: WeaponState, dt: number, bounds: Bounds): WeaponState => ({
+/** Advance projectiles and cooldown by `dt`, culling out-of-bounds or wall-hitting projectiles. */
+export const stepWeapon = (
+  w: WeaponState,
+  dt: number,
+  bounds: Bounds,
+  solids: readonly Solid[] = [],
+): WeaponState => ({
   cooldownLeft: Math.max(0, w.cooldownLeft - dt),
-  projectiles: advanceProjectiles(w.projectiles, dt, bounds),
+  projectiles: advanceProjectiles(w.projectiles, dt, bounds, solids),
 })

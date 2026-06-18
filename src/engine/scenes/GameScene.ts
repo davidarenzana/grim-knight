@@ -41,6 +41,7 @@ import { bus } from '@shared/events'
 
 const FIXED_DT = 1 / 60
 const SCORE_PER_KILL = 100
+const CROUCH_H = Math.round(PLAYER_H * 0.6) // shorter profile while crouching (dodge high shots)
 
 const ENEMY_COLOR: Record<EnemyKind, number> = {
   zombie: 0x6b8e23,
@@ -216,7 +217,9 @@ export class GameScene extends Phaser.Scene {
     const alpha = this.stepper.advance(delta / 1000, () => this.tick(input))
 
     const pos = lerp(this.prev.body.pos, this.player.body.pos, alpha)
-    this.knight.setPosition(pos.x, pos.y)
+    // Crouching draws a shorter knight with feet planted.
+    const ph = this.player.state === 'crouch' ? CROUCH_H : PLAYER_H
+    this.knight.setSize(PLAYER_W, ph).setPosition(pos.x, pos.y + (PLAYER_H - ph))
     this.renderProjectiles()
     this.renderEnemyProjectiles()
     this.renderEnemies()
@@ -250,7 +253,12 @@ export class GameScene extends Phaser.Scene {
     const stepped = this.enemies.map((e) => stepEnemy(e, target, this.solids, FIXED_DT))
     this.enemies = stepped.map((r) => r.enemy)
     for (const r of stepped) if (r.fired.length) this.enemyProjectiles.push(...r.fired)
-    this.enemyProjectiles = advanceProjectiles(this.enemyProjectiles, FIXED_DT, this.bounds)
+    this.enemyProjectiles = advanceProjectiles(
+      this.enemyProjectiles,
+      FIXED_DT,
+      this.bounds,
+      this.solids,
+    )
 
     if (input.attack) {
       const b = this.player.body
@@ -258,10 +266,12 @@ export class GameScene extends Phaser.Scene {
       const originY = b.pos.y + b.h / 2
       this.weapon = fire(this.weapon, LANCE, originX, originY, this.player.facing)
     }
-    this.weapon = stepWeapon(this.weapon, FIXED_DT, this.bounds)
+    this.weapon = stepWeapon(this.weapon, FIXED_DT, this.bounds, this.solids)
 
+    // Crouching shrinks the player's hitbox (feet planted) so it can duck shots.
     const b = this.player.body
-    const playerBox = aabb(b.pos.x, b.pos.y, b.w, b.h)
+    const ph = this.player.state === 'crouch' ? CROUCH_H : b.h
+    const playerBox = aabb(b.pos.x, b.pos.y + (b.h - ph), b.w, ph)
     const result = resolveCombat(playerBox, this.weapon.projectiles, this.enemies)
     this.weapon = { ...this.weapon, projectiles: result.projectiles }
     this.enemies = result.enemies as Enemy[]
