@@ -1,6 +1,6 @@
 # Spec: Player movement
 
-- **Status:** draft
+- **Status:** implemented (walk/run/idle/jump/crouch; climb/throw/hurt/die pending)
 - **Owner module(s):** `src/core/fsm/player.ts`, `src/core/physics/`
 - **Related:** GDD §3, ADR 0002 (fixed timestep)
 

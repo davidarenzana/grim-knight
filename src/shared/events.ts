@@ -1,4 +1,5 @@
 import mitt from 'mitt'
+import type { ArmorState } from '@core/rules/armor'
 
 /**
  * Event bus that decouples the simulation (Phaser/core) from the UI (Vue/Pinia).
@@ -7,8 +8,8 @@ import mitt from 'mitt'
  * Neither side imports the other directly.
  */
 
-/** Knight armor states (classic mechanic: 2 hits). */
-export type ArmorState = 'armored' | 'underwear' | 'dead'
+// Single source of truth for the armor states lives in the core.
+export type { ArmorState }
 
 export type GameEvents = {
   'game:ready': void

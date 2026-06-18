@@ -89,8 +89,9 @@ was learned.
 
 ## 8. Current status
 
-Phase 0 (scaffolding + process) done. Phase 1 (engine core: math + fixed-step sim loop + AABB physics)
-done, 31 tests green. Live detail in `memory/progress.md`.
+Phase 0 + Phase 1 done. Phase 2 in progress: player FSM (idle/run/jump/crouch) + 2-hit armor implemented
+and wired into `GameScene` (keyboard + interpolated render). 45 tests green. Live detail in
+`memory/progress.md`.
 
 ## 9. Parallel agents
 

@@ -1,6 +1,6 @@
 # Spec: Armor damage (2-hit model)
 
-- **Status:** draft
+- **Status:** implemented
 - **Owner module(s):** `src/core/rules/armor.ts`
 - **Related:** GDD §3, glossary (Armor), `shared/events.ts:ArmorState`
 

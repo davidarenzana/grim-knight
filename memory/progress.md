@@ -22,15 +22,25 @@
 - `core/physics/body.ts`: dynamic body, gravity integration, per-axis AABB collision resolution (grounded flag).
 - 31 Vitest tests green; 100% lines on core, branches ≥90% global. `pnpm typecheck`, `pnpm lint`, `pnpm build` all green.
 
+### Phase 2 (in progress) — Player vertical slice (greybox)
+
+- `core/rules/armor.ts`: 2-hit armor FSM (`armored`→`underwear`→`dead`) + pickup + i-frames + `tick`. Spec `specs/armor-damage.md` (implemented).
+  `ArmorState` now lives here as the single source of truth; `shared/events.ts` re-exports it.
+- `core/fsm/player.ts`: player FSM (idle/run/jump/crouch) over `Body` — ground control, no air control, no double-jump.
+  Spec `specs/player-movement.md` (implemented). Tunables: GRAVITY=1500, WALK_SPEED=120, JUMP_IMPULSE=400.
+- `engine/scenes/GameScene.ts`: now renders the real simulation (stepper + `stepPlayer` + keyboard input + interpolation),
+  replacing the demo back-and-forth. Greybox level = ground + platform + wall.
+- 45 Vitest tests green; coverage 100% lines / ~91% branches on core. typecheck/lint/build green.
+
 ## In progress 🔧
 
-- (nothing active)
+- Phase 2 continues: lance weapon (throwing projectile), then wire armor/lives into the play loop + HUD.
 
 ## Next ⏭️
 
-- Wire `GameScene` render to a real simulation tick (use `createStepper` + a `Body`), replacing the demo back-and-forth.
-- Phase 2: player FSM (idle/run/jump/crouch/climb/throw/hurt/die) + 2-hit armor (`core/rules/armor.ts`, spec exists) + lance weapon.
-  Specs already drafted: `specs/player-movement.md`, `specs/armor-damage.md`.
+- `core/weapons/` lance: spawn/throw projectile, fire rate, on-screen cap; render in `GameScene`.
+- Hook armor hits + lives + game-over into the loop and emit the matching `game:*` events to the HUD.
+- Then Phase 2 climb/throw/hurt/die player states; afterwards Phase 3 (enemies, level, full game loop).
 
 ## Recent decisions
 
