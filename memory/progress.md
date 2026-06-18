@@ -40,16 +40,26 @@
 - `engine/scenes/GameScene.ts`: greybox level now has a ladder; keys split (W/Up climb vs Space jump); world passed each step.
 - 61 Vitest tests green; coverage 100% lines on core. typecheck/lint/build green. Vitest 3 `environmentMatchGlobs` removed (use `// @vitest-environment jsdom` docblock).
 
+### Phase 3 — Enemies, combat, full game loop ✅ core complete
+
+- `core/enemies/zombie.ts`: rising walker (rising→walking→dead), walks toward player, HP, `hitEnemy`. Spec `enemy-zombie.md`.
+- `core/rules/combat.ts`: `resolveCombat(playerBox, projectiles, enemies)` → consumed projectiles, damaged enemies, `playerHit`, `kills`. Spec `combat.md`.
+- `core/rules/session.ts`: lives/score/game-over/won transitions (`createSession`/`addScore`/`loseLife`/`win`). Spec `scoring-lives.md`.
+- `engine/scenes/GameScene.ts`: spawns 3 zombies, chases player, resolves combat, applies player damage,
+  handles death→respawn→lives→game-over, win when all enemies dead, emits all `game:*` events to the HUD.
+  Pause/resume wired via bus with shutdown cleanup. Enemy/projectile render pools.
+- `src/ui/stores/game.test.ts`: smoke tests for the bus↔store bridge (Pinia, headless).
+- 84 Vitest tests green; typecheck/lint/build green; dev server boots (HTTP 200). **Playable greybox loop end-to-end.**
+
 ## In progress 🔧
 
-- Phase 3: first enemy + combat resolution + wiring damage/lives/game-over to the HUD.
+- (nothing active — Phases 0–3 done)
 
-## Next ⏭️ (Phase 3)
+## Next ⏭️ (Phase 4)
 
-- `core/enemies/zombie.ts`: rising walker with HP, walks toward the player (TDD).
-- `core/rules/combat.ts`: resolve projectile↔enemy and enemy↔player collisions (who takes damage).
-- `core/rules/session.ts` (or similar): lives, score, game-over from the play loop.
-- Wire into `GameScene`: spawn enemies, step them, resolve combat, emit `game:armor-changed/lives-changed/over` to the HUD.
+- More enemy types (flyer, plant, ogre) reusing the zombie/combat pattern; wave/continuous spawning.
+- First boss; level model (`core/level/`) with scroll, spawns and a stage timer (emit `game:time-changed`).
+- HUD timer wiring; then the 6-level rollout + double loop + audio.
 
 ## Recent decisions
 
