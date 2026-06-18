@@ -78,15 +78,20 @@
 - Stage timer: `core/level/timer.ts` countdown; HUD `TIME`; time-out costs a life (resets on respawn). Spec `stage-timer.md`.
 - 120 tests green; typecheck/lint/build green.
 
+- Camera scroll + level model: `core/level/level.ts` (`LevelDef` pure data + `LEVELS`), Phaser camera follows the
+  player within `[0, worldWidth]` (levels wider than screen), world-boundary walls at level edges. Clearing a level
+  advances to the next via `scene.restart({ levelIndex, session })` (lives/score carried); last level → `game:won`.
+  HUD shows TIME; `game:level-changed` emitted. Specs `level-model.md`. 125 tests green.
+
 ## In progress 🔧
 
-- Phase 4 continues: camera scroll (wider levels) + stage transitions.
+- (Phase 4 nearly done — playable across 2 greybox levels with camera scroll, boss, timer.)
 
 ## Next ⏭️
 
-- Camera scroll: make the level wider than the screen and follow the player (Phaser camera); replace edge walls with real world bounds.
-- Level model (`core/level/`): multi-stage definitions + transitions; wire `game:level-changed`.
-- Then 6-level rollout + double loop + audio. (Good point to parallelize: one agent per enemy/boss/level spec.)
+- Author the remaining levels (3–6) as `LevelDef` data; richer geometry/spawns. (Parallelizable: one agent per level.)
+- Double loop (replay harder after the last level) + scoring polish + extra lives at thresholds.
+- Audio (SFX/music) and the Phase 5 art pass (replace greybox with CC0/own assets). Camera/level code stays.
 
 ## Recent decisions
 

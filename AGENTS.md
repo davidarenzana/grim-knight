@@ -89,10 +89,12 @@ was learned.
 
 ## 8. Current status
 
-Phases 0–3 done. Playable greybox loop end-to-end: player FSM (idle/run/jump/crouch/climb/throw/hurt/die),
-2-hit armor and lance weapon, plus zombies, combat and lives/score/game-over/win — all wired into
-`GameScene` and the Vue HUD via the bus. 84 tests green. Next: Phase 4 (more enemies, boss, level model,
-double loop, audio). Live detail in `memory/progress.md`.
+Phases 0–3 done; Phase 4 mostly done. Playable across 2 greybox levels with camera scroll: player FSM
+(idle/run/jump/crouch/climb/throw/hurt/die + air control), 2-hit armor, lance; enemies zombie/flyer/ogre/plant
+
+- boss (HP bar), enemy projectiles, timed spawner, stage timer, lives/score/game-over, level transitions →
+  win. All wired into `GameScene` and the Vue HUD via the bus. 125 tests green. Next: more levels, double loop,
+  audio, then the Phase 5 art pass. Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 

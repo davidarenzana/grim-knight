@@ -33,17 +33,14 @@ import {
 } from '@core/enemies'
 import { createSpawner, isFinished, stepSpawner, type Spawner } from '@core/level/spawner'
 import { createTimer, tickTimer, type StageTimer } from '@core/level/timer'
+import { LEVELS } from '@core/level/level'
 import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
 import { addScore, createSession, loseLife, win, type Session } from '@core/rules/session'
 import type { ArmorState } from '@core/rules/armor'
 import { bus } from '@shared/events'
 
 const FIXED_DT = 1 / 60
-const GROUND_Y = 410
-const START_X = 80
-const START_Y = GROUND_Y - PLAYER_H
 const SCORE_PER_KILL = 100
-const STAGE_SECONDS = 99
 
 const ENEMY_COLOR: Record<EnemyKind, number> = {
   zombie: 0x6b8e23,
@@ -79,6 +76,12 @@ export class GameScene extends Phaser.Scene {
   private ladders: AABB[] = []
   private bounds!: { minX: number; maxX: number }
 
+  // Level state (carried across stage transitions via scene.restart).
+  private levelIndex = 0
+  private carriedSession: Session | null = null
+  private start = { x: 80, y: 362 }
+  private stageSeconds = 99
+
   private knight!: Phaser.GameObjects.Rectangle
   private projRects: Phaser.GameObjects.Rectangle[] = []
   private enemyProjRects: Phaser.GameObjects.Rectangle[] = []
@@ -99,68 +102,67 @@ export class GameScene extends Phaser.Scene {
     super('GameScene')
   }
 
-  create(): void {
-    const { width } = this.scale
+  /** Receives the level index and carried session across stage transitions. */
+  init(data: { levelIndex?: number; session?: Session }): void {
+    this.levelIndex = data.levelIndex ?? 0
+    this.carriedSession = data.session ?? null
+  }
 
+  create(): void {
     const height = this.scale.height
+    const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
+    this.start = { ...level.playerStart }
+    this.stageSeconds = level.durationSeconds
+
+    // Level geometry plus invisible world-boundary walls (left/right).
     this.solids = [
-      aabb(0, GROUND_Y, width, 40), // ground (solid)
-      { ...aabb(300, 320, 160, 20), oneWay: true }, // floating platform (jump/climb up through it)
-      aabb(620, 360, 40, 50), // low crate (solid) — jump over or onto it
-      aabb(-40, -200, 40, height + 400), // left world boundary (keeps the player on screen)
-      aabb(width, -200, 40, height + 400), // right world boundary
+      ...level.solids,
+      aabb(-40, -200, 40, height + 600),
+      aabb(level.worldWidth, -200, 40, height + 600),
     ]
     for (const s of this.solids) {
-      // Skip the off-screen boundary walls; draw the rest (one-way lighter).
-      if (s.x + s.w <= 0 || s.x >= width) continue
+      if (s.x + s.w <= 0 || s.x >= level.worldWidth) continue // skip boundary walls
       this.add.rectangle(s.x, s.y, s.w, s.h, s.oneWay ? 0x6b8f5a : 0x3a5a40).setOrigin(0, 0)
     }
 
-    this.ladders = [aabb(360, 320, 16, 90)]
+    this.ladders = level.ladders.map((l) => l)
     for (const l of this.ladders) {
       this.add.rectangle(l.x, l.y, l.w, l.h, 0x8a6d3b).setOrigin(0, 0)
     }
 
-    this.bounds = { minX: 0, maxX: width }
+    this.bounds = { minX: 0, maxX: level.worldWidth }
     this.stepper = createStepper(FIXED_DT)
-    this.player = createPlayer(START_X, START_Y)
+    this.player = createPlayer(this.start.x, this.start.y)
     this.prev = this.player
     this.weapon = createWeapon()
-    this.session = createSession()
+    this.session = this.carriedSession ?? createSession()
     this.over = false
     this.lastArmor = 'armored'
     this.enemies = []
     this.enemyProjectiles = []
-    this.timer = createTimer(STAGE_SECONDS)
+    this.timer = createTimer(this.stageSeconds)
     this.lastSecond = -1
     this.lastBossHp = -1
     this.bossCleared = false
-    // A finite, winnable greybox wave ending in the boss: clear them all to win.
-    this.spawner = createSpawner([
-      { at: 0.5, kind: 'zombie', x: 260, y: GROUND_Y },
-      { at: 1.5, kind: 'flyer', x: 760, y: 120 },
-      { at: 2.5, kind: 'plant', x: 470, y: GROUND_Y },
-      { at: 3.5, kind: 'zombie', x: 720, y: GROUND_Y },
-      { at: 5.0, kind: 'ogre', x: 760, y: GROUND_Y },
-      { at: 8.0, kind: 'boss', x: 720, y: GROUND_Y },
-    ])
+    this.spawner = createSpawner(level.spawns)
 
     this.knight = this.add
       .rectangle(this.player.body.pos.x, this.player.body.pos.y, PLAYER_W, PLAYER_H, 0xd9d9d9)
       .setOrigin(0, 0)
 
+    // Camera scrolls within the world, following the knight.
+    this.cameras.main.setBounds(0, 0, level.worldWidth, height)
+    this.cameras.main.startFollow(this.knight, true, 0.12, 0.12)
+
+    // Fixed on-screen help (does not scroll with the world).
     this.add
-      .text(
-        this.scale.width / 2,
-        24,
-        'GREYBOX — ←/→ move, ↑ jump/climb, ↓ crouch/down, Space throw',
-        {
-          fontFamily: 'monospace',
-          fontSize: '14px',
-          color: '#ffffff',
-        },
-      )
-      .setOrigin(0.5)
+      .text(12, 8, `${level.name} — ←/→ move · ↑ jump/climb · ↓ crouch · Space throw`, {
+        fontFamily: 'monospace',
+        fontSize: '13px',
+        color: '#ffffff',
+      })
+      .setScrollFactor(0)
+      .setOrigin(0, 0)
 
     const kb = this.input.keyboard!
     const k = (code: number) => kb.addKey(code)
@@ -190,6 +192,7 @@ export class GameScene extends Phaser.Scene {
     bus.emit('game:lives-changed', { lives: this.session.lives })
     bus.emit('game:score-changed', { score: this.session.score })
     bus.emit('game:weapon-changed', { weapon: LANCE.id })
+    bus.emit('game:level-changed', { level: this.levelIndex + 1, loop: 1 })
   }
 
   private held(keys: Phaser.Input.Keyboard.Key[]): boolean {
@@ -337,19 +340,24 @@ export class GameScene extends Phaser.Scene {
       this.over = true
       bus.emit('game:over', { score: this.session.score })
     } else {
-      this.player = createPlayer(START_X, START_Y)
+      this.player = createPlayer(this.start.x, this.start.y)
       this.prev = this.player
       this.lastArmor = 'armored'
-      this.timer = createTimer(STAGE_SECONDS)
+      this.timer = createTimer(this.stageSeconds)
       this.lastSecond = -1
       bus.emit('game:armor-changed', { armor: 'armored' })
     }
   }
 
+  /** Stage cleared: advance to the next level (carrying the session), or win the game. */
   private onWin(): void {
     this.over = true
-    this.session = win(this.session)
-    bus.emit('game:won', { score: this.session.score })
+    if (this.levelIndex < LEVELS.length - 1) {
+      this.scene.restart({ levelIndex: this.levelIndex + 1, session: this.session })
+    } else {
+      this.session = win(this.session)
+      bus.emit('game:won', { score: this.session.score })
+    }
   }
 
   /** Sync the projectile rectangle pool to the current weapon state. */
