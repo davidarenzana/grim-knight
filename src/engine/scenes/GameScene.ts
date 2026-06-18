@@ -25,11 +25,14 @@ import {
   createFlyer,
   createOgre,
   createPlant,
+  createBoss,
+  BOSS,
   stepEnemy,
   type Enemy,
   type EnemyKind,
 } from '@core/enemies'
 import { createSpawner, isFinished, stepSpawner, type Spawner } from '@core/level/spawner'
+import { createTimer, tickTimer, type StageTimer } from '@core/level/timer'
 import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
 import { addScore, createSession, loseLife, win, type Session } from '@core/rules/session'
 import type { ArmorState } from '@core/rules/armor'
@@ -40,12 +43,14 @@ const GROUND_Y = 410
 const START_X = 80
 const START_Y = GROUND_Y - PLAYER_H
 const SCORE_PER_KILL = 100
+const STAGE_SECONDS = 99
 
 const ENEMY_COLOR: Record<EnemyKind, number> = {
   zombie: 0x6b8e23,
   flyer: 0x9b59b6,
   ogre: 0x8b1a1a,
   plant: 0x2e8b57,
+  boss: 0x6a0dad,
 }
 
 /**
@@ -62,9 +67,13 @@ export class GameScene extends Phaser.Scene {
   private enemies: Enemy[] = []
   private enemyProjectiles: Projectile[] = []
   private spawner!: Spawner
+  private timer!: StageTimer
   private session!: Session
   private over = false
   private lastArmor: ArmorState = 'armored'
+  private lastSecond = -1
+  private lastBossHp = -1
+  private bossCleared = false
 
   private solids: Solid[] = []
   private ladders: AABB[] = []
@@ -122,14 +131,18 @@ export class GameScene extends Phaser.Scene {
     this.lastArmor = 'armored'
     this.enemies = []
     this.enemyProjectiles = []
-    // A finite, winnable greybox wave: clear them all to win.
+    this.timer = createTimer(STAGE_SECONDS)
+    this.lastSecond = -1
+    this.lastBossHp = -1
+    this.bossCleared = false
+    // A finite, winnable greybox wave ending in the boss: clear them all to win.
     this.spawner = createSpawner([
       { at: 0.5, kind: 'zombie', x: 260, y: GROUND_Y },
       { at: 1.5, kind: 'flyer', x: 760, y: 120 },
       { at: 2.5, kind: 'plant', x: 470, y: GROUND_Y },
       { at: 3.5, kind: 'zombie', x: 720, y: GROUND_Y },
       { at: 5.0, kind: 'ogre', x: 760, y: GROUND_Y },
-      { at: 6.5, kind: 'flyer', x: 40, y: 100 },
+      { at: 8.0, kind: 'boss', x: 720, y: GROUND_Y },
     ])
 
     this.knight = this.add
@@ -211,6 +224,19 @@ export class GameScene extends Phaser.Scene {
     if (this.over) return
     this.prev = this.player
 
+    // Stage countdown: emit on each whole-second change; time-out costs a life.
+    const t = tickTimer(this.timer, FIXED_DT)
+    this.timer = t.timer
+    const sec = Math.ceil(this.timer.secondsLeft)
+    if (sec !== this.lastSecond) {
+      this.lastSecond = sec
+      bus.emit('game:time-changed', { secondsLeft: this.timer.secondsLeft })
+    }
+    if (t.expired) {
+      this.onPlayerDead()
+      return
+    }
+
     // Spawn due enemies, then steer every enemy toward the player.
     const spawn = stepSpawner(this.spawner, FIXED_DT)
     this.spawner = spawn.spawner
@@ -236,6 +262,7 @@ export class GameScene extends Phaser.Scene {
     const result = resolveCombat(playerBox, this.weapon.projectiles, this.enemies)
     this.weapon = { ...this.weapon, projectiles: result.projectiles }
     this.enemies = result.enemies as Enemy[]
+    this.emitBossHp()
 
     if (result.kills > 0) {
       this.session = addScore(this.session, result.kills * SCORE_PER_KILL)
@@ -273,6 +300,21 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** Emit the boss HP to the HUD (bar) and a one-time cleared event when it dies. */
+  private emitBossHp(): void {
+    const boss = this.enemies.find((e) => e.kind === 'boss')
+    if (!boss) return
+    if (boss.state !== 'dead') {
+      if (boss.hp !== this.lastBossHp) {
+        this.lastBossHp = boss.hp
+        bus.emit('game:boss-hp', { hp: boss.hp, maxHp: BOSS.hp })
+      }
+    } else if (!this.bossCleared) {
+      this.bossCleared = true
+      bus.emit('game:boss-cleared')
+    }
+  }
+
   private spawnEnemy(kind: EnemyKind, x: number, y: number): Enemy {
     switch (kind) {
       case 'zombie':
@@ -283,6 +325,8 @@ export class GameScene extends Phaser.Scene {
         return createFlyer(x, y)
       case 'plant':
         return createPlant(x, y)
+      case 'boss':
+        return createBoss(x, y)
     }
   }
 
@@ -296,6 +340,8 @@ export class GameScene extends Phaser.Scene {
       this.player = createPlayer(START_X, START_Y)
       this.prev = this.player
       this.lastArmor = 'armored'
+      this.timer = createTimer(STAGE_SECONDS)
+      this.lastSecond = -1
       bus.emit('game:armor-changed', { armor: 'armored' })
     }
   }

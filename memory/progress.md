@@ -73,14 +73,19 @@
   `weapon.ts` extracts `advanceProjectiles`. Wired into `GameScene` (plant in the wave, red enemy projectiles,
   damage = enemy contact OR enemy projectile). Spec `enemy-plant.md`. 110 tests green.
 
+- First boss: `core/enemies/boss.ts` ("Cyclops Sentinel") — tough walker + 3-way spread volley (kind `boss`).
+  HUD boss HP bar via `game:boss-hp`/`game:boss-cleared`; spawned at the end of the wave. Spec `boss-cyclops.md`.
+- Stage timer: `core/level/timer.ts` countdown; HUD `TIME`; time-out costs a life (resets on respawn). Spec `stage-timer.md`.
+- 120 tests green; typecheck/lint/build green.
+
 ## In progress 🔧
 
-- Phase 4 continues: first boss + level model (scroll/timer).
+- Phase 4 continues: camera scroll (wider levels) + stage transitions.
 
 ## Next ⏭️
 
-- First boss (`core/bosses/` or `core/enemies/`) with an attack pattern + HP bar (emit boss HP to HUD).
-- Level model (`core/level/`): scroll, per-stage timer (emit `game:time-changed`), stage transitions.
+- Camera scroll: make the level wider than the screen and follow the player (Phaser camera); replace edge walls with real world bounds.
+- Level model (`core/level/`): multi-stage definitions + transitions; wire `game:level-changed`.
 - Then 6-level rollout + double loop + audio. (Good point to parallelize: one agent per enemy/boss/level spec.)
 
 ## Recent decisions

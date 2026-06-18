@@ -19,6 +19,8 @@ export type GameEvents = {
   'game:weapon-changed': { weapon: string }
   'game:time-changed': { secondsLeft: number }
   'game:level-changed': { level: number; loop: number }
+  'game:boss-hp': { hp: number; maxHp: number }
+  'game:boss-cleared': void
   'game:over': { score: number }
   'game:won': { score: number }
 

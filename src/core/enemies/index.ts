@@ -5,12 +5,14 @@ import { stepZombie } from './zombie'
 import { stepFlyer } from './flyer'
 import { stepOgre } from './ogre'
 import { stepPlant } from './plant'
+import { stepBoss } from './boss'
 
 export * from './enemy'
 export * from './zombie'
 export * from './flyer'
 export * from './ogre'
 export * from './plant'
+export * from './boss'
 
 export interface EnemyStepResult {
   readonly enemy: Enemy
@@ -34,5 +36,7 @@ export const stepEnemy = (
       return { enemy: stepOgre(e, target, solids, dt), fired: [] }
     case 'plant':
       return stepPlant(e, target, dt)
+    case 'boss':
+      return stepBoss(e, target, solids, dt)
   }
 }

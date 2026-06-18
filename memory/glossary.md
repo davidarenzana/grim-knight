@@ -13,7 +13,9 @@
 - **Level / stage**: a playable scrolling segment with enemies, a boss and a timer.
 - **Boss**: end-of-stage enemy with its own pattern.
 - **Spawn / spawner**: enemy spawn point/rule. `core/level/spawner.ts` schedules timed `SpawnEvent`s; the engine instantiates them.
-- **Enemy kinds**: `zombie` (rising ground walker), `flyer` (flying chaser, no gravity, sine bob), `ogre` (heavy slow walker, more HP), `plant` (stationary ranged, spits projectiles). Shared model in `core/enemies/enemy.ts`; per-kind step routed by `stepEnemy` in `core/enemies/index.ts` (returns `{ enemy, fired }`).
+- **Enemy kinds**: `zombie` (rising ground walker), `flyer` (flying chaser, no gravity, sine bob), `ogre` (heavy slow walker, more HP), `plant` (stationary ranged, spits projectiles), `boss` (tough walker + 3-way spread, HP bar). Shared model in `core/enemies/enemy.ts`; per-kind step routed by `stepEnemy` in `core/enemies/index.ts` (returns `{ enemy, fired }`).
+- **Boss**: end-of-stage enemy (`core/enemies/boss.ts`, "Cyclops Sentinel"). Engine emits `game:boss-hp`/`game:boss-cleared` for the HUD bar. Clearing it + the wave wins the stage.
+- **Stage timer**: per-stage countdown (`core/level/timer.ts`); time-out costs a life. Emits `game:time-changed`.
 - **Enemy projectile**: projectile fired by a ranged enemy (e.g. plant) that damages the player; resolved by `resolveEnemyProjectiles` in `core/rules/combat.ts`. Reuses the `Projectile` shape from `core/weapons/weapon.ts`.
 - **Greybox**: placeholder art using shapes/rectangles before integrating final assets.
 - **One-way / semi-solid platform**: a platform you pass through from below (jumping/climbing) and land on

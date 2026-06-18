@@ -18,9 +18,21 @@ export const useGameStore = defineStore('game', () => {
   const secondsLeft = ref(0)
   const level = ref(1)
   const loop = ref(1)
+  const bossActive = ref(false)
+  const bossHp = ref(0)
+  const bossMaxHp = ref(0)
 
   /** Subscribes the store to the bus. Called once at app bootstrap. */
   function bind(): void {
+    bus.on('game:ready', () => {
+      bossActive.value = false
+    })
+    bus.on('game:boss-hp', (e) => {
+      bossActive.value = true
+      bossHp.value = e.hp
+      bossMaxHp.value = e.maxHp
+    })
+    bus.on('game:boss-cleared', () => (bossActive.value = false))
     bus.on('game:score-changed', (e) => (score.value = e.score))
     bus.on('game:lives-changed', (e) => (lives.value = e.lives))
     bus.on('game:armor-changed', (e) => (armor.value = e.armor))
@@ -68,6 +80,9 @@ export const useGameStore = defineStore('game', () => {
     secondsLeft,
     level,
     loop,
+    bossActive,
+    bossHp,
+    bossMaxHp,
     bind,
     startGame,
     pause,
