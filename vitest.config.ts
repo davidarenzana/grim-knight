@@ -16,12 +16,9 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    // jsdom only where needed (Vue components). The core runs in 'node'.
+    // The core runs headless in 'node'. UI/DOM tests opt into jsdom per file with
+    // a docblock: `// @vitest-environment jsdom` at the top of the test file.
     environment: 'node',
-    environmentMatchGlobs: [
-      ['src/ui/**', 'jsdom'],
-      ['**/*.dom.test.ts', 'jsdom'],
-    ],
     include: ['src/**/*.{test,spec}.ts'],
     coverage: {
       provider: 'v8',

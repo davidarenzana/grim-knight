@@ -26,12 +26,14 @@ export class GameScene extends Phaser.Scene {
   private prev!: Player
   private weapon!: WeaponState
   private solids: AABB[] = []
+  private ladders: AABB[] = []
   private bounds!: { minX: number; maxX: number }
   private knight!: Phaser.GameObjects.Rectangle
   private projRects: Phaser.GameObjects.Rectangle[] = []
   private keys!: {
     left: Phaser.Input.Keyboard.Key[]
     right: Phaser.Input.Keyboard.Key[]
+    up: Phaser.Input.Keyboard.Key[]
     jump: Phaser.Input.Keyboard.Key[]
     down: Phaser.Input.Keyboard.Key[]
     attack: Phaser.Input.Keyboard.Key[]
@@ -54,6 +56,12 @@ export class GameScene extends Phaser.Scene {
       this.add.rectangle(s.x, s.y, s.w, s.h, 0x3a5a40).setOrigin(0, 0)
     }
 
+    // Ladder connecting the ground to the floating platform.
+    this.ladders = [aabb(360, 320, 16, 90)]
+    for (const l of this.ladders) {
+      this.add.rectangle(l.x, l.y, l.w, l.h, 0x8a6d3b).setOrigin(0, 0)
+    }
+
     this.bounds = { minX: 0, maxX: width }
     this.stepper = createStepper(FIXED_DT)
     this.player = createPlayer(80, 410 - PLAYER_H)
@@ -65,7 +73,7 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0, 0)
 
     this.add
-      .text(width / 2, 24, 'GREYBOX — arrows/A-D move, Space jump, Down crouch, X throw', {
+      .text(width / 2, 24, 'GREYBOX — A-D move, W/Up climb, Space jump, S/Down crouch, X throw', {
         fontFamily: 'monospace',
         fontSize: '14px',
         color: '#ffffff',
@@ -78,7 +86,8 @@ export class GameScene extends Phaser.Scene {
     this.keys = {
       left: [k(K.LEFT), k(K.A)],
       right: [k(K.RIGHT), k(K.D)],
-      jump: [k(K.SPACE), k(K.UP), k(K.Z)],
+      up: [k(K.UP), k(K.W)],
+      jump: [k(K.SPACE), k(K.Z)],
       down: [k(K.DOWN), k(K.S)],
       attack: [k(K.X)],
     }
@@ -97,20 +106,22 @@ export class GameScene extends Phaser.Scene {
     return {
       left: this.held(this.keys.left),
       right: this.held(this.keys.right),
-      jump: this.held(this.keys.jump),
+      up: this.held(this.keys.up),
       down: this.held(this.keys.down),
+      jump: this.held(this.keys.jump),
+      attack: this.held(this.keys.attack),
     }
   }
 
   update(_time: number, delta: number): void {
     const input = this.readInput()
-    const attacking = this.held(this.keys.attack)
+    const world = { solids: this.solids, ladders: this.ladders, damaged: false }
 
     const alpha = this.stepper.advance(delta / 1000, () => {
       this.prev = this.player
-      this.player = stepPlayer(this.player, input, this.solids, FIXED_DT)
+      this.player = stepPlayer(this.player, input, world, FIXED_DT)
 
-      if (attacking) {
+      if (input.attack) {
         const b = this.player.body
         const originX = this.player.facing > 0 ? b.pos.x + b.w : b.pos.x - LANCE.w
         const originY = b.pos.y + b.h / 2

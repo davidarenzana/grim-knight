@@ -89,9 +89,9 @@ was learned.
 
 ## 8. Current status
 
-Phase 0 + Phase 1 done. Phase 2 in progress: player FSM (idle/run/jump/crouch) + 2-hit armor implemented
-and wired into `GameScene` (keyboard + interpolated render). 45 tests green. Live detail in
-`memory/progress.md`.
+Phase 0 + 1 + 2 done. Player FSM (idle/run/jump/crouch/climb/throw/hurt/die) + 2-hit armor + lance weapon,
+all wired into a playable greybox `GameScene` (keyboard + interpolated render). Phase 3 in progress
+(enemies + combat + HUD wiring). 61 tests green. Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 

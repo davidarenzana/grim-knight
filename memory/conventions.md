@@ -13,7 +13,7 @@
 
 - Vitest with `globals: true` (no need to import `describe/it/expect`, though we do for clarity).
 - Test next to the code: `module.test.ts`.
-- Tests that need DOM/jsdom: name them `*.dom.test.ts` or place them under `src/ui/**` (config in `vitest.config.ts`).
+- Tests that need DOM/jsdom: add a docblock `// @vitest-environment jsdom` at the top of the test file (Vitest 3 deprecated `environmentMatchGlobs`; the default env is `node`).
 - Coverage measured only over `src/core/**` (threshold ≥80% lines). Render/UI is covered with smoke tests.
 
 ## Git / commits
