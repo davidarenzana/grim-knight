@@ -1,4 +1,4 @@
-# Arcade Knight
+# Grim Knight
 
 A 2D arcade action-platformer inspired by the 90s classics (Ghosts'n Goblins and similar).
 **Original IP** — no Capcom assets or names. Built with a pure-TS, fully testable game core,

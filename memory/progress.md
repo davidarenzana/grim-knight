@@ -180,6 +180,14 @@
   pools to `[]` in `create()`. (Gotcha logged in `conventions.md`.)
 - **Top HUD overlap:** the in-canvas Phaser help text overlapped the Vue HUD; moved it to the bottom
   (`setOrigin(0,1)`, `y=height-8`, dim bg).
+- **Proximity spawns + longer stages:** spawner rewritten from timed to position-triggered. A `SpawnEvent`
+  is now `{ kind, x, y, triggerX? }` (no `at`); `stepSpawner(s, playerX)` wakes events whose `triggerX ?? x`
+  is within `ACTIVATION_RANGE` (480px ≈ one screen) of the player. Fixes the report that the boss advanced
+  on the player from across the world when standing still at the start — enemies don't exist (so can't move)
+  until you approach their zone. All 6 stages widened (~2800–3400px, was 1600–2200) with more
+  platforms/ladders/enemies/chests spread out, each boss moved to the far right, timers bumped to 140–150s.
+  `GameScene` drives the spawner with the player x instead of `dt`; dropped the loop-2 `spawnScale` (loop 2
+  stays harder via the time scale). Spec `spawner.md` + `spawner.test.ts` updated. 139 tests green.
 
 ## In progress 🔧
 
