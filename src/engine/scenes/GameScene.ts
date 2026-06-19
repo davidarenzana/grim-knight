@@ -29,6 +29,9 @@ import {
   createOgre,
   createPlant,
   createBoss,
+  createCentipede,
+  createTurtle,
+  createBloated,
   BOSS,
   stepEnemy,
   type Enemy,
@@ -517,6 +520,12 @@ export class GameScene extends Phaser.Scene {
         return createPlant(x, y)
       case 'boss':
         return createBoss(x, y)
+      case 'centipede':
+        return createCentipede(x, y)
+      case 'turtle':
+        return createTurtle(x, y)
+      case 'bloated':
+        return createBloated(x, y)
     }
   }
 

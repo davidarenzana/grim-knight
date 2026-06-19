@@ -4,7 +4,15 @@ import type { Body } from '@core/physics/body'
  * Shared enemy model. Every enemy type uses this shape; per-type behavior lives
  * in its own module and is routed by `stepEnemy` (see `index.ts`). Pure core.
  */
-export type EnemyKind = 'zombie' | 'flyer' | 'ogre' | 'plant' | 'boss'
+export type EnemyKind =
+  | 'zombie'
+  | 'flyer'
+  | 'ogre'
+  | 'plant'
+  | 'boss'
+  | 'centipede'
+  | 'turtle'
+  | 'bloated'
 
 export type EnemyState = 'rising' | 'walking' | 'flying' | 'dead'
 

@@ -105,6 +105,37 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
       dead: { file: 'Dead', fps: 8, loop: false },
     },
   },
+  // New swap-monster pack (72px frames): low fast crawler, ranged turtle,
+  // stationary bolt-lobber. Foot-aligned like the other walkers.
+  centipede: {
+    frame: 72,
+    scale: 0.7,
+    foot: 0,
+    states: {
+      idle: { file: 'Idle', fps: 8, loop: true },
+      walk: { file: 'Walk', fps: 12, loop: true },
+      dead: { file: 'Dead', fps: 8, loop: false },
+    },
+  },
+  turtle: {
+    frame: 72,
+    scale: 0.8,
+    foot: 0,
+    states: {
+      idle: { file: 'Idle', fps: 8, loop: true },
+      walk: { file: 'Walk', fps: 9, loop: true },
+      dead: { file: 'Dead', fps: 8, loop: false },
+    },
+  },
+  bloated: {
+    frame: 72,
+    scale: 0.9,
+    foot: 0,
+    states: {
+      idle: { file: 'Idle', fps: 8, loop: true },
+      dead: { file: 'Dead', fps: 8, loop: false },
+    },
+  },
 }
 
 const animKey = (entity: string, state: string): string => `${entity}-${state}`

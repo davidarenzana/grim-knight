@@ -6,6 +6,9 @@ import { stepFlyer } from './flyer'
 import { stepOgre } from './ogre'
 import { stepPlant } from './plant'
 import { stepBoss } from './boss'
+import { stepCentipede } from './centipede'
+import { stepTurtle } from './turtle'
+import { stepBloated } from './bloated'
 
 export * from './enemy'
 export * from './zombie'
@@ -13,6 +16,9 @@ export * from './flyer'
 export * from './ogre'
 export * from './plant'
 export * from './boss'
+export * from './centipede'
+export * from './turtle'
+export * from './bloated'
 
 export interface EnemyStepResult {
   readonly enemy: Enemy
@@ -38,5 +44,11 @@ export const stepEnemy = (
       return stepPlant(e, target, dt)
     case 'boss':
       return stepBoss(e, target, solids, dt)
+    case 'centipede':
+      return { enemy: stepCentipede(e, target, solids, dt), fired: [] }
+    case 'turtle':
+      return stepTurtle(e, target, solids, dt)
+    case 'bloated':
+      return stepBloated(e, target, dt)
   }
 }
