@@ -1,13 +1,16 @@
-# Spec: Weapons (projectile model, starting with the lance)
+# Spec: Weapons (projectile model + weapon variety)
 
-- **Status:** implemented (lance; other weapons reuse the same model)
+- **Status:** implemented (lance, dagger, torch, axe)
 - **Owner module(s):** `src/core/weapons/weapon.ts`
 - **Related:** GDD §3 (weapons), glossary (Weapon)
 
 ## Summary
 
 The knight throws the active weapon as a projectile. A weapon has a speed, a fire-rate cooldown and a
-limit of simultaneous projectiles on screen. The lance is the straight, reliable default.
+limit of simultaneous projectiles on screen. The lance is the straight, reliable default. Other weapons
+reuse the same model with extra data: **arc** (gravity + an upward launch velocity, e.g. torch/axe) and
+**limited reach** (a max travel distance before the projectile is culled, e.g. the short-range dagger).
+Weapons are swapped via the `WEAPONS` registry (`nextWeapon`/`weaponById`); chests will pick from it.
 
 ## Scenarios (Given / When / Then)
 
@@ -41,10 +44,36 @@ limit of simultaneous projectiles on screen. The lance is the straight, reliable
 - **When** `stepWeapon` advances
 - **Then** that projectile is removed
 
+### Scenario: arcing weapons fall under gravity
+
+- **Given** an arcing weapon (gravity > 0, launchVy > 0) fired horizontally
+- **When** `stepWeapon` advances over several steps
+- **Then** the projectile first rises, then gains downward velocity and falls below the launch height
+
+### Scenario: straight weapons keep a flat trajectory
+
+- **Given** the lance (gravity 0) fired horizontally
+- **When** `stepWeapon` advances
+- **Then** the projectile's vertical velocity stays 0 (no arc)
+
+### Scenario: short-reach weapons are culled past their max range
+
+- **Given** a dagger (limited `maxRange`) fired
+- **When** `stepWeapon` advances past that distance
+- **Then** the projectile is removed even while still on screen
+
+### Scenario: weapon registry cycles weapons
+
+- **Given** the `WEAPONS` registry
+- **When** `nextWeapon` is called repeatedly from the lance
+- **Then** it cycles through all weapons and wraps around; `weaponById` resolves by id
+
 ## Acceptance criteria
 
-- [x] `fire` honors cooldown and `maxOnScreen`; sets velocity by `facing`.
-- [x] `stepWeapon` integrates projectiles, decays cooldown (never below 0), culls out-of-bounds.
+- [x] `fire` honors cooldown and `maxOnScreen`; sets velocity by `facing`; sets arc (vy/gravity) and reach.
+- [x] `stepWeapon` integrates projectiles under per-projectile gravity, decays cooldown (never below 0),
+      culls out-of-bounds, wall hits and projectiles past their max range.
+- [x] `WEAPONS` registry + `nextWeapon`/`weaponById` for swapping; lance/dagger/torch/axe defined.
 - [x] Pure and deterministic (no wall-clock time, no globals).
 
 ## Test mapping
@@ -56,3 +85,7 @@ limit of simultaneous projectiles on screen. The lance is the straight, reliable
 | max screen | `src/core/weapons/weapon.test.ts` | `weapon > respects maxOnScreen`    |
 | step       | `src/core/weapons/weapon.test.ts` | `weapon > step moves and decays`   |
 | cull       | `src/core/weapons/weapon.test.ts` | `weapon > culls out of bounds`     |
+| arc        | `src/core/weapons/weapon.test.ts` | `weapon > arcing weapons fall`     |
+| flat       | `src/core/weapons/weapon.test.ts` | `weapon > straight stays flat`     |
+| reach      | `src/core/weapons/weapon.test.ts` | `weapon > culls past max range`    |
+| registry   | `src/core/weapons/weapon.test.ts` | `weapon > registry cycles`         |

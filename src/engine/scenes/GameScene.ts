@@ -16,7 +16,9 @@ import {
   fire,
   stepWeapon,
   advanceProjectiles,
+  nextWeapon,
   LANCE,
+  type WeaponDef,
   type WeaponState,
   type Projectile,
 } from '@core/weapons/weapon'
@@ -62,6 +64,7 @@ export class GameScene extends Phaser.Scene {
   private player!: Player
   private prev!: Player
   private weapon!: WeaponState
+  private activeWeapon: WeaponDef = LANCE
   private enemies: Enemy[] = []
   private enemyProjectiles: Projectile[] = []
   private spawner!: Spawner
@@ -95,6 +98,7 @@ export class GameScene extends Phaser.Scene {
     jump: Phaser.Input.Keyboard.Key[]
     down: Phaser.Input.Keyboard.Key[]
     attack: Phaser.Input.Keyboard.Key[]
+    swap: Phaser.Input.Keyboard.Key[]
   }
 
   private onPause = () => this.scene.pause()
@@ -141,6 +145,7 @@ export class GameScene extends Phaser.Scene {
     this.player = createPlayer(this.start.x, this.start.y)
     this.prev = this.player
     this.weapon = createWeapon()
+    this.activeWeapon = LANCE
     this.session = this.carriedSession ?? createSession()
     this.over = false
     this.lastArmor = 'armored'
@@ -162,11 +167,16 @@ export class GameScene extends Phaser.Scene {
 
     // Fixed on-screen help (does not scroll with the world).
     this.add
-      .text(12, 8, `${level.name} — ←/→ move · ↑ jump/climb · ↓ crouch · Space throw`, {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        color: '#ffffff',
-      })
+      .text(
+        12,
+        8,
+        `${level.name} — ←/→ move · ↑ jump/climb · ↓ crouch · Space throw · Q swap weapon`,
+        {
+          fontFamily: 'monospace',
+          fontSize: '13px',
+          color: '#ffffff',
+        },
+      )
       .setScrollFactor(0)
       .setOrigin(0, 0)
 
@@ -183,6 +193,7 @@ export class GameScene extends Phaser.Scene {
       jump: [k(K.UP), k(K.W)],
       down: [k(K.DOWN), k(K.S)],
       attack: [k(K.SPACE)],
+      swap: [k(K.Q)],
     }
 
     // Pause/resume driven by the UI; cleaned up when the scene shuts down.
@@ -197,7 +208,7 @@ export class GameScene extends Phaser.Scene {
     bus.emit('game:armor-changed', { armor: 'armored' })
     bus.emit('game:lives-changed', { lives: this.session.lives })
     bus.emit('game:score-changed', { score: this.session.score })
-    bus.emit('game:weapon-changed', { weapon: LANCE.id })
+    bus.emit('game:weapon-changed', { weapon: this.activeWeapon.id })
     bus.emit('game:level-changed', { level: this.levelIndex + 1, loop: this.loop })
   }
 
@@ -218,6 +229,11 @@ export class GameScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (this.over) return
+    // Weapon swap on key press (edge-detected, presentation-only choice).
+    if (this.keys.swap.some((key) => Phaser.Input.Keyboard.JustDown(key))) {
+      this.activeWeapon = nextWeapon(this.activeWeapon)
+      bus.emit('game:weapon-changed', { weapon: this.activeWeapon.id })
+    }
     const input = this.readInput()
     const alpha = this.stepper.advance(delta / 1000, () => this.tick(input))
 
@@ -267,9 +283,10 @@ export class GameScene extends Phaser.Scene {
 
     if (input.attack) {
       const b = this.player.body
-      const originX = this.player.facing > 0 ? b.pos.x + b.w : b.pos.x - LANCE.w
+      const w = this.activeWeapon
+      const originX = this.player.facing > 0 ? b.pos.x + b.w : b.pos.x - w.w
       const originY = b.pos.y + b.h / 2
-      this.weapon = fire(this.weapon, LANCE, originX, originY, this.player.facing)
+      this.weapon = fire(this.weapon, w, originX, originY, this.player.facing)
     }
     this.weapon = stepWeapon(this.weapon, FIXED_DT, this.bounds, this.solids)
 
@@ -384,15 +401,25 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** Greybox color per weapon id (until the art pass swaps in sprites). */
+  private static readonly WEAPON_COLOR: Record<string, number> = {
+    lance: 0xffcc00,
+    dagger: 0xc0c0c0,
+    torch: 0xff7a1a,
+    axe: 0x66ccff,
+  }
+
   /** Sync the projectile rectangle pool to the current weapon state. */
   private renderProjectiles(): void {
     const projectiles = this.weapon.projectiles
+    const color = GameScene.WEAPON_COLOR[this.activeWeapon.id] ?? 0xffcc00
     while (this.projRects.length < projectiles.length) {
       this.projRects.push(this.add.rectangle(0, 0, LANCE.w, LANCE.h, 0xffcc00).setOrigin(0, 0))
     }
     this.projRects.forEach((rect, i) => {
       const p = projectiles[i]
-      if (p) rect.setVisible(true).setPosition(p.pos.x, p.pos.y).setSize(p.w, p.h)
+      if (p)
+        rect.setVisible(true).setPosition(p.pos.x, p.pos.y).setSize(p.w, p.h).setFillStyle(color)
       else rect.setVisible(false)
     })
   }

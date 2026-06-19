@@ -93,15 +93,28 @@
   spawns compressed ×0.65); clearing loop 2 → `game:won` ("True Victory"). `loop` carried via `scene.restart`.
 - HUD shows STAGE level-loop; win screen shows the true ending on loop 2.
 
+### Phase 5 (in progress) — art & juice, and polish
+
+- **Weapon variety** (core, TDD): `weapon.ts` now models **arc** (per-projectile gravity `ay` + upward
+  `launchVy`) and **limited reach** (`maxRange` + per-projectile `traveled`, culled past range).
+  New defs: `DAGGER` (fast, short reach), `TORCH` (arcs, gravity), `AXE` (arcs high). `WEAPONS` registry +
+  `nextWeapon`/`weaponById` for swapping. `advanceProjectiles` applies gravity (semi-implicit Euler) and
+  range-culls; straight weapons unchanged. `GameScene`: `activeWeapon` field, **Q** cycles weapons
+  (edge-detected via `JustDown` in `update`), per-weapon greybox color, `game:weapon-changed` on swap.
+  Spec `weapons.md` extended. 131 tests green; typecheck/lint/build green.
+  Note: `exactOptionalPropertyTypes: true` — don't assign `undefined` to optional fields; spread them in
+  conditionally (`...(x !== undefined ? { k: x } : {})`).
+
 ## In progress 🔧
 
-- (Phases 0–4 done. Game is feature-complete in greybox: 6 stages × 2 loops, all enemy types + boss.)
+- Phase 5: weapon variety done (above). Next within Phase 5: chests that swap weapons, torch ground-fire,
+  audio, then the art pass.
 
 ## Next ⏭️ (Phase 5 — art & juice, and polish)
 
 - Audio (SFX/music) via Phaser; then the art pass: replace greybox rectangles with CC0/own sprites + tilemaps.
 - Juice: animations, hit flashes, particles, screen shake, transitions. Core/level/camera code stays.
-- Polish: weapon variety (dagger/torch/axe), chests/pickups, extra lives at score thresholds, high-score table.
+- Polish: chests/pickups (swap to a `WEAPONS` weapon), extra lives at score thresholds, high-score table.
 - Phase 6: production build optimization (code-split Phaser chunk) + static deploy.
 
 ## Recent decisions

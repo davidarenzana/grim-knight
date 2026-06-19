@@ -11,6 +11,12 @@ export interface Projectile {
   readonly vel: Vec2
   readonly w: number
   readonly h: number
+  /** Vertical acceleration (gravity) in px/s²; 0 for straight projectiles. */
+  readonly ay?: number
+  /** Distance travelled so far in px (for limited-reach weapons). */
+  readonly traveled?: number
+  /** Max travel distance before culling; undefined = unlimited. */
+  readonly maxRange?: number
 }
 
 export interface WeaponDef {
@@ -23,6 +29,12 @@ export interface WeaponDef {
   readonly maxOnScreen: number
   readonly w: number
   readonly h: number
+  /** Gravity applied to the projectile (arc); 0 or omitted = flat trajectory. */
+  readonly gravity?: number
+  /** Upward launch velocity in px/s for arcing throws; 0 or omitted = flat. */
+  readonly launchVy?: number
+  /** Max travel distance before culling (short reach); omitted = unlimited. */
+  readonly maxRange?: number
 }
 
 export interface WeaponState {
@@ -35,6 +47,7 @@ export interface Bounds {
   readonly maxX: number
 }
 
+/** Straight, fast, reliable default. */
 export const LANCE: WeaponDef = {
   id: 'lance',
   speed: 360,
@@ -42,6 +55,54 @@ export const LANCE: WeaponDef = {
   maxOnScreen: 2,
   w: 16,
   h: 4,
+}
+
+/** Fastest fire rate but short reach — high DPS up close. */
+export const DAGGER: WeaponDef = {
+  id: 'dagger',
+  speed: 460,
+  cooldown: 0.16,
+  maxOnScreen: 3,
+  w: 10,
+  h: 4,
+  maxRange: 150,
+}
+
+/** Lobs in an arc, falls under gravity — area denial. */
+export const TORCH: WeaponDef = {
+  id: 'torch',
+  speed: 220,
+  cooldown: 0.5,
+  maxOnScreen: 2,
+  w: 10,
+  h: 10,
+  gravity: 900,
+  launchVy: 220,
+}
+
+/** Arcs high to hit elevated foes. */
+export const AXE: WeaponDef = {
+  id: 'axe',
+  speed: 240,
+  cooldown: 0.45,
+  maxOnScreen: 2,
+  w: 12,
+  h: 12,
+  gravity: 800,
+  launchVy: 430,
+}
+
+/** Registry of selectable weapons, in cycle order (chests pick from here). */
+export const WEAPONS: readonly WeaponDef[] = [LANCE, DAGGER, TORCH, AXE]
+
+/** Resolve a weapon by its id, or undefined if unknown. */
+export const weaponById = (id: string): WeaponDef | undefined =>
+  WEAPONS.find((wpn) => wpn.id === id)
+
+/** The next weapon in the registry, wrapping around. */
+export const nextWeapon = (def: WeaponDef): WeaponDef => {
+  const i = WEAPONS.findIndex((wpn) => wpn.id === def.id)
+  return WEAPONS[(i + 1) % WEAPONS.length]!
 }
 
 export const createWeapon = (): WeaponState => ({ cooldownLeft: 0, projectiles: [] })
@@ -58,9 +119,14 @@ export const fire = (
   if (w.projectiles.length >= def.maxOnScreen) return w
   const projectile: Projectile = {
     pos: vec2(originX, originY),
-    vel: vec2(def.speed * facing, 0),
+    // launchVy is upward (negative y); gravity (ay) pulls it back down.
+    vel: vec2(def.speed * facing, -(def.launchVy ?? 0)),
     w: def.w,
     h: def.h,
+    ay: def.gravity ?? 0,
+    traveled: 0,
+    // Only set maxRange when the weapon limits reach (exactOptionalPropertyTypes).
+    ...(def.maxRange !== undefined ? { maxRange: def.maxRange } : {}),
   }
   return { cooldownLeft: def.cooldown, projectiles: [...w.projectiles, projectile] }
 }
@@ -77,11 +143,18 @@ export const advanceProjectiles = (
   solids: readonly Solid[] = [],
 ): Projectile[] =>
   projectiles
-    .map((p) => ({ ...p, pos: vec2(p.pos.x + p.vel.x * dt, p.pos.y + p.vel.y * dt) }))
+    .map((p) => {
+      // Semi-implicit Euler: apply gravity to velocity, then integrate position.
+      const vel = vec2(p.vel.x, p.vel.y + (p.ay ?? 0) * dt)
+      const pos = vec2(p.pos.x + vel.x * dt, p.pos.y + vel.y * dt)
+      const traveled = (p.traveled ?? 0) + Math.hypot(vel.x * dt, vel.y * dt)
+      return { ...p, vel, pos, traveled }
+    })
     .filter(
       (p) =>
         p.pos.x + p.w > bounds.minX &&
         p.pos.x < bounds.maxX &&
+        (p.maxRange === undefined || (p.traveled ?? 0) <= p.maxRange) &&
         !solids.some((s) => !s.oneWay && intersects(aabb(p.pos.x, p.pos.y, p.w, p.h), s)),
     )
 

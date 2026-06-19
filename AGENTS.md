@@ -89,12 +89,13 @@ was learned.
 
 ## 8. Current status
 
-Phases 0–4 done. Feature-complete greybox: 6 stages × 2 loops (double quest) with camera scroll. Player FSM
-(idle/run/jump/crouch/climb/throw/hurt/die + air control), 2-hit armor and lance; enemies
+Phases 0–4 done; Phase 5 started. Feature-complete greybox: 6 stages × 2 loops (double quest) with camera
+scroll. Player FSM (idle/run/jump/crouch/climb/throw/hurt/die + air control), 2-hit armor; enemies
 zombie/flyer/ogre/plant and a boss (HP bar); enemy projectiles, projectile-vs-wall collision, timed spawner,
-stage timer, lives/score/game-over, level transitions and the double loop → "True Victory". All wired into
-`GameScene` and the Vue HUD via the bus. 127 tests green. Next: Phase 5 (audio, art pass, juice, weapon
-variety) then Phase 6 (build/deploy). Live detail in `memory/progress.md`.
+stage timer, lives/score/game-over, level transitions and the double loop → "True Victory". **Weapon variety**
+(lance/dagger/torch/axe with arc + limited-reach), Q to swap. All wired into `GameScene` and the Vue HUD via
+the bus. 131 tests green. Next within Phase 5: chests/pickups, audio, then the art pass; then Phase 6
+(build/deploy). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 

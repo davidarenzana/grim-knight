@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { createWeapon, fire, LANCE, stepWeapon, type WeaponState } from './weapon'
+import {
+  AXE,
+  createWeapon,
+  DAGGER,
+  fire,
+  LANCE,
+  nextWeapon,
+  stepWeapon,
+  TORCH,
+  weaponById,
+  WEAPONS,
+  type WeaponState,
+} from './weapon'
 
 const BOUNDS = { minX: 0, maxX: 800 }
 
@@ -74,5 +86,46 @@ describe('weapon', () => {
     }
     const stepped = stepWeapon(w, 0.05, BOUNDS, [platform])
     expect(stepped.projectiles).toHaveLength(1)
+  })
+
+  it('arcing weapons fall under gravity (rise then drop below launch height)', () => {
+    let w = fire(createWeapon(), AXE, 100, 100, 1)
+    expect(w.projectiles[0]!.vel.y).toBeLessThan(0) // launched upward
+    // Step until the arc passes its apex and falls back below the launch height.
+    let belowLaunch = false
+    for (let i = 0; i < 120 && !belowLaunch; i++) {
+      w = stepWeapon(w, 1 / 60, { minX: -1e6, maxX: 1e6 })
+      const p = w.projectiles[0]
+      if (p && p.vel.y > 0 && p.pos.y > 100) belowLaunch = true
+    }
+    expect(belowLaunch).toBe(true)
+  })
+
+  it('straight weapons stay flat (no vertical velocity)', () => {
+    let w = fire(createWeapon(), LANCE, 100, 50, 1)
+    w = stepWeapon(w, 0.2, BOUNDS)
+    expect(w.projectiles[0]!.vel.y).toBe(0)
+    expect(w.projectiles[0]!.pos.y).toBe(50)
+  })
+
+  it('culls projectiles past their max range even while on screen', () => {
+    const w = fire(createWeapon(), DAGGER, 400, 50, 1)
+    // DAGGER has a short reach; after enough travel it should be culled mid-screen.
+    let stepped = w
+    for (let i = 0; i < 60; i++) stepped = stepWeapon(stepped, 1 / 60, BOUNDS)
+    expect(stepped.projectiles).toHaveLength(0)
+  })
+
+  it('registry cycles through all weapons and resolves by id', () => {
+    expect(WEAPONS.length).toBeGreaterThanOrEqual(4)
+    expect(weaponById(TORCH.id)).toBe(TORCH)
+    const ids = new Set<string>()
+    let cur = LANCE
+    for (let i = 0; i < WEAPONS.length; i++) {
+      ids.add(cur.id)
+      cur = nextWeapon(cur)
+    }
+    expect(ids.size).toBe(WEAPONS.length) // visited each exactly once
+    expect(cur).toBe(LANCE) // wrapped back around
   })
 })
