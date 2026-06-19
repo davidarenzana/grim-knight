@@ -128,6 +128,24 @@
   confirmed in a browser (no headless browser installed) — run `pnpm dev` to eyeball, or swap real PNGs in
   later under the same `TEX.*` keys.
 
+### Real sprite art pass (Phase 5) — CraftPix
+
+- Swapped the procedural character textures for **CraftPix free pixel-art spritesheets** (animated):
+  knight = Warrior_3 (spear+shield), zombie = Skeleton, plant = Plent, flyer = Fire_Spirit,
+  ogre = Orc_Berserk, boss = Orc_Warrior. Only the used PNGs were copied into
+  `public/assets/sprites/<entity>/<State>.png` (+ `CRAFTPIX-LICENSE-*.txt`); the raw `test_art/` drop is
+  gitignored and will be deleted. README has credits.
+- Pipeline: `src/engine/assets/sprites.ts` (manifest + `preloadSprites`/`createAnims`/`hasAnim`). Sheets are
+  square horizontal frames (knight/orc 96px, fantasy enemies 128px); each PNG → one texture `<entity>-<state>`
+  → one animation. `GameScene.preload()` loads them; `create()` builds anims. Knight & enemies are now
+  `Phaser.GameObjects.Sprite`s; `applySprite()` plays `<entity>-<state>`, scales (per-entity `scale`),
+  foot-aligns (origin bottom + `foot` padding) or centers (flyer), flips by facing. `knightAnim()`/`enemyAnim()`
+  map core FSM states → anim states. Lost-armor = red tint (no bare sheet); i-frame blink kept.
+- Tiles/ladders/chests/projectiles stay procedural (`textures.ts`). The unused entity textures there are now
+  dead (harmless) — trim later. Verified in headless Chrome: knight idle/run/attack/flip + hurt-tint,
+  skeleton, fire-spirit all animate and align; no asset 404s. **Per-entity `scale`/`foot` are tunables**
+  (plant/ogre/boss not yet eyeballed in-frame — adjust on feedback). 138 tests green; typecheck/lint/build green.
+
 ### Feedback/juice additions (Phase 5)
 
 - **Stage-clear banner:** `onWin` now pops a centered "STAGE CLEAR!" (or "LOOP 1 CLEAR!" / "TRUE VICTORY!")

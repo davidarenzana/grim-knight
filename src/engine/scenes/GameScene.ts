@@ -42,16 +42,12 @@ import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
 import { addScore, createSession, gainLife, loseLife, win, type Session } from '@core/rules/session'
 import { pickupArmor, type ArmorState } from '@core/rules/armor'
 import { generateTextures, TEX } from '@engine/assets/textures'
+import { preloadSprites, createAnims, animKey, hasAnim, SPRITES } from '@engine/assets/sprites'
 import { bus } from '@shared/events'
 
-/** Texture key per enemy kind (procedural art). */
-const ENEMY_TEX: Record<EnemyKind, string> = {
-  zombie: TEX.zombie,
-  flyer: TEX.flyer,
-  ogre: TEX.ogre,
-  plant: TEX.plant,
-  boss: TEX.boss,
-}
+/** Map a core enemy state to a sprite animation state (idle/walk/dead). */
+const enemyAnim = (state: string): string =>
+  state === 'dead' ? 'dead' : state === 'walking' ? 'walk' : 'idle'
 
 const FIXED_DT = 1 / 60
 const SCORE_PER_KILL = 100
@@ -98,10 +94,10 @@ export class GameScene extends Phaser.Scene {
   private start = { x: 80, y: 362 }
   private stageSeconds = 99
 
-  private knight!: Phaser.GameObjects.Image
+  private knight!: Phaser.GameObjects.Sprite
   private projRects: Phaser.GameObjects.Rectangle[] = []
   private enemyProjRects: Phaser.GameObjects.Rectangle[] = []
-  private enemySprites: Phaser.GameObjects.Image[] = []
+  private enemySprites: Phaser.GameObjects.Sprite[] = []
   private chestSprites: Phaser.GameObjects.Image[] = []
   private keys!: {
     left: Phaser.Input.Keyboard.Key[]
@@ -127,9 +123,14 @@ export class GameScene extends Phaser.Scene {
     this.carriedSession = data.session ?? null
   }
 
+  preload(): void {
+    preloadSprites(this)
+  }
+
   create(): void {
     const height = this.scale.height
     generateTextures(this)
+    createAnims(this)
     const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
     this.start = { ...level.playerStart }
     // Loop 2 (the classic "second quest") is harder: less time, faster waves.
@@ -182,10 +183,7 @@ export class GameScene extends Phaser.Scene {
     this.bossCleared = false
     this.spawner = createSpawner(level.spawns.map((s) => ({ ...s, at: s.at * spawnScale })))
 
-    this.knight = this.add
-      .image(this.player.body.pos.x, this.player.body.pos.y, TEX.knight)
-      .setOrigin(0, 0)
-      .setDisplaySize(PLAYER_W, PLAYER_H)
+    this.knight = this.add.sprite(this.player.body.pos.x, this.player.body.pos.y, 'knight-idle')
 
     // Camera scrolls within the world, following the knight.
     this.cameras.main.setBounds(0, 0, level.worldWidth, height)
@@ -267,16 +265,18 @@ export class GameScene extends Phaser.Scene {
     const alpha = this.stepper.advance(delta / 1000, () => this.tick(input))
 
     const pos = lerp(this.prev.body.pos, this.player.body.pos, alpha)
-    // Crouching draws a shorter knight with feet planted.
-    const ph = this.player.state === 'crouch' ? CROUCH_H : PLAYER_H
-    const tex = this.player.armor.state === 'underwear' ? TEX.knightBare : TEX.knight
-    this.knight
-      .setTexture(tex)
-      .setDisplaySize(PLAYER_W, ph)
-      .setFlipX(this.player.facing < 0)
-      .setPosition(pos.x, pos.y + (PLAYER_H - ph))
-    // Juice: blink the knight while invulnerable (i-frames) after a hit.
+    this.applySprite(
+      this.knight,
+      'knight',
+      this.knightAnim(),
+      { pos, w: PLAYER_W, h: PLAYER_H },
+      this.player.facing,
+    )
+    // Lost-armor tint + i-frame blink (juice) since there is no bare-knight sheet.
+    const hurt = this.player.armor.state === 'underwear'
     const blinking = this.player.armor.iFramesLeft > 0
+    if (hurt) this.knight.setTint(0xffb0b0)
+    else this.knight.clearTint()
     this.knight.setAlpha(blinking && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
     this.renderProjectiles()
     this.renderEnemyProjectiles()
@@ -584,27 +584,68 @@ export class GameScene extends Phaser.Scene {
     })
   }
 
-  /** Sync the enemy sprite pool; dead enemies are hidden, textured per kind. */
+  /** Sync the enemy sprite pool; dead enemies are hidden, animated per kind. */
   private renderEnemies(): void {
     while (this.enemySprites.length < this.enemies.length) {
-      this.enemySprites.push(this.add.image(0, 0, TEX.zombie).setOrigin(0, 0))
+      this.enemySprites.push(this.add.sprite(0, 0, 'zombie-idle'))
     }
     this.enemySprites.forEach((sprite, i) => {
       const e = this.enemies[i]
       if (e && e.state !== 'dead') {
-        sprite
-          .setVisible(true)
-          .setTexture(ENEMY_TEX[e.kind])
-          .setDisplaySize(e.body.w, e.body.h)
-          .setFlipX(e.facing < 0)
-          .setPosition(e.body.pos.x, e.body.pos.y)
-        // Juice: flash white on hit (boss/ground enemies face the player).
+        sprite.setVisible(true)
+        this.applySprite(sprite, e.kind, enemyAnim(e.state), e.body, e.facing)
         if ((this.enemyFlash[i] ?? 0) > 0) sprite.setTintFill(0xffffff)
         else sprite.clearTint()
       } else {
         sprite.setVisible(false)
       }
     })
+  }
+
+  /** Map the player FSM state to a knight animation state. */
+  private knightAnim(): string {
+    switch (this.player.state) {
+      case 'run':
+        return 'run'
+      case 'jump':
+        return 'jump'
+      case 'throw':
+        return 'attack'
+      case 'hurt':
+        return 'hurt'
+      case 'die':
+        return 'dead'
+      default:
+        return 'idle' // idle, crouch, climb
+    }
+  }
+
+  /**
+   * Play `<entity>-<state>` on a sprite and place it from the core body box:
+   * foot-aligned for walkers (origin bottom + scaled foot padding), centered for
+   * flyers. Falls back to idle/first state when the requested anim is missing.
+   */
+  private applySprite(
+    sprite: Phaser.GameObjects.Sprite,
+    entity: string,
+    state: string,
+    body: { pos: { x: number; y: number }; w: number; h: number },
+    facing: 1 | -1,
+  ): void {
+    const def = SPRITES[entity]!
+    const animState = hasAnim(entity, state)
+      ? state
+      : hasAnim(entity, 'idle')
+        ? 'idle'
+        : Object.keys(def.states)[0]!
+    sprite.play(animKey(entity, animState), true)
+    sprite.setScale(def.scale).setFlipX(facing < 0)
+    const cx = body.pos.x + body.w / 2
+    if (def.center) {
+      sprite.setOrigin(0.5, 0.5).setPosition(cx, body.pos.y + body.h / 2)
+    } else {
+      sprite.setOrigin(0.5, 1).setPosition(cx, body.pos.y + body.h + def.foot * def.scale)
+    }
   }
 
   /** Sync the chest sprite pool; opened chests are hidden. */

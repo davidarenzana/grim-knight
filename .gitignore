@@ -15,3 +15,6 @@ npm-debug.log*
 pnpm-debug.log*
 logs
 *.log
+
+# raw art source drops (only the used PNGs live under public/assets/sprites)
+test_art/

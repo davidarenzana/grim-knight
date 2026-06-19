@@ -37,6 +37,14 @@ src/shared/   shared types + event bus (mitt)
 - `specs/` — feature specs (Given/When/Then), the SDD source of truth.
 - `memory/` — living context for AI sessions (architecture, conventions, glossary, progress, ADRs).
 
+## Credits / assets
+
+Character & enemy sprites are free pixel-art packs from **[CraftPix.net](https://craftpix.net/)**
+(Warrior, Orc, and Fantasy Enemies packs), used under the CraftPix free-files license — see
+`public/assets/sprites/CRAFTPIX-LICENSE-*.txt` and <https://craftpix.net/file-licenses/>. Tiles, chests
+and projectiles are drawn procedurally in code (`src/engine/assets/textures.ts`).
+
 ## License / IP
 
-Original work. Do not add third-party copyrighted assets without a compatible license.
+Original work (code, design, level/enemy/boss names). Third-party art is used only under compatible
+licenses (see Credits above); do not add copyrighted assets without one.

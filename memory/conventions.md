@@ -45,4 +45,13 @@
 - **Phaser + Vite HMR don't mix:** an HMR update to an engine module leaves a stale, half-updated `Phaser.Game`
   that looks frozen/unresponsive (input dead). `engine/game.ts` is a self-accepting HMR boundary that does a
   full `window.location.reload()` on any engine change. If a dev tab ever seems frozen after edits, hard-refresh.
+- **Sprites pipeline (`engine/assets/sprites.ts`):** real art = CraftPix animated spritesheets under
+  `public/assets/sprites/<entity>/<State>.png` (square frames; size = sheet height). `preloadSprites` runs in
+  the scene's `preload()`, `createAnims` in `create()` (idempotent). Render via `Phaser.GameObjects.Sprite` +
+  `applySprite(sprite, entity, state, body, facing)` which plays `<entity>-<state>`, scales, and foot-aligns
+  (origin (0.5,1) at body bottom + `foot*scale`) or centers (`center: true`, flyers). Per-entity `scale`/`foot`
+  are visual tunables. To add/replace art: drop PNGs in the entity folder and add a state entry — no render
+  change. Keep the `CRAFTPIX-LICENSE-*.txt` files and README credit.
+- **`scene.load.*` needs `preload()`:** file-based assets (spritesheets) must be queued in the scene's
+  `preload()`, not `create()`. Procedural `generateTexture` textures are fine in `create()`.
 - (Add every new gotcha discovered here — living project.)
