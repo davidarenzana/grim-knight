@@ -42,7 +42,7 @@ import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
 import { addScore, createSession, gainLife, loseLife, win, type Session } from '@core/rules/session'
 import { pickupArmor, type ArmorState } from '@core/rules/armor'
 import { preloadSprites, createAnims, animKey, hasAnim, SPRITES } from '@engine/assets/sprites'
-import { preloadTiles, backgroundFor, TILE } from '@engine/assets/tiles'
+import { preloadTiles, bgKey, groundKey, TILE } from '@engine/assets/tiles'
 import { bus } from '@shared/events'
 
 /** Map a core enemy state to a sprite animation state (idle/walk/dead). */
@@ -146,7 +146,7 @@ export class GameScene extends Phaser.Scene {
     // Static full-screen backdrop (ruins/forest at dusk) behind the world.
     this.cameras.main.setBackgroundColor(0x12141f)
     this.add
-      .image(0, 0, backgroundFor(this.levelIndex))
+      .image(0, 0, bgKey(level.theme))
       .setOrigin(0, 0)
       .setDisplaySize(this.scale.width, height)
       .setScrollFactor(0)
@@ -159,7 +159,7 @@ export class GameScene extends Phaser.Scene {
       if (!s.oneWay && s.w < 200) {
         this.add.image(s.x, s.y, TILE.crate).setOrigin(0, 0).setDisplaySize(s.w, s.h)
       } else {
-        this.add.tileSprite(s.x, s.y, s.w, s.h, TILE.ground).setOrigin(0, 0)
+        this.add.tileSprite(s.x, s.y, s.w, s.h, groundKey(level.theme)).setOrigin(0, 0)
       }
     }
 

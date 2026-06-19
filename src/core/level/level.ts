@@ -9,8 +9,13 @@ import { createChest, type Chest } from './chest'
  * geometry, ladders, the spawn wave, the world width (for camera scroll) and the
  * stage timer. Levels are wider than the screen so the camera scrolls.
  */
+/** Visual theme of a stage; the engine maps it to ground/background art. */
+export type LevelTheme = 'ruins' | 'forest' | 'cave' | 'castle' | 'ice' | 'hell'
+
 export interface LevelDef {
   readonly name: string
+  /** Visual theme: selects the ground tile and backdrop (see engine `tiles.ts`). */
+  readonly theme: LevelTheme
   /** World width in px (≥ screen width); the camera scrolls within it. */
   readonly worldWidth: number
   readonly playerStart: { readonly x: number; readonly y: number }
@@ -35,6 +40,7 @@ const oneWay = (x: number, y: number, w: number, h: number): Solid => ({
 export const LEVELS: readonly LevelDef[] = [
   {
     name: 'Graveyard',
+    theme: 'ruins',
     worldWidth: 2800,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
@@ -69,6 +75,7 @@ export const LEVELS: readonly LevelDef[] = [
   },
   {
     name: 'Haunted Forest',
+    theme: 'forest',
     worldWidth: 3000,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
@@ -103,6 +110,7 @@ export const LEVELS: readonly LevelDef[] = [
   },
   {
     name: 'Swamp Caverns',
+    theme: 'cave',
     worldWidth: 2900,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
@@ -137,6 +145,7 @@ export const LEVELS: readonly LevelDef[] = [
   },
   {
     name: 'Iron Fortress',
+    theme: 'castle',
     worldWidth: 3100,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
@@ -173,6 +182,7 @@ export const LEVELS: readonly LevelDef[] = [
   },
   {
     name: 'Frozen Spires',
+    theme: 'ice',
     worldWidth: 3000,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
@@ -209,6 +219,7 @@ export const LEVELS: readonly LevelDef[] = [
   },
   {
     name: 'Demon Keep',
+    theme: 'hell',
     worldWidth: 3400,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
