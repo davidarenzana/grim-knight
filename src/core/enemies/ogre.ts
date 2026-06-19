@@ -1,6 +1,7 @@
 import { vec2 } from '@core/math/vector'
 import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
+import { chooseDir } from './walk'
 
 /**
  * Ogre: a heavy, slow walker with several HP. Like the zombie's walk but no
@@ -32,9 +33,9 @@ export const stepOgre = (
 ): Enemy => {
   if (e.state === 'dead') return e
 
-  const center = e.body.pos.x + e.body.w / 2
-  const facing: 1 | -1 = target.x < center ? -1 : 1
-  const vx = OGRE.speed * facing
+  const dir = chooseDir(e.body, target.x, solids) // stops/turns at ledges
+  const facing = dir !== 0 ? dir : e.facing
+  const vx = OGRE.speed * dir
 
   const body = stepBody({ ...e.body, vel: vec2(vx, e.body.vel.y) }, solids, OGRE.gravity, dt)
   return { ...e, body, state: 'walking', facing, age: e.age + dt }

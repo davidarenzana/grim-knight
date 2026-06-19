@@ -1,6 +1,7 @@
 import { vec2 } from '@core/math/vector'
 import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
+import { chooseDir } from './walk'
 
 /**
  * Zombie: rises from the ground, then walks toward the player.
@@ -41,12 +42,12 @@ export const stepZombie = (
     if (riseTimer <= 0) state = 'walking'
   }
 
-  const center = e.body.pos.x + e.body.w / 2
   let facing = e.facing
   let vx = 0
   if (state === 'walking') {
-    facing = target.x < center ? -1 : 1
-    vx = ZOMBIE.speed * facing
+    const dir = chooseDir(e.body, target.x, solids) // stops/turns at ledges
+    if (dir !== 0) facing = dir
+    vx = ZOMBIE.speed * dir
   }
 
   const body = stepBody({ ...e.body, vel: vec2(vx, e.body.vel.y) }, solids, ZOMBIE.gravity, dt)

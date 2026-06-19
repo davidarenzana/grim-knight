@@ -87,7 +87,7 @@ export const LEVELS: readonly LevelDef[] = [
       oneWay(2250, 300, 200, 20),
     ],
     ladders: [aabb(360, 320, 16, 90), aabb(980, 300, 16, 110), aabb(2330, 300, 16, 110)],
-    hazards: [spikes(690, 60), spikes(2050, 70)],
+    hazards: [spikes(690, 40), spikes(2050, 40)],
     spawns: [
       { kind: 'zombie', x: 280, y: GROUND_Y },
       { kind: 'plant', x: 470, y: GROUND_Y },
@@ -129,7 +129,7 @@ export const LEVELS: readonly LevelDef[] = [
       oneWay(2500, 300, 200, 20),
     ],
     ladders: [aabb(320, 300, 16, 110), aabb(1160, 300, 16, 110), aabb(2560, 300, 16, 110)],
-    hazards: [spikes(1420, 70)],
+    hazards: [spikes(1420, 40)],
     spawns: [
       { kind: 'flyer', x: 500, y: 140 },
       { kind: 'plant', x: 600, y: GROUND_Y },
@@ -213,7 +213,7 @@ export const LEVELS: readonly LevelDef[] = [
       aabb(2750, 360, 40, 50),
     ],
     ladders: [aabb(820, 300, 16, 110), aabb(1520, 290, 16, 120), aabb(2420, 300, 16, 110)],
-    hazards: [spikes(840, 70), spikes(1300, 60), spikes(2500, 70)],
+    hazards: [spikes(840, 40), spikes(1300, 40), spikes(2500, 40)],
     spawns: [
       { kind: 'ogre', x: 350, y: GROUND_Y },
       { kind: 'zombie', x: 700, y: GROUND_Y },
@@ -259,7 +259,7 @@ export const LEVELS: readonly LevelDef[] = [
       oneWay(2700, 290, 180, 20),
     ],
     ladders: [aabb(1460, 290, 16, 120), aabb(2760, 290, 16, 120)],
-    hazards: [spikes(1000, 55), spikes(1880, 70)],
+    hazards: [spikes(1000, 40), spikes(1880, 40)],
     spawns: [
       { kind: 'flyer', x: 400, y: 140 },
       { kind: 'flyer', x: 700, y: 120 },

@@ -2,6 +2,7 @@ import { vec2 } from '@core/math/vector'
 import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Projectile } from '@core/weapons/weapon'
 import type { BossVariant, Enemy, EnemyTarget } from './enemy'
+import { chooseDir } from './walk'
 
 /**
  * Stage bosses: tough walkers that advance on the player and fire a spread on a
@@ -96,10 +97,12 @@ export const stepBoss = (
   if (e.state === 'dead') return { enemy: e, fired: [] }
 
   const s = BOSS_VARIANTS[e.variant ?? 1]
+  // Aim at the player always; only advance where there's floor (no pit dives).
   const center = e.body.pos.x + e.body.w / 2
   const facing: 1 | -1 = target.x < center ? -1 : 1
+  const moveDir = chooseDir(e.body, target.x, solids)
   const body = stepBody(
-    { ...e.body, vel: vec2(s.speed * facing, e.body.vel.y) },
+    { ...e.body, vel: vec2(s.speed * moveDir, e.body.vel.y) },
     solids,
     s.gravity,
     dt,
