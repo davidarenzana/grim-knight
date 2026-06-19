@@ -36,4 +36,10 @@
   and shown via `setDisplaySize`; facing via `setFlipX`; hit-flash via `setTintFill`/`clearTint`.
 - **`exactOptionalPropertyTypes: true`:** never assign `undefined` to an optional field; spread it in
   conditionally (`...(x !== undefined ? { k: x } : {})`).
+- **`scene.restart()` destroys all GameObjects** — any pooled-object array kept as a scene field (sprite/rect
+  render pools) holds DEAD references afterwards. Reset every pool array to `[]` in `create()`, or the next
+  frame's render touches destroyed objects and throws every frame → the game looks frozen. (This caused the
+  "kill the boss → stuck on the next stage" bug.)
+- **In-canvas Phaser text vs the Vue HUD:** the Vue HUD overlays the TOP of the canvas; pin any Phaser help/
+  debug text to the BOTTOM (`setOrigin(0,1)`, `y = height - 8`, `setScrollFactor(0)`) so they don't overlap.
 - (Add every new gotcha discovered here — living project.)

@@ -166,6 +166,12 @@ export class GameScene extends Phaser.Scene {
     this.enemyFlash = []
     this.enemyProjectiles = []
     this.chests = (level.chests ?? []).map((c) => ({ ...c }))
+    // Reset render pools: scene.restart() destroys all GameObjects, so the old
+    // pooled sprites are dead — start fresh or we'd touch destroyed objects.
+    this.projRects = []
+    this.enemyProjRects = []
+    this.enemySprites = []
+    this.chestSprites = []
     this.timer = createTimer(this.stageSeconds)
     this.lastSecond = -1
     this.lastBossHp = -1
@@ -181,20 +187,23 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, level.worldWidth, height)
     this.cameras.main.startFollow(this.knight, true, 0.12, 0.12)
 
-    // Fixed on-screen help (does not scroll with the world).
+    // Fixed on-screen help, pinned to the bottom so it never overlaps the Vue
+    // HUD (lives/score/time) which sits along the top of the canvas.
     this.add
       .text(
         12,
-        8,
+        height - 8,
         `${level.name} — ←/→ move · ↑ jump/climb · ↓ crouch · Space throw · Q swap weapon`,
         {
           fontFamily: 'monospace',
-          fontSize: '13px',
-          color: '#ffffff',
+          fontSize: '12px',
+          color: '#cfd3e0',
+          backgroundColor: '#00000066',
         },
       )
       .setScrollFactor(0)
-      .setOrigin(0, 0)
+      .setOrigin(0, 1)
+      .setDepth(1000)
 
     const kb = this.input.keyboard!
     const k = (code: number) => kb.addKey(code)

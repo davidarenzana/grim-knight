@@ -128,9 +128,18 @@
   confirmed in a browser (no headless browser installed) — run `pnpm dev` to eyeball, or swap real PNGs in
   later under the same `TEX.*` keys.
 
+### Playtest fixes (Phase 5)
+
+- **Stage-clear freeze:** `scene.restart()` destroys all GameObjects but the render-pool arrays
+  (`projRects`/`enemyProjRects`/`enemySprites`/`chestSprites`) were scene fields holding dead refs → the next
+  frame threw every frame and the game froze after beating a boss + clearing enemies. Fixed by resetting all
+  pools to `[]` in `create()`. (Gotcha logged in `conventions.md`.)
+- **Top HUD overlap:** the in-canvas Phaser help text overlapped the Vue HUD; moved it to the bottom
+  (`setOrigin(0,1)`, `y=height-8`, dim bg).
+
 ## In progress 🔧
 
-- Phase 5: weapon variety + chests/pickups + juice + procedural-art pass done. Next: audio, then optionally
+- Phase 5: weapon variety + chests/pickups + juice + procedural-art pass done (+ playtest fixes). Next: audio, then optionally
   real CC0 sprite/tilemap art (drop PNGs, preload under `TEX.*` keys), more juice (kill particles, fades).
 
 ## Next ⏭️ (Phase 5 — art & juice, and polish)
