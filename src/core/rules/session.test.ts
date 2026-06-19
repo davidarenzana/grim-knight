@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addScore, createSession, loseLife, STARTING_LIVES, win } from './session'
+import { addScore, createSession, gainLife, loseLife, STARTING_LIVES, win } from './session'
 
 describe('session', () => {
   it('starts fresh', () => {
@@ -38,5 +38,15 @@ describe('session', () => {
     let s = createSession()
     for (let i = 0; i < STARTING_LIVES + 2; i++) s = loseLife(s)
     expect(s.lives).toBe(0)
+  })
+
+  it('gains an extra life', () => {
+    expect(gainLife(createSession()).lives).toBe(STARTING_LIVES + 1)
+  })
+
+  it('cannot gain a life after game over', () => {
+    let s = createSession()
+    for (let i = 0; i < STARTING_LIVES; i++) s = loseLife(s)
+    expect(gainLife(s).lives).toBe(0)
   })
 })

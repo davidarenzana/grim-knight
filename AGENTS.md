@@ -93,9 +93,10 @@ Phases 0–4 done; Phase 5 started. Feature-complete greybox: 6 stages × 2 loop
 scroll. Player FSM (idle/run/jump/crouch/climb/throw/hurt/die + air control), 2-hit armor; enemies
 zombie/flyer/ogre/plant and a boss (HP bar); enemy projectiles, projectile-vs-wall collision, timed spawner,
 stage timer, lives/score/game-over, level transitions and the double loop → "True Victory". **Weapon variety**
-(lance/dagger/torch/axe with arc + limited-reach), Q to swap. All wired into `GameScene` and the Vue HUD via
-the bus. 131 tests green. Next within Phase 5: chests/pickups, audio, then the art pass; then Phase 6
-(build/deploy). Live detail in `memory/progress.md`.
+(lance/dagger/torch/axe with arc + limited-reach), Q to swap. **Chests/pickups** (weapon/armor/points/life/curse)
+across all 6 levels. All wired into `GameScene` and the Vue HUD via the bus. 138 tests green. Next within
+Phase 5: juice (screen shake/hit-flash/particles), audio, then the art pass; then Phase 6 (build/deploy).
+Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 

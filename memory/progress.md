@@ -105,16 +105,24 @@
   Note: `exactOptionalPropertyTypes: true` — don't assign `undefined` to optional fields; spread them in
   conditionally (`...(x !== undefined ? { k: x } : {})`).
 
+- **Chests & pickups** (core, TDD): `core/level/chest.ts` — a `Chest` is an AABB + `reward` + `opened`.
+  `openChests(playerBox, chests)` opens (idempotently) every unopened chest the player overlaps and
+  returns the new rewards. Reward kinds: `weapon` (by id), `armor`, `points`, `life`, `curse` (downgrade
+  to lance). `session.gainLife` added (also reusable for score-threshold extra lives). `LevelDef.chests?`
+  authored across all 6 levels (each has a weapon chest + extras; Iron Fortress has a risky curse chest).
+  `GameScene` opens chests on contact, applies rewards (`applyChestReward`) and renders them (gold rects,
+  hidden once opened). Specs `chests.md`. 138 tests green; typecheck/lint/build green.
+
 ## In progress 🔧
 
-- Phase 5: weapon variety done (above). Next within Phase 5: chests that swap weapons, torch ground-fire,
-  audio, then the art pass.
+- Phase 5: weapon variety + chests/pickups done. Next within Phase 5: juice (screen shake, hit-flash,
+  particles — engine-only, no assets), torch ground-fire, audio, then the art pass.
 
 ## Next ⏭️ (Phase 5 — art & juice, and polish)
 
-- Audio (SFX/music) via Phaser; then the art pass: replace greybox rectangles with CC0/own sprites + tilemaps.
 - Juice: animations, hit flashes, particles, screen shake, transitions. Core/level/camera code stays.
-- Polish: chests/pickups (swap to a `WEAPONS` weapon), extra lives at score thresholds, high-score table.
+- Audio (SFX/music) via Phaser; then the art pass: replace greybox rectangles with CC0/own sprites + tilemaps.
+- Polish: extra lives at score thresholds (reuse `gainLife`), high-score table, torch ground-fire hazard.
 - Phase 6: production build optimization (code-split Phaser chunk) + static deploy.
 
 ## Recent decisions

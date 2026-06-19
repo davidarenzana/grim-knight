@@ -17,6 +17,7 @@ import {
   stepWeapon,
   advanceProjectiles,
   nextWeapon,
+  weaponById,
   LANCE,
   type WeaponDef,
   type WeaponState,
@@ -36,9 +37,10 @@ import {
 import { createSpawner, isFinished, stepSpawner, type Spawner } from '@core/level/spawner'
 import { createTimer, tickTimer, type StageTimer } from '@core/level/timer'
 import { LEVELS } from '@core/level/level'
+import { openChests, type Chest, type ChestReward } from '@core/level/chest'
 import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
-import { addScore, createSession, loseLife, win, type Session } from '@core/rules/session'
-import type { ArmorState } from '@core/rules/armor'
+import { addScore, createSession, gainLife, loseLife, win, type Session } from '@core/rules/session'
+import { pickupArmor, type ArmorState } from '@core/rules/armor'
 import { bus } from '@shared/events'
 
 const FIXED_DT = 1 / 60
@@ -67,6 +69,7 @@ export class GameScene extends Phaser.Scene {
   private activeWeapon: WeaponDef = LANCE
   private enemies: Enemy[] = []
   private enemyProjectiles: Projectile[] = []
+  private chests: Chest[] = []
   private spawner!: Spawner
   private timer!: StageTimer
   private session!: Session
@@ -91,6 +94,7 @@ export class GameScene extends Phaser.Scene {
   private projRects: Phaser.GameObjects.Rectangle[] = []
   private enemyProjRects: Phaser.GameObjects.Rectangle[] = []
   private enemyRects: Phaser.GameObjects.Rectangle[] = []
+  private chestRects: Phaser.GameObjects.Rectangle[] = []
   private keys!: {
     left: Phaser.Input.Keyboard.Key[]
     right: Phaser.Input.Keyboard.Key[]
@@ -151,6 +155,7 @@ export class GameScene extends Phaser.Scene {
     this.lastArmor = 'armored'
     this.enemies = []
     this.enemyProjectiles = []
+    this.chests = (level.chests ?? []).map((c) => ({ ...c }))
     this.timer = createTimer(this.stageSeconds)
     this.lastSecond = -1
     this.lastBossHp = -1
@@ -244,6 +249,7 @@ export class GameScene extends Phaser.Scene {
     this.renderProjectiles()
     this.renderEnemyProjectiles()
     this.renderEnemies()
+    this.renderChests()
   }
 
   /** One fixed simulation step: enemies, weapon, combat, player, session. */
@@ -316,6 +322,14 @@ export class GameScene extends Phaser.Scene {
       FIXED_DT,
     )
 
+    // Open any chest the knight is touching and apply its reward.
+    if (this.chests.length > 0) {
+      const pb = this.player.body
+      const opened = openChests(aabb(pb.pos.x, pb.pos.y, pb.w, pb.h), this.chests)
+      this.chests = opened.chests as Chest[]
+      for (const reward of opened.rewards) this.applyChestReward(reward)
+    }
+
     if (this.player.armor.state !== this.lastArmor) {
       this.lastArmor = this.player.armor.state
       bus.emit('game:armor-changed', { armor: this.lastArmor })
@@ -332,6 +346,36 @@ export class GameScene extends Phaser.Scene {
       this.enemies.every((e) => e.state === 'dead')
     ) {
       this.onWin()
+    }
+  }
+
+  /** Apply a chest reward to the player/session and notify the HUD. */
+  private applyChestReward(reward: ChestReward): void {
+    switch (reward.kind) {
+      case 'weapon': {
+        const def = weaponById(reward.weaponId)
+        if (def) {
+          this.activeWeapon = def
+          bus.emit('game:weapon-changed', { weapon: def.id })
+        }
+        break
+      }
+      case 'curse':
+        // The magician's curse downgrades you back to the starting lance.
+        this.activeWeapon = LANCE
+        bus.emit('game:weapon-changed', { weapon: LANCE.id })
+        break
+      case 'armor':
+        this.player = { ...this.player, armor: pickupArmor(this.player.armor) }
+        break
+      case 'points':
+        this.session = addScore(this.session, reward.points)
+        bus.emit('game:score-changed', { score: this.session.score })
+        break
+      case 'life':
+        this.session = gainLife(this.session)
+        bus.emit('game:lives-changed', { lives: this.session.lives })
+        break
     }
   }
 
@@ -449,6 +493,21 @@ export class GameScene extends Phaser.Scene {
           .setFillStyle(ENEMY_COLOR[e.kind])
           .setPosition(e.body.pos.x, e.body.pos.y)
           .setSize(e.body.w, e.body.h)
+      } else {
+        rect.setVisible(false)
+      }
+    })
+  }
+
+  /** Sync the chest rectangle pool; opened chests are hidden. */
+  private renderChests(): void {
+    while (this.chestRects.length < this.chests.length) {
+      this.chestRects.push(this.add.rectangle(0, 0, 1, 1, 0xd4a017).setOrigin(0, 0))
+    }
+    this.chestRects.forEach((rect, i) => {
+      const c = this.chests[i]
+      if (c && !c.opened) {
+        rect.setVisible(true).setPosition(c.x, c.y).setSize(c.w, c.h)
       } else {
         rect.setVisible(false)
       }

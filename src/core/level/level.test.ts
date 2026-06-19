@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { LEVELS } from './level'
+import { weaponById } from '@core/weapons/weapon'
 
 const SCREEN_W = 800
 
@@ -32,6 +33,16 @@ describe('levels', () => {
     for (const lvl of LEVELS) {
       expect(lvl.playerStart.x).toBeGreaterThanOrEqual(0)
       expect(lvl.playerStart.x).toBeLessThan(lvl.worldWidth)
+    }
+  })
+
+  it('chests sit within bounds and reference valid weapons', () => {
+    for (const lvl of LEVELS) {
+      for (const c of lvl.chests ?? []) {
+        expect(c.x).toBeGreaterThanOrEqual(0)
+        expect(c.x).toBeLessThanOrEqual(lvl.worldWidth)
+        if (c.reward.kind === 'weapon') expect(weaponById(c.reward.weaponId)).toBeDefined()
+      }
     }
   })
 })

@@ -2,6 +2,7 @@ import type { AABB } from '@core/math/aabb'
 import { aabb } from '@core/math/aabb'
 import type { Solid } from '@core/physics/body'
 import type { SpawnEvent } from './spawner'
+import { createChest, type Chest } from './chest'
 
 /**
  * Static level definition (pure data). The engine reads it to build a stage:
@@ -17,11 +18,14 @@ export interface LevelDef {
   readonly ladders: readonly AABB[]
   readonly spawns: readonly SpawnEvent[]
   readonly durationSeconds: number
+  /** Optional chests/pickups placed in the stage. */
+  readonly chests?: readonly Chest[]
 }
 
 const GROUND_Y = 410
 const GROUND_H = 40
 const PLAYER_START_Y = 362 // GROUND_Y - player height (48)
+const CHEST_Y = GROUND_Y - 20 // chest sits on the ground
 
 const oneWay = (x: number, y: number, w: number, h: number): Solid => ({
   ...aabb(x, y, w, h),
@@ -50,6 +54,11 @@ export const LEVELS: readonly LevelDef[] = [
       { at: 9.0, kind: 'boss', x: 1400, y: GROUND_Y },
     ],
     durationSeconds: 99,
+    chests: [
+      createChest(500, CHEST_Y, { kind: 'weapon', weaponId: 'dagger' }),
+      createChest(940, CHEST_Y, { kind: 'points', points: 500 }),
+      createChest(1300, CHEST_Y, { kind: 'armor' }),
+    ],
   },
   {
     name: 'Haunted Forest',
@@ -73,6 +82,10 @@ export const LEVELS: readonly LevelDef[] = [
       { at: 9.0, kind: 'boss', x: 1600, y: GROUND_Y },
     ],
     durationSeconds: 99,
+    chests: [
+      createChest(520, CHEST_Y, { kind: 'weapon', weaponId: 'torch' }),
+      createChest(1180, CHEST_Y, { kind: 'life' }),
+    ],
   },
   {
     name: 'Swamp Caverns',
@@ -96,6 +109,10 @@ export const LEVELS: readonly LevelDef[] = [
       { at: 9.0, kind: 'boss', x: 1500, y: GROUND_Y },
     ],
     durationSeconds: 95,
+    chests: [
+      createChest(560, CHEST_Y, { kind: 'weapon', weaponId: 'axe' }),
+      createChest(1080, CHEST_Y, { kind: 'points', points: 750 }),
+    ],
   },
   {
     name: 'Iron Fortress',
@@ -119,6 +136,12 @@ export const LEVELS: readonly LevelDef[] = [
       { at: 9.0, kind: 'boss', x: 1700, y: GROUND_Y },
     ],
     durationSeconds: 95,
+    chests: [
+      createChest(520, CHEST_Y, { kind: 'weapon', weaponId: 'dagger' }),
+      // A risky magician chest: opening it curses you back to the lance.
+      createChest(1180, CHEST_Y, { kind: 'curse' }),
+      createChest(1680, CHEST_Y, { kind: 'armor' }),
+    ],
   },
   {
     name: 'Frozen Spires',
@@ -143,6 +166,10 @@ export const LEVELS: readonly LevelDef[] = [
       { at: 9.0, kind: 'boss', x: 1600, y: GROUND_Y },
     ],
     durationSeconds: 90,
+    chests: [
+      createChest(580, CHEST_Y, { kind: 'weapon', weaponId: 'torch' }),
+      createChest(1120, CHEST_Y, { kind: 'armor' }),
+    ],
   },
   {
     name: 'Demon Keep',
@@ -168,5 +195,10 @@ export const LEVELS: readonly LevelDef[] = [
       { at: 9.0, kind: 'boss', x: 2000, y: GROUND_Y },
     ],
     durationSeconds: 99,
+    chests: [
+      createChest(620, CHEST_Y, { kind: 'weapon', weaponId: 'axe' }),
+      createChest(1320, CHEST_Y, { kind: 'life' }),
+      createChest(1880, CHEST_Y, { kind: 'points', points: 1000 }),
+    ],
   },
 ]

@@ -28,4 +28,8 @@ export const loseLife = (s: Session): Session => {
   return { ...s, lives, state: lives <= 0 ? 'gameover' : 'playing' }
 }
 
+/** Gain one extra life (chest reward or score threshold). */
+export const gainLife = (s: Session): Session =>
+  s.state === 'playing' ? { ...s, lives: s.lives + 1 } : s
+
 export const win = (s: Session): Session => (s.state === 'playing' ? { ...s, state: 'won' } : s)
