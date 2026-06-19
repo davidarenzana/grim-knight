@@ -28,12 +28,12 @@
 - **pnpm 11 build approvals:** dependency build scripts (esbuild, vue-demi) are ignored until approved. The approval lives in `pnpm-workspace.yaml` under `allowBuilds:` (the `pnpm` field in `package.json` is no longer read). Without it, `pnpm install` exits non-zero and blocks scripts.
 - **husky must be a real devDependency.** Referencing it only in the `prepare` script is not enough; declare `husky` in `devDependencies`. `prepare` is `husky || true` so a missing binary never aborts install.
 - Vue SFC component names must be multi-word (`vue/multi-word-component-names`): use `GameHud`, not `Hud`.
-- **Procedural art (`engine/assets/textures.ts`):** sprites/tiles are drawn with a `scene.make.graphics(..., false)`
-  (NOT added to the display list) and baked via `generateTexture(key, w, h)`; call `generateTextures(this)` at
-  the top of `create()`. GameScene renders `this.add.image(...)`/`tileSprite(...)` by `TEX.*` key + entity body
-  size. To swap in real PNGs later, preload them under the same `TEX.*` keys — no render-code change. Textures
-  are drawn at core body sizes (knight 24×48, zombie 24×40, flyer 28×20, ogre 40×56, plant 28×32, boss 64×80)
-  and shown via `setDisplaySize`; facing via `setFlipX`; hit-flash via `setTintFill`/`clearTint`.
+- **Scenery art (`engine/assets/tiles.ts`):** CraftPix "Cartoon Medieval Ruins" PNGs under
+  `public/assets/tiles/`, loaded in `preload()` via `preloadTiles` (`TILE.*` keys, `backgroundFor(level)`).
+  GameScene routes solids in the geometry loop: one-way→`TILE.platform` (tileSprite), wide(≥200px)→`TILE.ground`
+  (tileSprite), small→`TILE.crate` (image). Ladder/chest are stretched images; background is a static
+  full-screen image at depth −1000, `scrollFactor(0)`. (The old procedural `textures.ts`/`generateTexture`
+  approach was fully replaced and deleted; only projectiles stay as plain rectangles.)
 - **`exactOptionalPropertyTypes: true`:** never assign `undefined` to an optional field; spread it in
   conditionally (`...(x !== undefined ? { k: x } : {})`).
 - **`scene.restart()` destroys all GameObjects** — any pooled-object array kept as a scene field (sprite/rect
@@ -55,6 +55,6 @@
   - **Aligning `foot`:** the CraftPix frames have the feet at the very bottom (`botPad=0`), so `foot` is 0 for
     all grounded entities — a non-zero foot sinks them below the ground. Don't guess padding: measure the
     frame's transparent bottom padding (alpha bbox via a canvas) and set `foot` to that. Flyers use `center`.
-- **`scene.load.*` needs `preload()`:** file-based assets (spritesheets) must be queued in the scene's
-  `preload()`, not `create()`. Procedural `generateTexture` textures are fine in `create()`.
+- **`scene.load.*` needs `preload()`:** file-based assets (spritesheets, tile images) must be queued in the
+  scene's `preload()`, not `create()`; anims are built in `create()` after the load completes.
 - (Add every new gotcha discovered here — living project.)

@@ -148,6 +148,17 @@
   skeleton, fire-spirit all animate and align; no asset 404s. **Per-entity `scale`/`foot` are tunables**
   (plant/ogre/boss not yet eyeballed in-frame — adjust on feedback). 138 tests green; typecheck/lint/build green.
 
+### Scenery art pass (Phase 5) — CraftPix tileset
+
+- New scenery from CraftPix **"Cartoon Medieval Ruins"** level set (`public/assets/tiles/`, loaded by
+  `engine/assets/tiles.ts` → `preloadTiles`/`TILE`/`backgroundFor`): static dusk **background** per level
+  (graveyard vs cave), grassy **ground** + **platform** (`tileSprite`), wooden **crate** (small solids),
+  real **chest** sprite, **ladder** image. `GameScene` geometry loop routes solids: one-way→platform tile,
+  wide→ground tile, small→crate image; ladders stretched a bit wider than the 16px hitbox; chest drawn
+  bottom-aligned a bit larger than its box. **Procedural `textures.ts` deleted** (fully replaced by
+  sprites + tiles); projectiles stay rectangles. Cartoon tiles + pixel characters read fine (shared dark
+  palette/outlines). Verified in headless Chrome. typecheck/lint/build/138 tests green.
+
 ### Feedback/juice additions (Phase 5)
 
 - **Stage-clear banner:** `onWin` now pops a centered "STAGE CLEAR!" (or "LOOP 1 CLEAR!" / "TRUE VICTORY!")

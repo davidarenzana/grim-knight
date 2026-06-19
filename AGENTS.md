@@ -95,10 +95,11 @@ zombie/flyer/ogre/plant and a boss (HP bar); enemy projectiles, projectile-vs-wa
 stage timer, lives/score/game-over, level transitions and the double loop → "True Victory". **Weapon variety**
 (lance/dagger/torch/axe with arc + limited-reach), Q to swap. **Chests/pickups** (weapon/armor/points/life/curse)
 across all 6 levels (chests show floating reward text; stage-clear banner). **Juice**: screen shake, enemy
-hit-flash, i-frame blink. **Art**: characters/enemies/boss are **CraftPix animated spritesheets**
-(`engine/assets/sprites.ts`, loaded in `preload()`); tiles/chests/projectiles stay procedural
-(`engine/assets/textures.ts`). All wired into `GameScene` and the Vue HUD via the bus. 138 tests green. Next
-within Phase 5: audio, fine-tune sprite scales; then Phase 6 (build/deploy). Live detail in `memory/progress.md`.
+hit-flash, i-frame blink. **Art**: characters/enemies/boss are **CraftPix animated spritesheets** (`engine/assets/sprites.ts`, loaded
+in `preload()`); scenery (background, ground/platform/ladder, crate, chest) is the CraftPix "Cartoon Medieval
+Ruins" tileset (`engine/assets/tiles.ts`); only projectiles stay procedural (rectangles). All wired into
+`GameScene` and the Vue HUD via the bus. 138 tests green. Next within Phase 5: audio, fine-tune sprite scales;
+then Phase 6 (build/deploy). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 

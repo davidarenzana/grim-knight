@@ -41,8 +41,8 @@ import { openChests, type Chest, type ChestReward } from '@core/level/chest'
 import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
 import { addScore, createSession, gainLife, loseLife, win, type Session } from '@core/rules/session'
 import { pickupArmor, type ArmorState } from '@core/rules/armor'
-import { generateTextures, TEX } from '@engine/assets/textures'
 import { preloadSprites, createAnims, animKey, hasAnim, SPRITES } from '@engine/assets/sprites'
+import { preloadTiles, backgroundFor, TILE } from '@engine/assets/tiles'
 import { bus } from '@shared/events'
 
 /** Map a core enemy state to a sprite animation state (idle/walk/dead). */
@@ -125,11 +125,11 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     preloadSprites(this)
+    preloadTiles(this)
   }
 
   create(): void {
     const height = this.scale.height
-    generateTextures(this)
     createAnims(this)
     const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
     this.start = { ...level.playerStart }
@@ -144,18 +144,35 @@ export class GameScene extends Phaser.Scene {
       aabb(-40, -200, 40, height + 600),
       aabb(level.worldWidth, -200, 40, height + 600),
     ]
-    // Backdrop (does not scroll); a dark night/cave tone behind the world.
+    // Static full-screen backdrop (ruins/forest at dusk) behind the world.
     this.cameras.main.setBackgroundColor(0x12141f)
+    this.add
+      .image(0, 0, backgroundFor(this.levelIndex))
+      .setOrigin(0, 0)
+      .setDisplaySize(this.scale.width, height)
+      .setScrollFactor(0)
+      .setDepth(-1000)
 
+    // Geometry: wide solids = tiled ground, one-way = tiled grassy ledge,
+    // small solids = wooden crate. Ladders are stretched ladder images.
     for (const s of this.solids) {
       if (s.x + s.w <= 0 || s.x >= level.worldWidth) continue // skip boundary walls
-      const tex = s.oneWay ? TEX.tilePlatform : TEX.tileGround
-      this.add.tileSprite(s.x, s.y, s.w, s.h, tex).setOrigin(0, 0)
+      if (s.oneWay) {
+        this.add.tileSprite(s.x, s.y, s.w, s.h, TILE.platform).setOrigin(0, 0)
+      } else if (s.w >= 200) {
+        this.add.tileSprite(s.x, s.y, s.w, s.h, TILE.ground).setOrigin(0, 0)
+      } else {
+        this.add.image(s.x, s.y, TILE.crate).setOrigin(0, 0).setDisplaySize(s.w, s.h)
+      }
     }
 
     this.ladders = level.ladders.map((l) => l)
     for (const l of this.ladders) {
-      this.add.tileSprite(l.x, l.y, l.w, l.h, TEX.tileLadder).setOrigin(0, 0)
+      // Drawn a touch wider than the thin (16px) hitbox so the rungs read.
+      this.add
+        .image(l.x + l.w / 2, l.y, TILE.ladder)
+        .setOrigin(0.5, 0)
+        .setDisplaySize(l.w + 12, l.h)
     }
 
     this.bounds = { minX: 0, maxX: level.worldWidth }
@@ -651,12 +668,16 @@ export class GameScene extends Phaser.Scene {
   /** Sync the chest sprite pool; opened chests are hidden. */
   private renderChests(): void {
     while (this.chestSprites.length < this.chests.length) {
-      this.chestSprites.push(this.add.image(0, 0, TEX.chest).setOrigin(0, 0))
+      this.chestSprites.push(this.add.image(0, 0, TILE.chest).setOrigin(0.5, 1))
     }
     this.chestSprites.forEach((sprite, i) => {
       const c = this.chests[i]
       if (c && !c.opened) {
-        sprite.setVisible(true).setDisplaySize(c.w, c.h).setPosition(c.x, c.y)
+        // Drawn a bit larger than the hitbox, sitting on its bottom edge.
+        sprite
+          .setVisible(true)
+          .setDisplaySize(c.w + 10, c.h + 12)
+          .setPosition(c.x + c.w / 2, c.y + c.h)
       } else {
         sprite.setVisible(false)
       }

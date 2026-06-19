@@ -39,10 +39,15 @@ src/shared/   shared types + event bus (mitt)
 
 ## Credits / assets
 
-Character & enemy sprites are free pixel-art packs from **[CraftPix.net](https://craftpix.net/)**
-(Warrior, Orc, and Fantasy Enemies packs), used under the CraftPix free-files license — see
-`public/assets/sprites/CRAFTPIX-LICENSE-*.txt` and <https://craftpix.net/file-licenses/>. Tiles, chests
-and projectiles are drawn procedurally in code (`src/engine/assets/textures.ts`).
+Art is from free **[CraftPix.net](https://craftpix.net/)** packs, used under the CraftPix free-files
+license (<https://craftpix.net/file-licenses/>; see the `CRAFTPIX-LICENSE-*.txt` files under
+`public/assets/`):
+
+- **Characters/enemies** — Warrior, Orc and Fantasy Enemies sprite packs (`public/assets/sprites/`).
+- **Scenery** — "Cartoon Medieval Ruins" level set: backgrounds, ground/platform/ladder tiles, crate,
+  chest (`public/assets/tiles/`).
+
+Projectiles are still drawn procedurally in code.
 
 ## License / IP
 
