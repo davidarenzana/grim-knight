@@ -18,7 +18,12 @@ export const TILE = {
   crate: 'tile-crate-img',
   ladder: 'tile-ladder-img',
   chest: 'tile-chest-img',
+  spikes: 'tile-spikes-img',
+  lava: 'tile-lava-img',
 } as const
+
+/** Texture used to paint a theme's damaging zones: molten lava in hell, else spikes. */
+export const hazardKey = (theme: LevelTheme): string => (theme === 'hell' ? TILE.lava : TILE.spikes)
 
 export const THEMES: readonly LevelTheme[] = ['ruins', 'forest', 'cave', 'castle', 'ice', 'hell']
 
@@ -31,6 +36,8 @@ export function preloadTiles(scene: Phaser.Scene): void {
   scene.load.image(TILE.crate, 'assets/tiles/crate.png')
   scene.load.image(TILE.ladder, 'assets/tiles/ladder.png')
   scene.load.image(TILE.chest, 'assets/tiles/chest.png')
+  scene.load.image(TILE.spikes, 'assets/tiles/spikes.png')
+  scene.load.image(TILE.lava, 'assets/tiles/lava.png')
 
   // Ruins reuse the original shipped ground + the two original backdrops.
   scene.load.image(groundKey('ruins'), 'assets/tiles/ground.png')

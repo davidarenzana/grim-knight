@@ -25,6 +25,8 @@ export interface LevelDef {
   readonly durationSeconds: number
   /** Optional chests/pickups placed in the stage. */
   readonly chests?: readonly Chest[]
+  /** Optional damaging zones (spikes/lava) that hurt the player on contact. */
+  readonly hazards?: readonly AABB[]
 }
 
 const GROUND_Y = 410
@@ -37,6 +39,34 @@ const oneWay = (x: number, y: number, w: number, h: number): Solid => ({
   oneWay: true,
 })
 
+/** A pit (gap in the ground): the player falls through and dies. */
+interface Pit {
+  readonly x: number
+  readonly w: number
+}
+
+/**
+ * Build the ground as solid segments covering [0, worldWidth] minus the given
+ * pits. Keep pit widths jumpable (≤ ~85px: a jump clears ~90px) so the stage
+ * stays passable. The boundary walls are added by the engine.
+ */
+const floor = (worldWidth: number, pits: readonly Pit[] = []): Solid[] => {
+  const sorted = [...pits].sort((a, b) => a.x - b.x)
+  const segments: Solid[] = []
+  let cursor = 0
+  for (const p of sorted) {
+    if (p.x > cursor) segments.push(aabb(cursor, GROUND_Y, p.x - cursor, GROUND_H))
+    cursor = Math.max(cursor, p.x + p.w)
+  }
+  if (cursor < worldWidth) segments.push(aabb(cursor, GROUND_Y, worldWidth - cursor, GROUND_H))
+  return segments
+}
+
+/** A spike strip sitting on the ground surface (contact hazard you jump over). */
+const spikes = (x: number, w: number): AABB => aabb(x, GROUND_Y - 16, w, 16)
+/** A lava pool band on the ground surface (contact hazard). */
+const lava = (x: number, w: number): AABB => aabb(x, GROUND_Y - 12, w, 12)
+
 export const LEVELS: readonly LevelDef[] = [
   {
     name: 'Graveyard',
@@ -44,7 +74,11 @@ export const LEVELS: readonly LevelDef[] = [
     worldWidth: 2800,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
-      aabb(0, GROUND_Y, 2800, GROUND_H),
+      ...floor(2800, [
+        { x: 1075, w: 75 },
+        { x: 1780, w: 75 },
+        { x: 2330, w: 70 },
+      ]),
       oneWay(300, 320, 160, 20),
       aabb(620, 360, 40, 50), // jumpable crate
       oneWay(900, 300, 200, 20),
@@ -53,6 +87,7 @@ export const LEVELS: readonly LevelDef[] = [
       oneWay(2250, 300, 200, 20),
     ],
     ladders: [aabb(360, 320, 16, 90), aabb(980, 300, 16, 110), aabb(2330, 300, 16, 110)],
+    hazards: [spikes(690, 60), spikes(2050, 70)],
     spawns: [
       { kind: 'zombie', x: 280, y: GROUND_Y },
       { kind: 'plant', x: 470, y: GROUND_Y },
@@ -80,7 +115,11 @@ export const LEVELS: readonly LevelDef[] = [
     worldWidth: 3000,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
-      aabb(0, GROUND_Y, 3000, GROUND_H),
+      ...floor(3000, [
+        { x: 690, w: 70 },
+        { x: 960, w: 70 },
+        { x: 2300, w: 60 },
+      ]),
       oneWay(260, 300, 180, 20),
       oneWay(560, 250, 160, 20),
       aabb(820, 360, 40, 50),
@@ -90,6 +129,7 @@ export const LEVELS: readonly LevelDef[] = [
       oneWay(2500, 300, 200, 20),
     ],
     ladders: [aabb(320, 300, 16, 110), aabb(1160, 300, 16, 110), aabb(2560, 300, 16, 110)],
+    hazards: [spikes(1420, 70)],
     spawns: [
       { kind: 'flyer', x: 500, y: 140 },
       { kind: 'plant', x: 600, y: GROUND_Y },
@@ -117,7 +157,11 @@ export const LEVELS: readonly LevelDef[] = [
     worldWidth: 2900,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
-      aabb(0, GROUND_Y, 2900, GROUND_H),
+      ...floor(2900, [
+        { x: 880, w: 70 },
+        { x: 1500, w: 70 },
+        { x: 2080, w: 70 },
+      ]),
       oneWay(280, 310, 160, 20),
       oneWay(700, 300, 180, 20),
       aabb(1050, 360, 40, 50),
@@ -127,6 +171,7 @@ export const LEVELS: readonly LevelDef[] = [
       oneWay(2600, 300, 180, 20),
     ],
     ladders: [aabb(340, 310, 16, 100), aabb(1460, 300, 16, 110), aabb(2660, 300, 16, 110)],
+    hazards: [lava(1150, 60), lava(1890, 60)],
     spawns: [
       { kind: 'zombie', x: 300, y: GROUND_Y },
       { kind: 'plant', x: 520, y: GROUND_Y },
@@ -154,7 +199,11 @@ export const LEVELS: readonly LevelDef[] = [
     worldWidth: 3100,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
-      aabb(0, GROUND_Y, 3100, GROUND_H),
+      ...floor(3100, [
+        { x: 1010, w: 70 },
+        { x: 1620, w: 70 },
+        { x: 2170, w: 70 },
+      ]),
       aabb(500, 360, 40, 50),
       oneWay(750, 300, 200, 20),
       aabb(1150, 360, 40, 50),
@@ -164,6 +213,7 @@ export const LEVELS: readonly LevelDef[] = [
       aabb(2750, 360, 40, 50),
     ],
     ladders: [aabb(820, 300, 16, 110), aabb(1520, 290, 16, 120), aabb(2420, 300, 16, 110)],
+    hazards: [spikes(840, 70), spikes(1300, 60), spikes(2500, 70)],
     spawns: [
       { kind: 'ogre', x: 350, y: GROUND_Y },
       { kind: 'zombie', x: 700, y: GROUND_Y },
@@ -193,7 +243,11 @@ export const LEVELS: readonly LevelDef[] = [
     worldWidth: 3000,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
-      aabb(0, GROUND_Y, 3000, GROUND_H),
+      ...floor(3000, [
+        { x: 1230, w: 70 },
+        { x: 1600, w: 70 },
+        { x: 2470, w: 70 },
+      ]),
       oneWay(300, 320, 140, 20),
       oneWay(560, 260, 140, 20),
       oneWay(820, 320, 140, 20),
@@ -205,6 +259,7 @@ export const LEVELS: readonly LevelDef[] = [
       oneWay(2700, 290, 180, 20),
     ],
     ladders: [aabb(1460, 290, 16, 120), aabb(2760, 290, 16, 120)],
+    hazards: [spikes(1000, 55), spikes(1880, 70)],
     spawns: [
       { kind: 'flyer', x: 400, y: 140 },
       { kind: 'flyer', x: 700, y: 120 },
@@ -231,7 +286,12 @@ export const LEVELS: readonly LevelDef[] = [
     worldWidth: 3400,
     playerStart: { x: 80, y: PLAYER_START_Y },
     solids: [
-      aabb(0, GROUND_Y, 3400, GROUND_H),
+      ...floor(3400, [
+        { x: 980, w: 65 },
+        { x: 1480, w: 70 },
+        { x: 1980, w: 70 },
+        { x: 2700, w: 70 },
+      ]),
       aabb(450, 360, 40, 50),
       oneWay(700, 300, 180, 20),
       oneWay(1050, 260, 180, 20),
@@ -242,6 +302,7 @@ export const LEVELS: readonly LevelDef[] = [
       oneWay(2900, 300, 200, 20),
     ],
     ladders: [aabb(770, 300, 16, 110), aabb(1820, 300, 16, 110), aabb(2960, 300, 16, 110)],
+    hazards: [lava(700, 80), lava(1220, 60), lava(2300, 80)],
     spawns: [
       { kind: 'zombie', x: 350, y: GROUND_Y },
       { kind: 'flyer', x: 650, y: 130 },

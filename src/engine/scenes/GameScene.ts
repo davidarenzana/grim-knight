@@ -42,10 +42,12 @@ import { createTimer, tickTimer, type StageTimer } from '@core/level/timer'
 import { LEVELS } from '@core/level/level'
 import { openChests, type Chest, type ChestReward } from '@core/level/chest'
 import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
+import { hasFallenOut } from '@core/rules/fall'
+import { touchesHazard } from '@core/rules/hazard'
 import { addScore, createSession, gainLife, loseLife, win, type Session } from '@core/rules/session'
 import { pickupArmor, type ArmorState } from '@core/rules/armor'
 import { preloadSprites, createAnims, animKey, hasAnim, SPRITES } from '@engine/assets/sprites'
-import { preloadTiles, bgKey, groundKey, TILE } from '@engine/assets/tiles'
+import { preloadTiles, bgKey, groundKey, hazardKey, TILE } from '@engine/assets/tiles'
 import { bus } from '@shared/events'
 
 /** Map a core enemy state to a sprite animation state (idle/walk/dead). */
@@ -88,7 +90,9 @@ export class GameScene extends Phaser.Scene {
 
   private solids: Solid[] = []
   private ladders: AABB[] = []
+  private hazards: AABB[] = []
   private bounds!: { minX: number; maxX: number }
+  private deathY = 0 // y below which a fallen player dies (set per scene size)
 
   // Level state (carried across stage transitions via scene.restart).
   private levelIndex = 0
@@ -175,7 +179,15 @@ export class GameScene extends Phaser.Scene {
         .setDisplaySize(l.w + 12, l.h)
     }
 
+    // Hazards (spikes/lava): painted with the theme's hazard tile and folded
+    // into the player's damage check each tick.
+    this.hazards = (level.hazards ?? []).map((h) => h)
+    for (const h of this.hazards) {
+      this.add.tileSprite(h.x, h.y, h.w, h.h, hazardKey(level.theme)).setOrigin(0, 0)
+    }
+
     this.bounds = { minX: 0, maxX: level.worldWidth }
+    this.deathY = height + 40 // just below the viewport: fall past it = death
     this.stepper = createStepper(FIXED_DT)
     this.player = createPlayer(this.start.x, this.start.y)
     this.prev = this.player
@@ -327,7 +339,13 @@ export class GameScene extends Phaser.Scene {
     const b0 = this.player.body
     const target = { x: b0.pos.x + b0.w / 2, y: b0.pos.y + b0.h / 2 }
     const stepped = this.enemies.map((e) => stepEnemy(e, target, this.solids, FIXED_DT))
-    this.enemies = stepped.map((r) => r.enemy)
+    // Walkers that chase the player off a ledge fall to their death too — cull
+    // them (mark dead) so they don't drop forever and block the stage-clear.
+    this.enemies = stepped.map((r) =>
+      r.enemy.state !== 'dead' && hasFallenOut(r.enemy.body, this.deathY)
+        ? { ...r.enemy, state: 'dead' as const, hp: 0 }
+        : r.enemy,
+    )
     for (const r of stepped) if (r.fired.length) this.enemyProjectiles.push(...r.fired)
     this.enemyProjectiles = advanceProjectiles(
       this.enemyProjectiles,
@@ -370,7 +388,7 @@ export class GameScene extends Phaser.Scene {
     // Enemy projectiles vs the player.
     const ep = resolveEnemyProjectiles(playerBox, this.enemyProjectiles)
     this.enemyProjectiles = [...ep.projectiles]
-    const damaged = result.playerHit || ep.playerHit
+    const damaged = result.playerHit || ep.playerHit || touchesHazard(playerBox, this.hazards)
 
     this.player = stepPlayer(
       this.player,
@@ -378,6 +396,12 @@ export class GameScene extends Phaser.Scene {
       { solids: this.solids, ladders: this.ladders, damaged },
       FIXED_DT,
     )
+
+    // Fell into a pit: drop below the world bottom costs a life (classic rule).
+    if (hasFallenOut(this.player.body, this.deathY)) {
+      this.onPlayerDead()
+      return
+    }
 
     // Open any chest the knight is touching, apply its reward and announce it.
     if (this.chests.length > 0) {
