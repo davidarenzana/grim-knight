@@ -153,16 +153,14 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(-1000)
 
-    // Geometry: wide solids = tiled ground, one-way = tiled grassy ledge,
-    // small solids = wooden crate. Ladders are stretched ladder images.
+    // Geometry: small solids = wooden crate; everything else (ground + one-way
+    // ledges) = the grassy ground tile, so floating platforms are clearly drawn.
     for (const s of this.solids) {
       if (s.x + s.w <= 0 || s.x >= level.worldWidth) continue // skip boundary walls
-      if (s.oneWay) {
-        this.add.tileSprite(s.x, s.y, s.w, s.h, TILE.platform).setOrigin(0, 0)
-      } else if (s.w >= 200) {
-        this.add.tileSprite(s.x, s.y, s.w, s.h, TILE.ground).setOrigin(0, 0)
-      } else {
+      if (!s.oneWay && s.w < 200) {
         this.add.image(s.x, s.y, TILE.crate).setOrigin(0, 0).setDisplaySize(s.w, s.h)
+      } else {
+        this.add.tileSprite(s.x, s.y, s.w, s.h, TILE.ground).setOrigin(0, 0)
       }
     }
 

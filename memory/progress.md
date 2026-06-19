@@ -152,12 +152,16 @@
 
 - New scenery from CraftPix **"Cartoon Medieval Ruins"** level set (`public/assets/tiles/`, loaded by
   `engine/assets/tiles.ts` → `preloadTiles`/`TILE`/`backgroundFor`): static dusk **background** per level
-  (graveyard vs cave), grassy **ground** + **platform** (`tileSprite`), wooden **crate** (small solids),
-  real **chest** sprite, **ladder** image. `GameScene` geometry loop routes solids: one-way→platform tile,
-  wide→ground tile, small→crate image; ladders stretched a bit wider than the 16px hitbox; chest drawn
-  bottom-aligned a bit larger than its box. **Procedural `textures.ts` deleted** (fully replaced by
-  sprites + tiles); projectiles stay rectangles. Cartoon tiles + pixel characters read fine (shared dark
-  palette/outlines). Verified in headless Chrome. typecheck/lint/build/138 tests green.
+  (graveyard vs cave), grassy **ground** (`tileSprite`), wooden **crate** (small solids), real **chest**
+  sprite, **ladder** image. `GameScene` geometry loop routes solids: small solid→crate image; everything
+  else (ground + one-way ledges)→ground tile. Ladder stretched a bit wider than the 16px hitbox; chest
+  drawn bottom-aligned a bit larger than its box.
+  - **Aerial platforms**: one-way ledges reuse the ground tile. (First tried the `Bridge` tile, but it's a
+    rounded/transparent ledge that vanished when cropped to 20px → platforms were invisible and ladders ran
+    into the void. `platform.png` removed.)
+  - **Procedural `textures.ts` deleted** (fully replaced by sprites + tiles); only projectiles stay
+    rectangles. Cartoon tiles + pixel characters read fine (shared dark palette/outlines). Verified in
+    headless Chrome. typecheck/lint/build/138 tests green.
 
 ### Feedback/juice additions (Phase 5)
 

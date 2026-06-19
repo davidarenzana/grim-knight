@@ -8,7 +8,6 @@ import Phaser from 'phaser'
  */
 export const TILE = {
   ground: 'tile-ground-img',
-  platform: 'tile-platform-img',
   crate: 'tile-crate-img',
   ladder: 'tile-ladder-img',
   chest: 'tile-chest-img',
@@ -18,7 +17,6 @@ export const TILE = {
 
 export function preloadTiles(scene: Phaser.Scene): void {
   scene.load.image(TILE.ground, 'assets/tiles/ground.png')
-  scene.load.image(TILE.platform, 'assets/tiles/platform.png')
   scene.load.image(TILE.crate, 'assets/tiles/crate.png')
   scene.load.image(TILE.ladder, 'assets/tiles/ladder.png')
   scene.load.image(TILE.chest, 'assets/tiles/chest.png')
