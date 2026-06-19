@@ -30,7 +30,7 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
   knight: {
     frame: 96,
     scale: 0.92,
-    foot: 18,
+    foot: 0,
     states: {
       idle: { file: 'Idle', fps: 8, loop: true },
       run: { file: 'Run', fps: 12, loop: true },
@@ -42,8 +42,8 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
   },
   zombie: {
     frame: 128,
-    scale: 0.5,
-    foot: 24,
+    scale: 0.6,
+    foot: 0,
     states: {
       idle: { file: 'Idle', fps: 8, loop: true },
       walk: { file: 'Walk', fps: 10, loop: true },
@@ -52,8 +52,8 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
   },
   plant: {
     frame: 128,
-    scale: 0.42,
-    foot: 18,
+    scale: 0.55,
+    foot: 0,
     states: {
       idle: { file: 'Idle', fps: 8, loop: true },
       attack: { file: 'Attack', fps: 12, loop: false },
@@ -72,8 +72,8 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
   },
   ogre: {
     frame: 96,
-    scale: 1.05,
-    foot: 16,
+    scale: 1.0,
+    foot: 0,
     states: {
       idle: { file: 'Idle', fps: 8, loop: true },
       walk: { file: 'Walk', fps: 9, loop: true },
@@ -82,8 +82,8 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
   },
   boss: {
     frame: 96,
-    scale: 1.6,
-    foot: 16,
+    scale: 1.55,
+    foot: 0,
     states: {
       walk: { file: 'Walk', fps: 8, loop: true },
       attack: { file: 'Attack', fps: 10, loop: false },

@@ -52,6 +52,9 @@
   (origin (0.5,1) at body bottom + `foot*scale`) or centers (`center: true`, flyers). Per-entity `scale`/`foot`
   are visual tunables. To add/replace art: drop PNGs in the entity folder and add a state entry — no render
   change. Keep the `CRAFTPIX-LICENSE-*.txt` files and README credit.
+  - **Aligning `foot`:** the CraftPix frames have the feet at the very bottom (`botPad=0`), so `foot` is 0 for
+    all grounded entities — a non-zero foot sinks them below the ground. Don't guess padding: measure the
+    frame's transparent bottom padding (alpha bbox via a canvas) and set `foot` to that. Flyers use `center`.
 - **`scene.load.*` needs `preload()`:** file-based assets (spritesheets) must be queued in the scene's
   `preload()`, not `create()`. Procedural `generateTexture` textures are fine in `create()`.
 - (Add every new gotcha discovered here — living project.)
