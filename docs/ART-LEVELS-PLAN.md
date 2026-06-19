@@ -6,6 +6,10 @@
 > hazards, structures) the reference images show.
 >
 > Follows the project's SDD+TDD flow (AGENTS.md §5): core changes get a spec + failing test first.
+>
+> **Status (2026-06-19): all phases A–E done.** Themes, the three new enemies, GnG-style
+> pits/hazards and the three boss variants are shipped; docs/memory updated. Pits + spikes
+> confirmed in-game by the user.
 
 ## Source art (in `test_art/`, to be imported into `public/assets/`)
 

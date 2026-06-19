@@ -189,6 +189,29 @@
   `GameScene` drives the spawner with the player x instead of `dt`; dropped the loop-2 `spawnScale` (loop 2
   stays harder via the time scale). Spec `spawner.md` + `spawner.test.ts` updated. 139 tests green.
 
+### Art + levels overhaul (Phase 5) — themes, new creatures, GnG-style stages
+
+Plan: `docs/ART-LEVELS-PLAN.md`. Done in four committed phases:
+
+- **A — per-level themes:** `LevelTheme` (ruins/forest/cave/castle/ice/hell) on each `LevelDef`;
+  `tiles.ts` maps it to a ground tile + backdrop, loaded per theme from `public/assets/tiles/<theme>/`.
+  Theme art prepared with PIL from the CraftPix swap/dungeons/medieval packs (ice/hell tinted; castle/ice
+  backdrops are built gradients). Every stage now looks distinct. ADR [[0004-level-themes]].
+- **B — three new enemies** (pure-core TDD): `centipede` (fast fragile crawler), `turtle` (slow armored
+  walker + straight bullet), `bloated` (stationary arcing-bolt caster). 72px sheets in
+  `public/assets/sprites/<kind>/`, registered in `SPRITES`, routed in `stepEnemy`, woven into all stages.
+- **C — GnG-style geometry:** `floor(width, pits)` carves jumpable gaps (≤~85px); `hasFallenOut`
+  (`core/rules/fall.ts`) = fall-out death for the player and enemy culling; `touchesHazard`
+  (`core/rules/hazard.ts`) + `LevelDef.hazards` for spike/lava contact damage (folded into the armor
+  damage path). Invariant tests guard passability. Specs `fall-out.md`, `hazards.md`. ADR [[0005-hazards-and-pits]].
+  Confirmed working in-game by the user (pits + spikes).
+- **D — three boss variants:** `BOSS_VARIANTS` (1–3, one skin per pair of stages), escalating HP + a
+  wider/faster volley (3-way→5-way). `Enemy.variant` selects stats + the `boss<variant>` skin; HUD bar
+  uses the variant max HP. Old single-boss art removed.
+
+170 tests green; typecheck/lint/build clean throughout. Sprite/tile scales tuned via PIL mocks (no headless
+browser in the dev env); the user is play-testing in the real game.
+
 ## In progress 🔧
 
 - Phase 5: weapon variety + chests/pickups + juice + procedural-art pass done (+ playtest fixes). Next: audio, then optionally

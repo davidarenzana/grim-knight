@@ -10,3 +10,5 @@ One line per file. Read this first; open only what you need. Keeping it in sync 
   - [0001-engine-core-ui-split.md](./decisions/0001-engine-core-ui-split.md) — why pure core + Phaser + Vue.
   - [0002-fixed-timestep-sim.md](./decisions/0002-fixed-timestep-sim.md) — fixed-timestep simulation + interpolation.
   - [0003-one-way-platforms.md](./decisions/0003-one-way-platforms.md) — semi-solid platforms (pass up, land on top).
+  - [0004-level-themes.md](./decisions/0004-level-themes.md) — per-level visual themes (ground tile + backdrop).
+  - [0005-hazards-and-pits.md](./decisions/0005-hazards-and-pits.md) — fall-out (pits) and contact hazards.

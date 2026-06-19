@@ -100,7 +100,11 @@ across all 6 levels (chests show floating reward text; stage-clear banner). **Ju
 hit-flash, i-frame blink. **Art**: characters/enemies/boss are **CraftPix animated spritesheets** (`engine/assets/sprites.ts`, loaded
 in `preload()`); scenery (background, ground/platform/ladder, crate, chest) is the CraftPix "Cartoon Medieval
 Ruins" tileset (`engine/assets/tiles.ts`); only projectiles stay procedural (rectangles). All wired into
-`GameScene` and the Vue HUD via the bus. 139 tests green. Next within Phase 5: audio, fine-tune sprite scales;
+`GameScene` and the Vue HUD via the bus. **Per-level themes** (ruins/forest/cave/castle/ice/hell) give every
+stage its own ground tile + backdrop (`engine/assets/tiles.ts`; theme art under `public/assets/tiles/<theme>/`).
+**Three more enemies** (centipede/turtle/bloated) and **three escalating boss variants** (one skin per pair of
+stages). **GnG-style level geometry**: jumpable pits (`floor(width, pits)`) with **fall-out** death (`core/rules/fall.ts`)
+and **contact hazards** (spikes/lava, `core/rules/hazard.ts`). 170 tests green. Next within Phase 5: audio, fine-tune sprite scales;
 then Phase 6 (build/deploy). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents

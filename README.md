@@ -43,11 +43,13 @@ Art is from free **[CraftPix.net](https://craftpix.net/)** packs, used under the
 license (<https://craftpix.net/file-licenses/>; see the `CRAFTPIX-LICENSE-*.txt` files under
 `public/assets/`):
 
-- **Characters/enemies** — Warrior, Orc and Fantasy Enemies sprite packs (`public/assets/sprites/`).
-- **Scenery** — "Cartoon Medieval Ruins" level set: backgrounds, ground/platform/ladder tiles, crate,
-  chest (`public/assets/tiles/`).
+- **Characters/enemies** — Warrior, Orc and Fantasy Enemies sprite packs, plus the swap-monster creatures
+  (centipede, battle turtle, big bloated) and three boss skins (`public/assets/sprites/`).
+- **Scenery** — per-stage themes (ruins/forest/cave/castle/ice/hell) built from the "Cartoon Medieval
+  Ruins", swap-tileset, dungeons-tileset and medieval-tileset packs; backgrounds, ground/platform/ladder
+  tiles, crate, chest (`public/assets/tiles/`). Each theme folder carries its source LICENSE.txt.
 
-Projectiles are still drawn procedurally in code.
+Projectiles, spikes and the cold/dark backdrops are generated procedurally in code.
 
 ## License / IP
 
