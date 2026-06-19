@@ -41,20 +41,22 @@ import { openChests, type Chest, type ChestReward } from '@core/level/chest'
 import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
 import { addScore, createSession, gainLife, loseLife, win, type Session } from '@core/rules/session'
 import { pickupArmor, type ArmorState } from '@core/rules/armor'
+import { generateTextures, TEX } from '@engine/assets/textures'
 import { bus } from '@shared/events'
+
+/** Texture key per enemy kind (procedural art). */
+const ENEMY_TEX: Record<EnemyKind, string> = {
+  zombie: TEX.zombie,
+  flyer: TEX.flyer,
+  ogre: TEX.ogre,
+  plant: TEX.plant,
+  boss: TEX.boss,
+}
 
 const FIXED_DT = 1 / 60
 const SCORE_PER_KILL = 100
 const CROUCH_H = Math.round(PLAYER_H * 0.6) // shorter profile while crouching (dodge high shots)
 const HIT_FLASH = 0.1 // seconds an enemy flashes white after taking a hit
-
-const ENEMY_COLOR: Record<EnemyKind, number> = {
-  zombie: 0x6b8e23,
-  flyer: 0x9b59b6,
-  ogre: 0x8b1a1a,
-  plant: 0x2e8b57,
-  boss: 0x6a0dad,
-}
 
 /**
  * Main game scene. It RENDERS the state produced by the pure `core/` simulation
@@ -92,11 +94,11 @@ export class GameScene extends Phaser.Scene {
   private start = { x: 80, y: 362 }
   private stageSeconds = 99
 
-  private knight!: Phaser.GameObjects.Rectangle
+  private knight!: Phaser.GameObjects.Image
   private projRects: Phaser.GameObjects.Rectangle[] = []
   private enemyProjRects: Phaser.GameObjects.Rectangle[] = []
-  private enemyRects: Phaser.GameObjects.Rectangle[] = []
-  private chestRects: Phaser.GameObjects.Rectangle[] = []
+  private enemySprites: Phaser.GameObjects.Image[] = []
+  private chestSprites: Phaser.GameObjects.Image[] = []
   private keys!: {
     left: Phaser.Input.Keyboard.Key[]
     right: Phaser.Input.Keyboard.Key[]
@@ -123,6 +125,7 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     const height = this.scale.height
+    generateTextures(this)
     const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
     this.start = { ...level.playerStart }
     // Loop 2 (the classic "second quest") is harder: less time, faster waves.
@@ -136,14 +139,18 @@ export class GameScene extends Phaser.Scene {
       aabb(-40, -200, 40, height + 600),
       aabb(level.worldWidth, -200, 40, height + 600),
     ]
+    // Backdrop (does not scroll); a dark night/cave tone behind the world.
+    this.cameras.main.setBackgroundColor(0x12141f)
+
     for (const s of this.solids) {
       if (s.x + s.w <= 0 || s.x >= level.worldWidth) continue // skip boundary walls
-      this.add.rectangle(s.x, s.y, s.w, s.h, s.oneWay ? 0x6b8f5a : 0x3a5a40).setOrigin(0, 0)
+      const tex = s.oneWay ? TEX.tilePlatform : TEX.tileGround
+      this.add.tileSprite(s.x, s.y, s.w, s.h, tex).setOrigin(0, 0)
     }
 
     this.ladders = level.ladders.map((l) => l)
     for (const l of this.ladders) {
-      this.add.rectangle(l.x, l.y, l.w, l.h, 0x8a6d3b).setOrigin(0, 0)
+      this.add.tileSprite(l.x, l.y, l.w, l.h, TEX.tileLadder).setOrigin(0, 0)
     }
 
     this.bounds = { minX: 0, maxX: level.worldWidth }
@@ -166,8 +173,9 @@ export class GameScene extends Phaser.Scene {
     this.spawner = createSpawner(level.spawns.map((s) => ({ ...s, at: s.at * spawnScale })))
 
     this.knight = this.add
-      .rectangle(this.player.body.pos.x, this.player.body.pos.y, PLAYER_W, PLAYER_H, 0xd9d9d9)
+      .image(this.player.body.pos.x, this.player.body.pos.y, TEX.knight)
       .setOrigin(0, 0)
+      .setDisplaySize(PLAYER_W, PLAYER_H)
 
     // Camera scrolls within the world, following the knight.
     this.cameras.main.setBounds(0, 0, level.worldWidth, height)
@@ -248,7 +256,12 @@ export class GameScene extends Phaser.Scene {
     const pos = lerp(this.prev.body.pos, this.player.body.pos, alpha)
     // Crouching draws a shorter knight with feet planted.
     const ph = this.player.state === 'crouch' ? CROUCH_H : PLAYER_H
-    this.knight.setSize(PLAYER_W, ph).setPosition(pos.x, pos.y + (PLAYER_H - ph))
+    const tex = this.player.armor.state === 'underwear' ? TEX.knightBare : TEX.knight
+    this.knight
+      .setTexture(tex)
+      .setDisplaySize(PLAYER_W, ph)
+      .setFlipX(this.player.facing < 0)
+      .setPosition(pos.x, pos.y + (PLAYER_H - ph))
     // Juice: blink the knight while invulnerable (i-frames) after a hit.
     const blinking = this.player.armor.iFramesLeft > 0
     this.knight.setAlpha(blinking && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
@@ -496,37 +509,40 @@ export class GameScene extends Phaser.Scene {
     })
   }
 
-  /** Sync the enemy rectangle pool; dead enemies are hidden, colored per kind. */
+  /** Sync the enemy sprite pool; dead enemies are hidden, textured per kind. */
   private renderEnemies(): void {
-    while (this.enemyRects.length < this.enemies.length) {
-      this.enemyRects.push(this.add.rectangle(0, 0, 1, 1, 0xffffff).setOrigin(0, 0))
+    while (this.enemySprites.length < this.enemies.length) {
+      this.enemySprites.push(this.add.image(0, 0, TEX.zombie).setOrigin(0, 0))
     }
-    this.enemyRects.forEach((rect, i) => {
+    this.enemySprites.forEach((sprite, i) => {
       const e = this.enemies[i]
       if (e && e.state !== 'dead') {
-        const color = (this.enemyFlash[i] ?? 0) > 0 ? 0xffffff : ENEMY_COLOR[e.kind]
-        rect
+        sprite
           .setVisible(true)
-          .setFillStyle(color)
+          .setTexture(ENEMY_TEX[e.kind])
+          .setDisplaySize(e.body.w, e.body.h)
+          .setFlipX(e.facing < 0)
           .setPosition(e.body.pos.x, e.body.pos.y)
-          .setSize(e.body.w, e.body.h)
+        // Juice: flash white on hit (boss/ground enemies face the player).
+        if ((this.enemyFlash[i] ?? 0) > 0) sprite.setTintFill(0xffffff)
+        else sprite.clearTint()
       } else {
-        rect.setVisible(false)
+        sprite.setVisible(false)
       }
     })
   }
 
-  /** Sync the chest rectangle pool; opened chests are hidden. */
+  /** Sync the chest sprite pool; opened chests are hidden. */
   private renderChests(): void {
-    while (this.chestRects.length < this.chests.length) {
-      this.chestRects.push(this.add.rectangle(0, 0, 1, 1, 0xd4a017).setOrigin(0, 0))
+    while (this.chestSprites.length < this.chests.length) {
+      this.chestSprites.push(this.add.image(0, 0, TEX.chest).setOrigin(0, 0))
     }
-    this.chestRects.forEach((rect, i) => {
+    this.chestSprites.forEach((sprite, i) => {
       const c = this.chests[i]
       if (c && !c.opened) {
-        rect.setVisible(true).setPosition(c.x, c.y).setSize(c.w, c.h)
+        sprite.setVisible(true).setDisplaySize(c.w, c.h).setPosition(c.x, c.y)
       } else {
-        rect.setVisible(false)
+        sprite.setVisible(false)
       }
     })
   }

@@ -119,14 +119,26 @@
   `enemyFlash` timer array); **i-frame blink** (knight alpha flickers while `armor.iFramesLeft > 0`). All in
   `GameScene` (no core change). 138 tests still green; typecheck/lint/build/dev(200) green.
 
+- **Art pass — procedural textures** (engine, no external assets): `engine/assets/textures.ts` draws every
+  sprite/tile with `scene.make.graphics` + `generateTexture` (keys in `TEX`). `GameScene` now renders the
+  knight, all enemy kinds, chests via `this.add.image` (textured, `setDisplaySize` to body, `setFlipX` by
+  facing, `setTintFill` hit-flash) and level geometry/ladders via `tileSprite`. Knight texture swaps
+  armored↔bare; camera backdrop set. `ENEMY_COLOR` rect-coloring removed. Greybox rectangles gone except the
+  tiny weapon/enemy projectiles. Verified: typecheck/lint/138 tests/build/dev(200) green. NOT visually
+  confirmed in a browser (no headless browser installed) — run `pnpm dev` to eyeball, or swap real PNGs in
+  later under the same `TEX.*` keys.
+
 ## In progress 🔧
 
-- Phase 5: weapon variety + chests/pickups + juice done. Next within Phase 5: audio, then the art pass.
+- Phase 5: weapon variety + chests/pickups + juice + procedural-art pass done. Next: audio, then optionally
+  real CC0 sprite/tilemap art (drop PNGs, preload under `TEX.*` keys), more juice (kill particles, fades).
 
 ## Next ⏭️ (Phase 5 — art & juice, and polish)
 
-- Audio (SFX/music) via Phaser; then the art pass: replace greybox rectangles with CC0/own sprites + tilemaps.
-- More juice if wanted: particles on kill, hurt tint, transition fades (kept out for now — particles need a texture).
+- Audio (SFX/music) via Phaser (procedural synth or CC0 files).
+- Optional: replace procedural textures with CC0/own PNG sprites + tilemaps (same `TEX.*` keys, no render change).
+- More juice if wanted: particles on kill, transition fades.
+- Polish: extra lives at score thresholds (reuse `gainLife`), high-score table, torch ground-fire hazard.
 - Polish: extra lives at score thresholds (reuse `gainLife`), high-score table, torch ground-fire hazard.
 - Phase 6: production build optimization (code-split Phaser chunk) + static deploy.
 

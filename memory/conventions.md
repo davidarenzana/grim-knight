@@ -28,4 +28,12 @@
 - **pnpm 11 build approvals:** dependency build scripts (esbuild, vue-demi) are ignored until approved. The approval lives in `pnpm-workspace.yaml` under `allowBuilds:` (the `pnpm` field in `package.json` is no longer read). Without it, `pnpm install` exits non-zero and blocks scripts.
 - **husky must be a real devDependency.** Referencing it only in the `prepare` script is not enough; declare `husky` in `devDependencies`. `prepare` is `husky || true` so a missing binary never aborts install.
 - Vue SFC component names must be multi-word (`vue/multi-word-component-names`): use `GameHud`, not `Hud`.
+- **Procedural art (`engine/assets/textures.ts`):** sprites/tiles are drawn with a `scene.make.graphics(..., false)`
+  (NOT added to the display list) and baked via `generateTexture(key, w, h)`; call `generateTextures(this)` at
+  the top of `create()`. GameScene renders `this.add.image(...)`/`tileSprite(...)` by `TEX.*` key + entity body
+  size. To swap in real PNGs later, preload them under the same `TEX.*` keys — no render-code change. Textures
+  are drawn at core body sizes (knight 24×48, zombie 24×40, flyer 28×20, ogre 40×56, plant 28×32, boss 64×80)
+  and shown via `setDisplaySize`; facing via `setFlipX`; hit-flash via `setTintFill`/`clearTint`.
+- **`exactOptionalPropertyTypes: true`:** never assign `undefined` to an optional field; spread it in
+  conditionally (`...(x !== undefined ? { k: x } : {})`).
 - (Add every new gotcha discovered here — living project.)
