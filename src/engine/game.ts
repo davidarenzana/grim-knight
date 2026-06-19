@@ -26,3 +26,13 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     scene: [GameScene],
   })
 }
+
+// Phaser does not hot-reload cleanly: an HMR update to any engine module (this
+// file, the scenes, the textures…) leaves a stale, half-updated Phaser.Game that
+// looks frozen. Make this a self-accepting HMR boundary that does a full page
+// reload instead, so dev edits always restart from a clean game instance.
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    window.location.reload()
+  })
+}

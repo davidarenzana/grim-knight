@@ -42,4 +42,7 @@
   "kill the boss → stuck on the next stage" bug.)
 - **In-canvas Phaser text vs the Vue HUD:** the Vue HUD overlays the TOP of the canvas; pin any Phaser help/
   debug text to the BOTTOM (`setOrigin(0,1)`, `y = height - 8`, `setScrollFactor(0)`) so they don't overlap.
+- **Phaser + Vite HMR don't mix:** an HMR update to an engine module leaves a stale, half-updated `Phaser.Game`
+  that looks frozen/unresponsive (input dead). `engine/game.ts` is a self-accepting HMR boundary that does a
+  full `window.location.reload()` on any engine change. If a dev tab ever seems frozen after edits, hard-refresh.
 - (Add every new gotcha discovered here — living project.)
