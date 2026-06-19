@@ -113,15 +113,20 @@
   `GameScene` opens chests on contact, applies rewards (`applyChestReward`) and renders them (gold rects,
   hidden once opened). Specs `chests.md`. 138 tests green; typecheck/lint/build green.
 
+- **Juice** (engine-only, no assets, smoke-tested): camera **screen shake** on player hit (`shake(150,0.01)`),
+  on death (`shake(320,0.02)`) and a small kick per kill (`shake(90,0.006)`); **enemy hit-flash** (enemy rect
+  flashes white for `HIT_FLASH`=0.1s the moment its HP drops, tracked by stable array index via an
+  `enemyFlash` timer array); **i-frame blink** (knight alpha flickers while `armor.iFramesLeft > 0`). All in
+  `GameScene` (no core change). 138 tests still green; typecheck/lint/build/dev(200) green.
+
 ## In progress 🔧
 
-- Phase 5: weapon variety + chests/pickups done. Next within Phase 5: juice (screen shake, hit-flash,
-  particles — engine-only, no assets), torch ground-fire, audio, then the art pass.
+- Phase 5: weapon variety + chests/pickups + juice done. Next within Phase 5: audio, then the art pass.
 
 ## Next ⏭️ (Phase 5 — art & juice, and polish)
 
-- Juice: animations, hit flashes, particles, screen shake, transitions. Core/level/camera code stays.
 - Audio (SFX/music) via Phaser; then the art pass: replace greybox rectangles with CC0/own sprites + tilemaps.
+- More juice if wanted: particles on kill, hurt tint, transition fades (kept out for now — particles need a texture).
 - Polish: extra lives at score thresholds (reuse `gainLife`), high-score table, torch ground-fire hazard.
 - Phase 6: production build optimization (code-split Phaser chunk) + static deploy.
 

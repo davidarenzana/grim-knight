@@ -46,6 +46,7 @@ import { bus } from '@shared/events'
 const FIXED_DT = 1 / 60
 const SCORE_PER_KILL = 100
 const CROUCH_H = Math.round(PLAYER_H * 0.6) // shorter profile while crouching (dodge high shots)
+const HIT_FLASH = 0.1 // seconds an enemy flashes white after taking a hit
 
 const ENEMY_COLOR: Record<EnemyKind, number> = {
   zombie: 0x6b8e23,
@@ -68,6 +69,7 @@ export class GameScene extends Phaser.Scene {
   private weapon!: WeaponState
   private activeWeapon: WeaponDef = LANCE
   private enemies: Enemy[] = []
+  private enemyFlash: number[] = [] // per-enemy hit-flash timer (juice)
   private enemyProjectiles: Projectile[] = []
   private chests: Chest[] = []
   private spawner!: Spawner
@@ -154,6 +156,7 @@ export class GameScene extends Phaser.Scene {
     this.over = false
     this.lastArmor = 'armored'
     this.enemies = []
+    this.enemyFlash = []
     this.enemyProjectiles = []
     this.chests = (level.chests ?? []).map((c) => ({ ...c }))
     this.timer = createTimer(this.stageSeconds)
@@ -232,7 +235,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  update(_time: number, delta: number): void {
+  update(time: number, delta: number): void {
     if (this.over) return
     // Weapon swap on key press (edge-detected, presentation-only choice).
     if (this.keys.swap.some((key) => Phaser.Input.Keyboard.JustDown(key))) {
@@ -246,6 +249,9 @@ export class GameScene extends Phaser.Scene {
     // Crouching draws a shorter knight with feet planted.
     const ph = this.player.state === 'crouch' ? CROUCH_H : PLAYER_H
     this.knight.setSize(PLAYER_W, ph).setPosition(pos.x, pos.y + (PLAYER_H - ph))
+    // Juice: blink the knight while invulnerable (i-frames) after a hit.
+    const blinking = this.player.armor.iFramesLeft > 0
+    this.knight.setAlpha(blinking && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
     this.renderProjectiles()
     this.renderEnemyProjectiles()
     this.renderEnemies()
@@ -300,14 +306,22 @@ export class GameScene extends Phaser.Scene {
     const b = this.player.body
     const ph = this.player.state === 'crouch' ? CROUCH_H : b.h
     const playerBox = aabb(b.pos.x, b.pos.y + (b.h - ph), b.w, ph)
+    const before = this.enemies
     const result = resolveCombat(playerBox, this.weapon.projectiles, this.enemies)
     this.weapon = { ...this.weapon, projectiles: result.projectiles }
     this.enemies = result.enemies as Enemy[]
+    // Juice: flash an enemy white the moment its HP drops (index order is stable).
+    this.enemyFlash = this.enemyFlash.map((t) => Math.max(0, t - FIXED_DT))
+    this.enemies.forEach((e, i) => {
+      const prev = before[i]
+      if (prev && e.hp < prev.hp) this.enemyFlash[i] = HIT_FLASH
+    })
     this.emitBossHp()
 
     if (result.kills > 0) {
       this.session = addScore(this.session, result.kills * SCORE_PER_KILL)
       bus.emit('game:score-changed', { score: this.session.score })
+      this.cameras.main.shake(90, 0.006) // a small kick on each kill
     }
 
     // Enemy projectiles vs the player.
@@ -333,6 +347,7 @@ export class GameScene extends Phaser.Scene {
     if (this.player.armor.state !== this.lastArmor) {
       this.lastArmor = this.player.armor.state
       bus.emit('game:armor-changed', { armor: this.lastArmor })
+      this.cameras.main.shake(150, 0.01) // juice: jolt when the knight is hit
     }
 
     if (this.player.armor.state === 'dead') {
@@ -410,6 +425,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onPlayerDead(): void {
+    this.cameras.main.shake(320, 0.02) // juice: heavy shake on death
     this.session = loseLife(this.session)
     bus.emit('game:lives-changed', { lives: this.session.lives })
     if (this.session.state === 'gameover') {
@@ -488,9 +504,10 @@ export class GameScene extends Phaser.Scene {
     this.enemyRects.forEach((rect, i) => {
       const e = this.enemies[i]
       if (e && e.state !== 'dead') {
+        const color = (this.enemyFlash[i] ?? 0) > 0 ? 0xffffff : ENEMY_COLOR[e.kind]
         rect
           .setVisible(true)
-          .setFillStyle(ENEMY_COLOR[e.kind])
+          .setFillStyle(color)
           .setPosition(e.body.pos.x, e.body.pos.y)
           .setSize(e.body.w, e.body.h)
       } else {
