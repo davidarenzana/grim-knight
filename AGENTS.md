@@ -104,8 +104,10 @@ Ruins" tileset (`engine/assets/tiles.ts`); only projectiles stay procedural (rec
 stage its own ground tile + backdrop (`engine/assets/tiles.ts`; theme art under `public/assets/tiles/<theme>/`).
 **Three more enemies** (centipede/turtle/bloated) and **three escalating boss variants** (one skin per pair of
 stages). **GnG-style level geometry**: jumpable pits (`floor(width, pits)`) with **fall-out** death (`core/rules/fall.ts`)
-and **contact hazards** (spikes/lava, `core/rules/hazard.ts`). 170 tests green. Next within Phase 5: audio, fine-tune sprite scales;
-then Phase 6 (build/deploy). Live detail in `memory/progress.md`.
+and **contact hazards** (spikes/lava, `core/rules/hazard.ts`); ground enemies are **ledge-aware** (turn around at
+edges instead of falling, `core/enemies/walk.ts`). Levels are split per stage under `core/level/stages/` (types in
+`types.ts`, shared helpers in `geometry.ts`, ordered campaign via `LEVELS`). 178 tests green. Next within Phase 5:
+audio, fine-tune sprite scales; then Phase 6 (build/deploy). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 

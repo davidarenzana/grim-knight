@@ -49,7 +49,8 @@ license (<https://craftpix.net/file-licenses/>; see the `CRAFTPIX-LICENSE-*.txt`
   Ruins", swap-tileset, dungeons-tileset and medieval-tileset packs; backgrounds, ground/platform/ladder
   tiles, crate, chest (`public/assets/tiles/`). Each theme folder carries its source LICENSE.txt.
 
-Projectiles, spikes and the cold/dark backdrops are generated procedurally in code.
+Only projectiles are drawn procedurally at runtime (rectangles). The spike/lava hazard tiles and the
+castle/ice backdrops were generated offline (derived/tinted from these packs) and ship as PNGs.
 
 ## License / IP
 
