@@ -1,46 +1,53 @@
 import { describe, expect, it } from 'vitest'
-import { createSpawner, isFinished, stepSpawner, type SpawnEvent } from './spawner'
+import {
+  ACTIVATION_RANGE,
+  createSpawner,
+  isFinished,
+  stepSpawner,
+  type SpawnEvent,
+} from './spawner'
 
 const events: SpawnEvent[] = [
-  { at: 1.0, kind: 'zombie', x: 100, y: 410 },
-  { at: 2.0, kind: 'flyer', x: 300, y: 120 },
+  { kind: 'zombie', x: 600, y: 410 },
+  { kind: 'flyer', x: 1200, y: 120 },
 ]
 
 describe('spawner', () => {
-  it('nothing due early', () => {
-    const { due, spawner } = stepSpawner(createSpawner(events), 0.5)
+  it('nothing due while the player is far to the left', () => {
+    const { due, spawner } = stepSpawner(createSpawner(events), 0)
     expect(due).toHaveLength(0)
     expect(spawner.pending).toHaveLength(2)
   })
 
-  it('event comes due', () => {
-    let s = createSpawner(events)
-    let allDue: SpawnEvent[] = []
-    for (let i = 0; i < 60; i++) {
-      const r = stepSpawner(s, 1 / 60) // ~1s total
-      s = r.spawner
-      allDue = [...allDue, ...r.due]
-    }
-    expect(allDue.map((e) => e.kind)).toEqual(['zombie'])
-    expect(s.pending).toHaveLength(1)
+  it('an enemy wakes once the player gets within range of it', () => {
+    // Player just inside ACTIVATION_RANGE of the zombie at x=600.
+    const { due, spawner } = stepSpawner(createSpawner(events), 600 - ACTIVATION_RANGE + 1)
+    expect(due.map((e) => e.kind)).toEqual(['zombie'])
+    expect(spawner.pending).toHaveLength(1)
   })
 
-  it('fires once', () => {
+  it('does not re-fire an enemy that already woke', () => {
     let s = createSpawner(events)
-    const first = stepSpawner(s, 1.5)
+    const first = stepSpawner(s, 600)
     s = first.spawner
-    const second = stepSpawner(s, 0.1)
-    expect(first.due).toHaveLength(1)
+    const second = stepSpawner(s, 700)
+    expect(first.due.map((e) => e.kind)).toEqual(['zombie'])
     expect(second.due).toHaveLength(0)
   })
 
-  it('finished when empty', () => {
-    const { spawner } = stepSpawner(createSpawner(events), 10)
+  it('finished once the player has passed every trigger', () => {
+    const { spawner } = stepSpawner(createSpawner(events), 5000)
     expect(isFinished(spawner)).toBe(true)
   })
 
-  it('returns events in time order', () => {
-    const { due } = stepSpawner(createSpawner(events), 5)
+  it('triggerX overrides the spawn position', () => {
+    const ambush: SpawnEvent[] = [{ kind: 'ogre', x: 1500, y: 410, triggerX: 400 }]
+    const { due } = stepSpawner(createSpawner(ambush), 400 - ACTIVATION_RANGE + 1)
+    expect(due.map((e) => e.kind)).toEqual(['ogre'])
+  })
+
+  it('wakes enemies in trigger-x order', () => {
+    const { due } = stepSpawner(createSpawner(events), 5000)
     expect(due.map((e) => e.kind)).toEqual(['zombie', 'flyer'])
   })
 })

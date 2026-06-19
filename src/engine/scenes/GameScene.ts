@@ -133,9 +133,8 @@ export class GameScene extends Phaser.Scene {
     createAnims(this)
     const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
     this.start = { ...level.playerStart }
-    // Loop 2 (the classic "second quest") is harder: less time, faster waves.
+    // Loop 2 (the classic "second quest") is harder: less time on the clock.
     const timeScale = this.loop >= 2 ? 0.75 : 1
-    const spawnScale = this.loop >= 2 ? 0.65 : 1
     this.stageSeconds = Math.round(level.durationSeconds * timeScale)
 
     // Level geometry plus invisible world-boundary walls (left/right).
@@ -196,7 +195,7 @@ export class GameScene extends Phaser.Scene {
     this.lastSecond = -1
     this.lastBossHp = -1
     this.bossCleared = false
-    this.spawner = createSpawner(level.spawns.map((s) => ({ ...s, at: s.at * spawnScale })))
+    this.spawner = createSpawner(level.spawns)
 
     this.knight = this.add.sprite(this.player.body.pos.x, this.player.body.pos.y, 'knight-idle')
 
@@ -317,8 +316,8 @@ export class GameScene extends Phaser.Scene {
       return
     }
 
-    // Spawn due enemies, then steer every enemy toward the player.
-    const spawn = stepSpawner(this.spawner, FIXED_DT)
+    // Wake enemies the player has walked up to, then steer them toward it.
+    const spawn = stepSpawner(this.spawner, this.player.body.pos.x)
     this.spawner = spawn.spawner
     for (const ev of spawn.due) this.enemies.push(this.spawnEnemy(ev.kind, ev.x, ev.y))
 
