@@ -128,6 +128,15 @@
   confirmed in a browser (no headless browser installed) — run `pnpm dev` to eyeball, or swap real PNGs in
   later under the same `TEX.*` keys.
 
+### Feedback/juice additions (Phase 5)
+
+- **Stage-clear banner:** `onWin` now pops a centered "STAGE CLEAR!" (or "LOOP 1 CLEAR!" / "TRUE VICTORY!")
+  banner and advances after `STAGE_CLEAR_MS` (1.7s) via `this.time.delayedCall` instead of restarting
+  instantly — the player sees they finished the stage.
+- **Chest pickup feedback:** opening a chest spawns a floating, fading label above the knight ("DAGGER!",
+  "+500", "1UP!", "ARMOR!", "CURSED!") colored per reward (`applyChestReward` now returns `{label,color}`,
+  `floatReward` tweens it). Verified in headless Chrome (the "DAGGER!" float + HUD `WEAPON dagger`).
+
 ### Playtest fixes (Phase 5)
 
 - **Stage-clear freeze:** `scene.restart()` destroys all GameObjects but the render-pool arrays

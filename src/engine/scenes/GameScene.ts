@@ -57,6 +57,10 @@ const FIXED_DT = 1 / 60
 const SCORE_PER_KILL = 100
 const CROUCH_H = Math.round(PLAYER_H * 0.6) // shorter profile while crouching (dodge high shots)
 const HIT_FLASH = 0.1 // seconds an enemy flashes white after taking a hit
+const STAGE_CLEAR_MS = 1700 // banner hold before advancing to the next stage
+
+/** Format a 0xRRGGBB number as a CSS hex string for Phaser text colors. */
+const hexColor = (n: number): string => `#${n.toString(16).padStart(6, '0')}`
 
 /**
  * Main game scene. It RENDERS the state produced by the pure `core/` simulation
@@ -358,12 +362,17 @@ export class GameScene extends Phaser.Scene {
       FIXED_DT,
     )
 
-    // Open any chest the knight is touching and apply its reward.
+    // Open any chest the knight is touching, apply its reward and announce it.
     if (this.chests.length > 0) {
       const pb = this.player.body
       const opened = openChests(aabb(pb.pos.x, pb.pos.y, pb.w, pb.h), this.chests)
-      this.chests = opened.chests as Chest[]
-      for (const reward of opened.rewards) this.applyChestReward(reward)
+      if (opened.rewards.length > 0) {
+        this.chests = opened.chests as Chest[]
+        opened.rewards.forEach((reward, n) => {
+          const fb = this.applyChestReward(reward)
+          this.floatReward(pb.pos.x + pb.w / 2, pb.pos.y - n * 18, fb.label, fb.color)
+        })
+      }
     }
 
     if (this.player.armor.state !== this.lastArmor) {
@@ -386,8 +395,11 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Apply a chest reward to the player/session and notify the HUD. */
-  private applyChestReward(reward: ChestReward): void {
+  /**
+   * Apply a chest reward to the player/session and notify the HUD. Returns a
+   * label + color for the floating pickup text so the player sees what they got.
+   */
+  private applyChestReward(reward: ChestReward): { label: string; color: string } {
     switch (reward.kind) {
       case 'weapon': {
         const def = weaponById(reward.weaponId)
@@ -395,25 +407,73 @@ export class GameScene extends Phaser.Scene {
           this.activeWeapon = def
           bus.emit('game:weapon-changed', { weapon: def.id })
         }
-        break
+        const color = GameScene.WEAPON_COLOR[reward.weaponId] ?? 0xffffff
+        return { label: `${reward.weaponId.toUpperCase()}!`, color: hexColor(color) }
       }
       case 'curse':
         // The magician's curse downgrades you back to the starting lance.
         this.activeWeapon = LANCE
         bus.emit('game:weapon-changed', { weapon: LANCE.id })
-        break
+        return { label: 'CURSED!', color: '#ff5555' }
       case 'armor':
         this.player = { ...this.player, armor: pickupArmor(this.player.armor) }
-        break
+        return { label: 'ARMOR!', color: '#7fdfff' }
       case 'points':
         this.session = addScore(this.session, reward.points)
         bus.emit('game:score-changed', { score: this.session.score })
-        break
+        return { label: `+${reward.points}`, color: '#ffd23a' }
       case 'life':
         this.session = gainLife(this.session)
         bus.emit('game:lives-changed', { lives: this.session.lives })
-        break
+        return { label: '1UP!', color: '#7cfc00' }
     }
+  }
+
+  /** A short-lived label that floats up and fades (chest pickups). */
+  private floatReward(x: number, y: number, label: string, color: string): void {
+    const t = this.add
+      .text(x, y - 6, label, {
+        fontFamily: 'monospace',
+        fontSize: '20px',
+        fontStyle: 'bold',
+        color,
+        stroke: '#000000',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(1500)
+    this.tweens.add({
+      targets: t,
+      y: y - 52,
+      scale: { from: 0.7, to: 1 },
+      alpha: { from: 1, to: 0 },
+      duration: 1300,
+      ease: 'Cubic.out',
+      onComplete: () => t.destroy(),
+    })
+  }
+
+  /** A centered banner (e.g. "STAGE CLEAR!") that pops in and holds. */
+  private showBanner(text: string): void {
+    const cam = this.cameras.main
+    const banner = this.add
+      .text(cam.width / 2, cam.height / 2, text, {
+        fontFamily: 'monospace',
+        fontSize: '38px',
+        color: '#ffd23a',
+        stroke: '#000000',
+        strokeThickness: 6,
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(2000)
+    this.tweens.add({
+      targets: banner,
+      scale: { from: 0.5, to: 1 },
+      duration: 320,
+      ease: 'Back.out',
+    })
   }
 
   /** Emit the boss HP to the HUD (bar) and a one-time cleared event when it dies. */
@@ -469,18 +529,24 @@ export class GameScene extends Phaser.Scene {
    */
   private onWin(): void {
     this.over = true
-    if (this.levelIndex < LEVELS.length - 1) {
-      this.scene.restart({
-        levelIndex: this.levelIndex + 1,
-        loop: this.loop,
-        session: this.session,
-      })
-    } else if (this.loop < 2) {
-      this.scene.restart({ levelIndex: 0, loop: this.loop + 1, session: this.session })
-    } else {
+    const lastLevel = this.levelIndex >= LEVELS.length - 1
+
+    // Beating the final stage of loop 2 is the true victory (no next stage).
+    if (lastLevel && this.loop >= 2) {
+      this.showBanner('TRUE VICTORY!')
       this.session = win(this.session)
-      bus.emit('game:won', { score: this.session.score })
+      this.time.delayedCall(STAGE_CLEAR_MS, () =>
+        bus.emit('game:won', { score: this.session.score }),
+      )
+      return
     }
+
+    // Otherwise announce the clear, then advance after a short hold.
+    const next = lastLevel
+      ? { levelIndex: 0, loop: this.loop + 1, session: this.session } // into loop 2
+      : { levelIndex: this.levelIndex + 1, loop: this.loop, session: this.session }
+    this.showBanner(lastLevel ? 'LOOP 1 CLEAR!\nTHE QUEST BEGINS AGAIN' : 'STAGE CLEAR!')
+    this.time.delayedCall(STAGE_CLEAR_MS, () => this.scene.restart(next))
   }
 
   /** Greybox color per weapon id (until the art pass swaps in sprites). */
