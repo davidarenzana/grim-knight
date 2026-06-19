@@ -27,7 +27,22 @@ interface SpriteDef {
 }
 
 export const SPRITES: Readonly<Record<string, SpriteDef>> = {
+  // Unarmored hero (after losing armor): Warrior_3 (spear, cloth tunic).
   knight: {
+    frame: 96,
+    scale: 0.92,
+    foot: 0,
+    states: {
+      idle: { file: 'Idle', fps: 8, loop: true },
+      run: { file: 'Run', fps: 12, loop: true },
+      jump: { file: 'Jump', fps: 10, loop: false },
+      attack: { file: 'Attack', fps: 16, loop: false },
+      hurt: { file: 'Hurt', fps: 10, loop: false },
+      dead: { file: 'Dead', fps: 8, loop: false },
+    },
+  },
+  // Armored hero (full plate + shield): Warrior_2. Shown while `armored`.
+  knight_armored: {
     frame: 96,
     scale: 0.92,
     foot: 0,

@@ -265,18 +265,18 @@ export class GameScene extends Phaser.Scene {
     const alpha = this.stepper.advance(delta / 1000, () => this.tick(input))
 
     const pos = lerp(this.prev.body.pos, this.player.body.pos, alpha)
+    // Armor state picks the skin: armored = Warrior_2 (plate), otherwise the
+    // unarmored Warrior_3. An armor chest restores `armored` → plate is shown.
+    const skin = this.player.armor.state === 'armored' ? 'knight_armored' : 'knight'
     this.applySprite(
       this.knight,
-      'knight',
+      skin,
       this.knightAnim(),
       { pos, w: PLAYER_W, h: PLAYER_H },
       this.player.facing,
     )
-    // Lost-armor tint + i-frame blink (juice) since there is no bare-knight sheet.
-    const hurt = this.player.armor.state === 'underwear'
+    // Blink while invulnerable (i-frames) after a hit.
     const blinking = this.player.armor.iFramesLeft > 0
-    if (hurt) this.knight.setTint(0xffb0b0)
-    else this.knight.clearTint()
     this.knight.setAlpha(blinking && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
     this.renderProjectiles()
     this.renderEnemyProjectiles()

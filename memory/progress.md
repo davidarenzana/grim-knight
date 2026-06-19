@@ -132,7 +132,9 @@
 
 - Swapped the procedural character textures for **CraftPix free pixel-art spritesheets** (animated):
   knight = Warrior_3 (spear+shield), zombie = Skeleton, plant = Plent, flyer = Fire_Spirit,
-  ogre = Orc_Berserk, boss = Orc_Warrior. Only the used PNGs were copied into
+  ogre = Orc_Berserk, boss = Orc_Warrior. **Two knight skins driven by armor state**: `armored` =
+  Warrior_2 (plate+shield), `underwear` = Warrior_3 (spear, no plate) — so an armor chest visibly re-armors
+  the hero. Only the used PNGs were copied into
   `public/assets/sprites/<entity>/<State>.png` (+ `CRAFTPIX-LICENSE-*.txt`); the raw `test_art/` drop is
   gitignored and will be deleted. README has credits.
 - Pipeline: `src/engine/assets/sprites.ts` (manifest + `preloadSprites`/`createAnims`/`hasAnim`). Sheets are
