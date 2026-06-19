@@ -1,4 +1,4 @@
-# Project Plan — Arcade Knight (Ghosts'n-Goblins-style action platformer)
+# Project Plan — Grim Knight (Ghosts'n-Goblins-style action platformer)
 
 > **Project language: everything in English** — code, comments, `AGENTS.md`, `memory/`, `docs/`,
 > `specs/` and UI strings. This file is the canonical, version-controlled plan.

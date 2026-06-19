@@ -11,7 +11,7 @@ const game = useGameStore()
 
 <template>
   <div class="shell">
-    <h1 class="title">Arcade Knight</h1>
+    <h1 class="title">Grim Knight</h1>
 
     <div class="stage">
       <!-- The Phaser canvas is only mounted while playing or paused. -->

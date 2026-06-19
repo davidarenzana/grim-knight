@@ -1,4 +1,4 @@
-# Game Design Document — Arcade Knight
+# Game Design Document — Grim Knight
 
 > Full game structure (design-complete, built incrementally). Original IP inspired by 90s
 > action-platformers. No Capcom assets or names.
