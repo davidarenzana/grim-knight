@@ -95,13 +95,38 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
       dead: { file: 'Dead', fps: 8, loop: false },
     },
   },
-  boss: {
+  // Three boss skins (96px, bosses/1–3), one per pair of stages. Selected at
+  // spawn time as `boss<variant>` from the enemy's `variant`.
+  boss1: {
     frame: 96,
-    scale: 1.55,
+    scale: 1.6,
     foot: 0,
     states: {
-      walk: { file: 'Walk', fps: 8, loop: true },
-      attack: { file: 'Attack', fps: 10, loop: false },
+      idle: { file: 'Idle', fps: 8, loop: true },
+      walk: { file: 'Walk', fps: 9, loop: true },
+      attack: { file: 'Attack', fps: 12, loop: false },
+      dead: { file: 'Dead', fps: 8, loop: false },
+    },
+  },
+  boss2: {
+    frame: 96,
+    scale: 1.9,
+    foot: 0,
+    states: {
+      idle: { file: 'Idle', fps: 8, loop: true },
+      walk: { file: 'Walk', fps: 9, loop: true },
+      attack: { file: 'Attack', fps: 12, loop: false },
+      dead: { file: 'Dead', fps: 8, loop: false },
+    },
+  },
+  boss3: {
+    frame: 96,
+    scale: 2.4,
+    foot: 0,
+    states: {
+      idle: { file: 'Idle', fps: 8, loop: true },
+      walk: { file: 'Walk', fps: 9, loop: true },
+      attack: { file: 'Attack', fps: 12, loop: false },
       dead: { file: 'Dead', fps: 8, loop: false },
     },
   },

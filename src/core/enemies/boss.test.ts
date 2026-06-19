@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { aabb } from '@core/math/aabb'
 import { hitEnemy } from './enemy'
-import { BOSS, createBoss, stepBoss } from './boss'
+import { BOSS, BOSS_VARIANTS, createBoss, stepBoss } from './boss'
 
 const DT = 1 / 60
 const GROUND = aabb(0, 410, 800, 40)
@@ -40,5 +40,24 @@ describe('boss', () => {
   it('does not fire before its cadence', () => {
     const { fired } = stepBoss(createBoss(600, GROUND_Y), left, [GROUND], DT)
     expect(fired).toHaveLength(0)
+  })
+
+  it('defaults to variant 1', () => {
+    expect(createBoss(600, GROUND_Y).variant).toBe(1)
+  })
+
+  it('escalates across variants (tougher, wider volley)', () => {
+    expect(BOSS_VARIANTS[2].hp).toBeGreaterThan(BOSS_VARIANTS[1].hp)
+    expect(BOSS_VARIANTS[3].hp).toBeGreaterThan(BOSS_VARIANTS[2].hp)
+    expect(BOSS_VARIANTS[3].spread.length).toBeGreaterThan(BOSS_VARIANTS[1].spread.length)
+    expect(BOSS_VARIANTS[3].fireInterval).toBeLessThan(BOSS_VARIANTS[1].fireInterval)
+  })
+
+  it('fires the variant-specific volley size and carries its HP', () => {
+    const b3 = createBoss(600, GROUND_Y, 3)
+    expect(b3.variant).toBe(3)
+    expect(b3.hp).toBe(BOSS_VARIANTS[3].hp)
+    const { fired } = stepBoss(b3, left, [GROUND], BOSS_VARIANTS[3].fireInterval + 0.01)
+    expect(fired).toHaveLength(BOSS_VARIANTS[3].spread.length)
   })
 })

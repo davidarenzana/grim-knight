@@ -26,7 +26,12 @@ export interface Enemy {
   readonly riseTimer: number
   /** Seconds since spawn, for periodic motion (e.g. flyer sine). */
   readonly age: number
+  /** Boss skin/stat variant (1–3); undefined for non-boss enemies. */
+  readonly variant?: BossVariant
 }
+
+/** Which of the three boss skins/stat sets this boss uses. */
+export type BossVariant = 1 | 2 | 3
 
 /** Where the enemy steers toward (the player center). */
 export interface EnemyTarget {

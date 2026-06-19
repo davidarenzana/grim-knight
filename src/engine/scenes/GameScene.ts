@@ -32,10 +32,11 @@ import {
   createCentipede,
   createTurtle,
   createBloated,
-  BOSS,
+  BOSS_VARIANTS,
   stepEnemy,
   type Enemy,
   type EnemyKind,
+  type BossVariant,
 } from '@core/enemies'
 import { createSpawner, isFinished, stepSpawner, type Spawner } from '@core/level/spawner'
 import { createTimer, tickTimer, type StageTimer } from '@core/level/timer'
@@ -524,12 +525,17 @@ export class GameScene extends Phaser.Scene {
     if (boss.state !== 'dead') {
       if (boss.hp !== this.lastBossHp) {
         this.lastBossHp = boss.hp
-        bus.emit('game:boss-hp', { hp: boss.hp, maxHp: BOSS.hp })
+        bus.emit('game:boss-hp', { hp: boss.hp, maxHp: BOSS_VARIANTS[boss.variant ?? 1].hp })
       }
     } else if (!this.bossCleared) {
       this.bossCleared = true
       bus.emit('game:boss-cleared')
     }
+  }
+
+  /** Boss skin/stats escalate one variant per pair of stages (1,1,2,2,3,3). */
+  private bossVariant(): BossVariant {
+    return (Math.min(2, Math.floor(this.levelIndex / 2)) + 1) as BossVariant
   }
 
   private spawnEnemy(kind: EnemyKind, x: number, y: number): Enemy {
@@ -543,7 +549,7 @@ export class GameScene extends Phaser.Scene {
       case 'plant':
         return createPlant(x, y)
       case 'boss':
-        return createBoss(x, y)
+        return createBoss(x, y, this.bossVariant())
       case 'centipede':
         return createCentipede(x, y)
       case 'turtle':
@@ -640,7 +646,9 @@ export class GameScene extends Phaser.Scene {
       const e = this.enemies[i]
       if (e && e.state !== 'dead') {
         sprite.setVisible(true)
-        this.applySprite(sprite, e.kind, enemyAnim(e.state), e.body, e.facing)
+        // The boss kind paints with its variant skin (boss1/2/3).
+        const entity = e.kind === 'boss' ? `boss${e.variant ?? 1}` : e.kind
+        this.applySprite(sprite, entity, enemyAnim(e.state), e.body, e.facing)
         if ((this.enemyFlash[i] ?? 0) > 0) sprite.setTintFill(0xffffff)
         else sprite.clearTint()
       } else {
