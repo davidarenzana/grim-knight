@@ -6,23 +6,53 @@ const game = useGameStore()
 const bossPct = computed(() =>
   game.bossMaxHp > 0 ? Math.max(0, (game.bossHp / game.bossMaxHp) * 100) : 0,
 )
+const armored = computed(() => game.armor === 'armored')
+const lowTime = computed(() => Math.ceil(game.secondsLeft) <= 10)
 </script>
 
 <template>
   <div class="hud">
-    <div class="row">
-      <span>LIVES {{ game.lives }}</span>
-      <span>WEAPON {{ game.weapon }}</span>
-      <span>ARMOR {{ game.armor }}</span>
-      <span>SCORE {{ game.score }}</span>
-      <span>TIME {{ Math.ceil(game.secondsLeft) }}</span>
-      <span>STAGE {{ game.level }}-{{ game.loop }}</span>
+    <!-- Left cluster: survival stats -->
+    <div class="panel-wood chip">
+      <span class="stat">
+        <img class="icon" src="/assets/icons/heart.png" alt="lives" />
+        <span class="val">{{ game.lives }}</span>
+      </span>
+      <span class="sep"></span>
+      <span class="stat shield" :class="armored ? 'is-armored' : 'is-exposed'">{{
+        armored ? '◈' : '◇'
+      }}</span>
+      <span class="sep"></span>
+      <span class="stat weapon">{{ game.weapon }}</span>
     </div>
-    <button class="pause" @click="game.pause()">⏸ Pause</button>
 
+    <!-- Right cluster: progress stats -->
+    <div class="panel-wood chip">
+      <span class="stat">
+        <img class="icon" src="/assets/icons/coin.png" alt="score" />
+        <span class="val">{{ String(game.score).padStart(5, '0') }}</span>
+      </span>
+      <span class="sep"></span>
+      <span class="stat">
+        <span class="lbl">ST</span>
+        <span class="val">{{ game.level }}-{{ game.loop }}</span>
+      </span>
+      <span class="sep"></span>
+      <span class="stat" :class="{ 'is-low': lowTime }">
+        <span class="lbl">TIME</span>
+        <span class="val">{{ Math.ceil(game.secondsLeft) }}</span>
+      </span>
+    </div>
+
+    <!-- Pause: corner button, kept out of the stat row so chips have full width -->
+    <button class="btn-pixel pause" @click="game.pause()">II</button>
+
+    <!-- Boss health -->
     <div v-if="game.bossActive" class="boss">
       <span class="boss-label">BOSS</span>
-      <div class="boss-bar"><div class="boss-fill" :style="{ width: bossPct + '%' }"></div></div>
+      <div class="boss-bar">
+        <div class="boss-fill" :style="{ width: bossPct + '%' }"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -33,48 +63,121 @@ const bossPct = computed(() =>
   inset: 0 0 auto 0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
+  align-items: flex-start;
+  padding: 1.6cqw 1.8cqw;
+  /* leave room on the right so the absolute pause button never overlaps a chip */
+  padding-right: 12.5cqw;
   z-index: 3;
   pointer-events: none;
+  gap: 1.4cqw;
 }
-.row {
+
+.chip {
   display: flex;
-  gap: 16px;
-  font-size: 14px;
-  text-shadow: 1px 1px 0 #000;
+  align-items: center;
+  gap: 1.2cqw;
+  padding: 1cqw 1.4cqw;
+  font-size: 2cqw;
+  border-width: 2.2cqw;
+  border-image-width: 2.2cqw;
 }
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8cqw;
+  white-space: nowrap;
+}
+.icon {
+  width: 3cqw;
+  height: 3cqw;
+  display: block;
+}
+.val {
+  color: var(--ink);
+}
+.lbl {
+  font-size: 1.4cqw;
+  color: #8a6a48;
+}
+.weapon {
+  text-transform: uppercase;
+  color: #7a4a12;
+}
+.sep {
+  width: 2px;
+  height: 2.4cqw;
+  background: #00000022;
+}
+
+/* Armor state pip */
+.shield {
+  font-size: 2.8cqw;
+  line-height: 1;
+}
+.is-armored {
+  color: #2d7fb8;
+}
+.is-exposed {
+  color: var(--blood);
+}
+
+/* Time running out */
+.is-low .val,
+.is-low .lbl {
+  color: var(--blood);
+  animation: blink 0.6s steps(2, start) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .pause {
+  position: absolute;
+  top: 1.6cqw;
+  right: 1.8cqw;
   pointer-events: auto;
-  font: inherit;
-  background: #0008;
-  color: var(--fg);
-  border: 1px solid #555;
-  cursor: pointer;
+  font-size: 1.6cqw;
+  padding: 1cqw 1.2cqw;
+  letter-spacing: 1px;
+  border-width: 2cqw;
+  border-image-width: 2cqw;
 }
+
+/* Boss bar */
 .boss {
   position: absolute;
-  top: 36px;
+  top: 12cqw;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 0.6cqw;
 }
 .boss-label {
-  font-size: 12px;
-  color: #ff6b6b;
-  text-shadow: 1px 1px 0 #000;
+  font-size: 2cqw;
+  color: var(--accent-bright);
+  text-shadow:
+    0 0 6px #ff3b3b,
+    1px 1px 0 #000;
 }
 .boss-bar {
-  width: 320px;
-  height: 10px;
-  background: #400;
-  border: 1px solid #a00;
+  width: 46cqw;
+  height: 2.4cqw;
+  background: #1a0606;
+  border: 2px solid #000;
+  box-shadow:
+    inset 2px 2px 0 #5a0d0d,
+    inset -2px -2px 0 #2a0404;
+  padding: 1px;
 }
 .boss-fill {
   height: 100%;
-  background: #ff3b3b;
+  background: linear-gradient(#ff6b6b, #c01010);
+  box-shadow: inset 0 2px 0 #ffb3b3;
   transition: width 120ms linear;
 }
 </style>

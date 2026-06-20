@@ -1,12 +1,30 @@
 :root {
-  --bg: #0b0f1a;
-  --fg: #e8e8e8;
-  --accent: #ffcc00;
-  font-family: monospace;
+  /* Dark-fantasy arcade palette. The wood/parchment UI art (CraftPix) pairs
+     with a near-black backdrop and gold/bone text. */
+  --bg: #0a0813;
+  --fg: #f4ead2; /* bone / parchment text */
+  --ink: #3a2417; /* dark brown ink, for text ON parchment */
+  --muted: #b6a888;
+  --accent: #ffcc00; /* gold */
+  --accent-bright: #ffe680;
+  --blood: #e23b3b;
+  --steel: #8fd3ff; /* armor cyan, matches in-game pickups */
+
+  font-family: 'Press Start 2P', ui-monospace, monospace;
+  /* Press Start 2P is a chunky bitmap face — relax tracking and lines. */
+  line-height: 1.6;
+  letter-spacing: 0.5px;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Pixel art must never be smoothed when scaled. */
+img,
+.panel-wood,
+.btn-pixel {
+  image-rendering: pixelated;
 }
 
 html,
@@ -21,4 +39,56 @@ body,
 #app {
   display: grid;
   place-items: center;
+}
+
+/* ---- Reusable pixel-art chrome (CraftPix wood/parchment kit) ---- */
+
+/* A wood-framed parchment panel. 9-slice from the extracted art. */
+.panel-wood {
+  border-style: solid;
+  border-width: 4cqw;
+  border-image-source: url('/assets/ui/panel.png');
+  border-image-slice: 12 fill;
+  border-image-width: 4cqw;
+  border-image-repeat: stretch;
+  color: var(--ink);
+  text-shadow: 0 1px 0 #fff5;
+}
+
+/* A green pixel button (9-slice). Carries our own Press Start 2P label. */
+.btn-pixel {
+  font: inherit;
+  font-size: 2.4cqw;
+  letter-spacing: 1px;
+  color: #16321f;
+  text-shadow: 0 1px 0 #ffffff66;
+  padding: 2cqw 3.6cqw;
+  border-style: solid;
+  border-width: 2.4cqw;
+  border-image-source: url('/assets/ui/button.png');
+  border-image-slice: 6 fill;
+  border-image-width: 2.4cqw;
+  border-image-repeat: stretch;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    filter 80ms,
+    transform 60ms;
+}
+.btn-pixel:hover {
+  filter: brightness(1.12);
+}
+.btn-pixel:active {
+  transform: translateY(2px);
+  filter: brightness(0.95);
+}
+
+/* Primary call-to-action: same chrome, larger and a touch brighter. */
+.btn-pixel.is-primary {
+  font-size: 3cqw;
+  padding: 2.6cqw 4.4cqw;
+  filter: brightness(1.08);
+}
+.btn-pixel.is-primary:hover {
+  filter: brightness(1.22);
 }

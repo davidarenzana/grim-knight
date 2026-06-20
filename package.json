@@ -22,6 +22,7 @@
     "prepare": "husky || true"
   },
   "dependencies": {
+    "@fontsource/press-start-2p": "^5.2.7",
     "mitt": "^3.0.1",
     "phaser": "^3.87.0",
     "pinia": "^2.3.0",

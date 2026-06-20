@@ -98,6 +98,9 @@ const DROP_CHANCE = 0.18 // chance a slain regular enemy drops an item (a boss a
 /** Format a 0xRRGGBB number as a CSS hex string for Phaser text colors. */
 const hexColor = (n: number): string => `#${n.toString(16).padStart(6, '0')}`
 
+/** Pixel UI font shared with the Vue HUD. Latin subset only — no arrow glyphs. */
+const UI_FONT = '"Press Start 2P", monospace'
+
 /**
  * Main game scene. It RENDERS the state produced by the pure `core/` simulation
  * (fixed-timestep stepper + interpolation), translates keyboard input, runs the
@@ -285,14 +288,15 @@ export class GameScene extends Phaser.Scene {
     // HUD (lives/score/time) which sits along the top of the canvas.
     this.add
       .text(
-        12,
+        10,
         height - 8,
-        `${level.name} — ←/→ move · ↑ jump/climb · ↓ crouch · Space throw · Q swap weapon`,
+        `${level.name.toUpperCase()}   MOVE A/D  JUMP W  CROUCH S  THROW SPACE  SWAP Q`,
         {
-          fontFamily: 'monospace',
-          fontSize: '12px',
-          color: '#cfd3e0',
-          backgroundColor: '#00000066',
+          fontFamily: UI_FONT,
+          fontSize: '10px',
+          color: '#f4ead2',
+          backgroundColor: '#000000aa',
+          padding: { x: 7, y: 5 },
         },
       )
       .setScrollFactor(0)
@@ -664,9 +668,8 @@ export class GameScene extends Phaser.Scene {
   private floatReward(x: number, y: number, label: string, color: string): void {
     const t = this.add
       .text(x, y - 6, label, {
-        fontFamily: 'monospace',
-        fontSize: '20px',
-        fontStyle: 'bold',
+        fontFamily: UI_FONT,
+        fontSize: '12px',
         color,
         stroke: '#000000',
         strokeThickness: 5,
@@ -689,12 +692,13 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main
     const banner = this.add
       .text(cam.width / 2, cam.height / 2, text, {
-        fontFamily: 'monospace',
-        fontSize: '38px',
+        fontFamily: UI_FONT,
+        fontSize: '24px',
         color: '#ffd23a',
         stroke: '#000000',
         strokeThickness: 6,
         align: 'center',
+        lineSpacing: 8,
       })
       .setOrigin(0.5)
       .setScrollFactor(0)

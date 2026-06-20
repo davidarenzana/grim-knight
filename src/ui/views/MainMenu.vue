@@ -6,9 +6,12 @@ const game = useGameStore()
 
 <template>
   <div class="menu">
-    <p class="tagline">One knight. One suit of armor. Far too many undead.</p>
-    <button class="cta" @click="game.startGame()">▶ Start game</button>
-    <p class="version">v0.0.0 · greybox</p>
+    <div class="panel-wood card">
+      <h1 class="title">GRIM<br />KNIGHT</h1>
+      <p class="tagline">One knight. One suit of armor.<br />Far too many undead.</p>
+      <button class="btn-pixel is-primary" @click="game.startGame()">START</button>
+      <p class="version">v0.0.0 · greybox</p>
+    </div>
   </div>
 </template>
 
@@ -16,30 +19,37 @@ const game = useGameStore()
 .menu {
   position: absolute;
   inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+.card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 2;
+  gap: 3.4cqw;
+  padding: 5cqw 7cqw;
+  text-align: center;
+}
+.title {
+  margin: 0;
+  font-size: 7cqw;
+  line-height: 1.2;
+  color: #7a1f12;
+  text-shadow:
+    2px 2px 0 #f4ead2,
+    4px 4px 0 #00000022;
+  letter-spacing: 2px;
 }
 .tagline {
-  opacity: 0.8;
-}
-.cta {
-  font: inherit;
-  font-size: 18px;
-  padding: 12px 24px;
-  background: var(--accent);
-  color: #000;
-  border: none;
-  cursor: pointer;
-}
-.cta:hover {
-  filter: brightness(1.1);
+  margin: 0;
+  font-size: 2cqw;
+  line-height: 1.9;
+  color: #5a4632;
 }
 .version {
-  opacity: 0.4;
-  font-size: 12px;
+  margin: 0;
+  font-size: 1.7cqw;
+  color: #9a8158;
 }
 </style>
