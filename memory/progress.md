@@ -210,23 +210,38 @@ Plan: `docs/ART-LEVELS-PLAN.md`. Done in four committed phases:
   uses the variant max HP. Old single-boss art removed.
 
 170 tests green; typecheck/lint/build clean throughout. Sprite/tile scales tuned via PIL mocks (no headless
-browser in the dev env); the user is play-testing in the real game.
+browser in the dev env); the user play-tested in the real game.
+
+### Post-overhaul tweaks + level refactor
+
+- **Ledge-aware enemies:** walkers (zombie/ogre/centipede/turtle/boss) no longer stroll off ledges into
+  pits — `core/enemies/walk.ts` (`chooseDir`/`groundAhead`) turns them around at an edge; ranged
+  turtle/boss still aim/fire across the gap. User-reported: enemies were falling into pits.
+- **Spikes narrowed** to 40px wide (the jump over them was too tight); pits untouched so the jumpable
+  invariant still holds.
+- **Level split refactor:** `core/level/level.ts` (one big file) split into `types.ts`, `geometry.ts`
+  (shared `floor`/`oneWay`/`spikes`/`lava` + ground constants) and one module per stage under
+  `core/level/stages/` (+ `STAGES` order in `index.ts`); `level.ts` re-exports the types and `LEVELS`.
+  Pure refactor; new `stages.test.ts` locks each stage's identity + order. 178 tests green.
 
 ## In progress 🔧
 
-- Phase 5: weapon variety + chests/pickups + juice + procedural-art pass done (+ playtest fixes). Next: audio, then optionally
-  real CC0 sprite/tilemap art (drop PNGs, preload under `TEX.*` keys), more juice (kill particles, fades).
+- Phase 5 art/levels overhaul is **done** (themes, 3 new enemies, pits + hazards, 3 boss variants, level
+  refactor). Remaining Phase 5 work: audio, then optional juice (kill particles, transition fades).
 
-## Next ⏭️ (Phase 5 — art & juice, and polish)
+## Next ⏭️ (Phase 5 — audio & polish, then Phase 6)
 
 - Audio (SFX/music) via Phaser (procedural synth or CC0 files).
-- Optional: replace procedural textures with CC0/own PNG sprites + tilemaps (same `TEX.*` keys, no render change).
 - More juice if wanted: particles on kill, transition fades.
-- Polish: extra lives at score thresholds (reuse `gainLife`), high-score table, torch ground-fire hazard.
-- Polish: extra lives at score thresholds (reuse `gainLife`), high-score table, torch ground-fire hazard.
-- Phase 6: production build optimization (code-split Phaser chunk) + static deploy.
+- Polish: time/no-damage score bonuses, extra lives at score thresholds (reuse `gainLife`), high-score
+  table, torch ground-fire hazard.
+- Richer boss/hazard designs from the GDD (unique boss patterns; water/crushers/wind/collapsing floors).
+- Phase 6: production build optimization (code-split the Phaser chunk) + static deploy (GitHub Pages).
 
 ## Recent decisions
 
 - core/engine/ui split → ADR 0001.
 - Fixed-timestep simulation + interpolation → ADR 0002.
+- One-way (semi-solid) platforms → ADR 0003.
+- Per-level visual themes → ADR 0004.
+- Pits (fall-out) + contact hazards → ADR 0005.

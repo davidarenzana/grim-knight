@@ -90,3 +90,23 @@ weapon yields the **true ending**.
 
 Greybox vertical slice (player + 1 enemy + 1 stage + 1 boss) first, then fill the table above reusing the
 established systems. Art and audio come last (asset contracts defined per spec).
+
+## 11. Implementation status (as of 2026-06-20)
+
+This GDD is the **design target**; the game is built incrementally, so some of the above is still
+aspirational. What's actually in the build today:
+
+- **Player / armor / weapons:** implemented — lance, dagger, torch, axe, plus the magician **curse** chest.
+  **Shield is designed but not yet implemented.**
+- **Enemies:** zombie, flyer, plant, ogre **plus** centipede (fast crawler), turtle (armored ranged),
+  bloated (arcing-bolt caster). The "crow/bat swarm" is not built. Ground enemies are ledge-aware (turn
+  at pits).
+- **Bosses:** currently **three escalating variant skins** (one per pair of stages: more HP + a wider/faster
+  spread volley), not yet the six unique boss designs/patterns listed in §5 — those remain the target.
+- **Levels:** all 6 stages exist with per-stage **visual themes** (ruins/forest/cave/castle/ice/hell), the
+  **double loop**, camera scroll, stage timer, and the position-triggered spawner. Hazards implemented so
+  far are **jumpable pits (fall-out)** and **spike/lava contact strips**; the §6 hazards like rising water,
+  crushers, wind gusts and collapsing floors are still design-only.
+- **Scoring:** points for kills/chests implemented; **time bonus, no-damage bonus, score-threshold extra
+  lives and the high-score table are not yet built.**
+- **Pending (Phase 5/6):** audio, the richer boss/hazard designs above, and build/deploy.
