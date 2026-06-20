@@ -6,7 +6,16 @@ const game = useGameStore()
 
 <template>
   <div class="menu">
-    <div class="panel-wood card">
+    <!-- Atmospheric backdrop reused from the first stage. -->
+    <div class="backdrop"></div>
+    <div class="vignette"></div>
+
+    <!-- Monsters lurking at the edges. -->
+    <img class="boss left" src="/assets/ui/boss1.png" alt="" />
+    <img class="boss right" src="/assets/ui/boss3.png" alt="" />
+
+    <!-- Title + call to action. -->
+    <div class="content">
       <h1 class="title">GRIM<br />KNIGHT</h1>
       <p class="tagline">One knight. One suit of armor.<br />Far too many undead.</p>
       <button class="btn-pixel is-primary" @click="game.startGame()">START</button>
@@ -19,37 +28,77 @@ const game = useGameStore()
 .menu {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  overflow: hidden;
   z-index: 2;
 }
-.card {
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: url('/assets/tiles/bg_graveyard.png') center / cover no-repeat;
+  image-rendering: pixelated;
+}
+/* Darken toward the center-bottom so the title and button read clearly. */
+.vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% 35%, transparent 30%, #07050cdd 100%),
+    linear-gradient(#0a0813aa, #0a081366 40%, #0a0813cc);
+}
+
+.boss {
+  position: absolute;
+  bottom: 0;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 6px #000a);
+  pointer-events: none;
+}
+.boss.left {
+  left: 1cqw;
+  height: 34cqw;
+}
+.boss.right {
+  right: 1cqw;
+  height: 30cqw;
+  transform: scaleX(-1); /* face the center */
+}
+
+.content {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3.4cqw;
-  padding: 5cqw 7cqw;
+  justify-content: center;
+  gap: 4cqw;
   text-align: center;
+  padding-bottom: 2cqw;
 }
 .title {
   margin: 0;
-  font-size: 7cqw;
-  line-height: 1.2;
-  color: #7a1f12;
+  font-size: 7.4cqw;
+  line-height: 1.15;
+  letter-spacing: 3px;
+  color: var(--accent);
   text-shadow:
-    2px 2px 0 #f4ead2,
-    4px 4px 0 #00000022;
-  letter-spacing: 2px;
+    3px 3px 0 #000,
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    0 0 22px #ff8a00aa;
 }
 .tagline {
   margin: 0;
-  font-size: 2cqw;
-  line-height: 1.9;
-  color: #5a4632;
+  font-size: 1.9cqw;
+  line-height: 1.7;
+  color: #e8dcc0;
+  text-shadow: 2px 2px 0 #000;
 }
 .version {
   margin: 0;
-  font-size: 1.7cqw;
-  color: #9a8158;
+  font-size: 1.6cqw;
+  color: #b6a888;
+  text-shadow: 1px 1px 0 #000;
 }
 </style>

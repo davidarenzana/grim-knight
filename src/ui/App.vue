@@ -11,7 +11,9 @@ const game = useGameStore()
 
 <template>
   <div class="shell">
-    <h1 class="title">GRIM KNIGHT</h1>
+    <!-- Marquee header. Hidden on the menu (the title screen shows its own),
+         but kept in flow so the cabinet doesn't jump when the game starts. -->
+    <h1 class="title" :class="{ 'is-hidden': game.screen === 'menu' }">GRIM KNIGHT</h1>
 
     <div class="cabinet">
       <div class="stage">
@@ -45,6 +47,9 @@ const game = useGameStore()
   text-shadow:
     3px 3px 0 #000,
     0 0 18px #ffcc0077;
+}
+.title.is-hidden {
+  visibility: hidden;
 }
 /* Wood cabinet bezel — reuses the panel art's border only (no fill), so the
    game shows through the transparent center. */
