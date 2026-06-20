@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LEVELS } from './level'
 import { weaponById } from '@core/weapons/weapon'
+import { PLAYER_H } from '@core/fsm/player'
 
 const SCREEN_W = 800
 
@@ -54,17 +55,23 @@ describe('levels', () => {
   const groundOf = (lvl: (typeof LEVELS)[number]) =>
     lvl.solids.filter((s) => !s.oneWay && s.y === GROUND_Y).sort((a, b) => a.x - b.x)
 
-  /** Is the whole span [x, x+w] covered by ground (no pit underneath)? */
-  const supported = (lvl: (typeof LEVELS)[number], x: number, w: number): boolean => {
-    const ground = groundOf(lvl)
+  /**
+   * Is the span [x, x+w] resting on a solid surface at top edge `topY`? Works
+   * for both the flat ground line and a tower's ledges — any solid (ground or
+   * one-way ledge) whose top is `topY` counts as standable.
+   */
+  const standsOn = (lvl: (typeof LEVELS)[number], x: number, w: number, topY: number): boolean => {
+    const surface = lvl.solids.filter((s) => s.y === topY)
     for (let px = x; px <= x + w; px += 4) {
-      if (!ground.some((s) => px >= s.x && px <= s.x + s.w)) return false
+      if (!surface.some((s) => px >= s.x && px <= s.x + s.w)) return false
     }
     return true
   }
 
   it('the player always starts on solid ground', () => {
-    for (const lvl of LEVELS) expect(supported(lvl, lvl.playerStart.x, 24)).toBe(true)
+    // Feet rest a player-height below the spawn (body) top.
+    for (const lvl of LEVELS)
+      expect(standsOn(lvl, lvl.playerStart.x, 24, lvl.playerStart.y + PLAYER_H)).toBe(true)
   })
 
   it('no ground-bound enemy (or the boss) spawns over a pit', () => {
@@ -72,11 +79,12 @@ describe('levels', () => {
       for (const s of lvl.spawns) {
         if (s.kind === 'flyer') continue // flyers spawn in the air
         const w = s.kind === 'boss' ? 64 : 44
+        // A walker's spawn `y` is the surface it stands on.
         expect({
           level: lvl.name,
           kind: s.kind,
           x: s.x,
-          supported: supported(lvl, s.x, w),
+          supported: standsOn(lvl, s.x, w, s.y),
         }).toEqual({ level: lvl.name, kind: s.kind, x: s.x, supported: true })
       }
     }
@@ -85,7 +93,8 @@ describe('levels', () => {
   it('every chest sits on solid ground', () => {
     for (const lvl of LEVELS) {
       for (const c of lvl.chests ?? []) {
-        expect({ level: lvl.name, x: c.x, ok: supported(lvl, c.x, c.w) }).toEqual({
+        // A chest rests with its bottom edge on the surface.
+        expect({ level: lvl.name, x: c.x, ok: standsOn(lvl, c.x, c.w, c.y + c.h) }).toEqual({
           level: lvl.name,
           x: c.x,
           ok: true,

@@ -50,4 +50,13 @@ describe('spawner', () => {
     const { due } = stepSpawner(createSpawner(events), 5000)
     expect(due.map((e) => e.kind)).toEqual(['zombie', 'flyer'])
   })
+
+  it('triggerY gates a tower enemy until the player climbs near it', () => {
+    // A foe perched high in a tower (small y), directly above the player (same x).
+    const tower: SpawnEvent[] = [{ kind: 'ogre', x: 400, y: 300, triggerY: 300 }]
+    const farBelow = stepSpawner(createSpawner(tower), 400, 300 + ACTIVATION_RANGE + 1)
+    expect(farBelow.due).toHaveLength(0)
+    const climbedClose = stepSpawner(createSpawner(tower), 400, 300 + ACTIVATION_RANGE - 1)
+    expect(climbedClose.due.map((e) => e.kind)).toEqual(['ogre'])
+  })
 })

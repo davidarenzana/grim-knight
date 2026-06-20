@@ -134,6 +134,7 @@ export class GameScene extends Phaser.Scene {
   private hazards: AABB[] = []
   private bounds!: { minX: number; maxX: number }
   private deathY = 0 // y below which a fallen player dies (set per scene size)
+  private sinkY = GROUND_Y // y below which a wedged ground enemy is culled (per level)
 
   // Level state (carried across stage transitions via scene.restart).
   private levelIndex = 0
@@ -185,12 +186,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    const height = this.scale.height
+    // `view` is the camera viewport (fixed UI/backdrop space); `worldHeight` is
+    // the scrollable world, taller than the viewport for vertical tower stages.
+    const view = this.scale.height
     createAnims(this)
     createWeaponAnims(this)
     createEffectAnims(this)
     createEnemyProjectileAnims(this)
     const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
+    const worldHeight = level.worldHeight ?? view
     this.start = { ...level.playerStart }
     // Loop 2 (the classic "second quest") is harder: less time on the clock.
     const timeScale = this.loop >= 2 ? 0.75 : 1
@@ -199,15 +203,15 @@ export class GameScene extends Phaser.Scene {
     // Level geometry plus invisible world-boundary walls (left/right).
     this.solids = [
       ...level.solids,
-      aabb(-40, -200, 40, height + 600),
-      aabb(level.worldWidth, -200, 40, height + 600),
+      aabb(-40, -200, 40, worldHeight + 600),
+      aabb(level.worldWidth, -200, 40, worldHeight + 600),
     ]
     // Static full-screen backdrop (ruins/forest at dusk) behind the world.
     this.cameras.main.setBackgroundColor(0x12141f)
     this.add
       .image(0, 0, bgKey(level.theme))
       .setOrigin(0, 0)
-      .setDisplaySize(this.scale.width, height)
+      .setDisplaySize(this.scale.width, view)
       .setScrollFactor(0)
       .setDepth(-1000)
 
@@ -239,7 +243,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.bounds = { minX: 0, maxX: level.worldWidth }
-    this.deathY = height + 40 // just below the viewport: fall past it = death
+    this.deathY = worldHeight + 40 // just below the world floor: fall past it = death
+    // The "wedged below the floor" net is the ground line for flat stages, but
+    // the world bottom for tall (tower) stages whose enemies stand high up.
+    this.sinkY = level.worldHeight ? worldHeight : GROUND_Y
     this.stepper = createStepper(FIXED_DT)
     this.player = createPlayer(this.start.x, this.start.y)
     this.prev = this.player
@@ -280,8 +287,9 @@ export class GameScene extends Phaser.Scene {
 
     this.knight = this.add.sprite(this.player.body.pos.x, this.player.body.pos.y, 'knight-idle')
 
-    // Camera scrolls within the world, following the knight.
-    this.cameras.main.setBounds(0, 0, level.worldWidth, height)
+    // Camera scrolls within the world (horizontally and, for tower stages,
+    // vertically), following the knight.
+    this.cameras.main.setBounds(0, 0, level.worldWidth, worldHeight)
     this.cameras.main.startFollow(this.knight, true, 0.12, 0.12)
 
     // Fixed on-screen help, pinned to the bottom so it never overlaps the Vue
@@ -289,7 +297,7 @@ export class GameScene extends Phaser.Scene {
     this.add
       .text(
         10,
-        height - 8,
+        view - 8,
         `${level.name.toUpperCase()}   MOVE A/D  JUMP W  CROUCH S  THROW SPACE  SWAP Q`,
         {
           fontFamily: UI_FONT,
@@ -400,7 +408,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Wake enemies the player has walked up to, then steer them toward it.
-    const spawn = stepSpawner(this.spawner, this.player.body.pos.x)
+    const spawn = stepSpawner(this.spawner, this.player.body.pos.x, this.player.body.pos.y)
     this.spawner = spawn.spawner
     for (const ev of spawn.due) this.enemies.push(this.spawnEnemy(ev.kind, ev.x, ev.y))
 
@@ -415,7 +423,7 @@ export class GameScene extends Phaser.Scene {
       if (e.state === 'dead') return e
       const gone =
         hasFallenOut(e.body, this.deathY) ||
-        (e.kind !== 'flyer' && hasSunkUnderFloor(e.body, GROUND_Y))
+        (e.kind !== 'flyer' && hasSunkUnderFloor(e.body, this.sinkY))
       return gone ? { ...e, state: 'dead' as const, hp: 0 } : e
     })
     for (const r of stepped) if (r.fired.length) this.enemyProjectiles.push(...r.fired)

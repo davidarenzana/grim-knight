@@ -26,7 +26,7 @@ export const demonKeep: LevelDef = {
     oneWay(2900, 300, 200, 20),
   ],
   ladders: [aabb(770, 300, 16, 110), aabb(1820, 300, 16, 110), aabb(2960, 300, 16, 110)],
-  hazards: [lava(700, 80), lava(1220, 60), lava(2300, 80)],
+  hazards: [lava(700, 64), lava(1220, 60), lava(2300, 64)],
   spawns: [
     { kind: 'zombie', x: 350, y: GROUND_Y },
     { kind: 'flyer', x: 650, y: 130 },

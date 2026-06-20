@@ -18,6 +18,12 @@ export interface LevelDef {
   readonly theme: LevelTheme
   /** World width in px (≥ screen width); the camera scrolls within it. */
   readonly worldWidth: number
+  /**
+   * World height in px. Defaults to the screen height (one-screen-tall, classic
+   * side-scroller). Set larger than the screen for a vertical (tower) stage the
+   * camera scrolls up through.
+   */
+  readonly worldHeight?: number
   readonly playerStart: { readonly x: number; readonly y: number }
   readonly solids: readonly Solid[]
   readonly ladders: readonly AABB[]

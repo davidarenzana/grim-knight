@@ -18,6 +18,12 @@ export interface SpawnEvent {
    * spawn `x`; override to trigger an ambush earlier or later than its position.
    */
   readonly triggerX?: number
+  /**
+   * World y the player must climb within range of for this enemy to wake. Used
+   * by vertical (tower) stages, where progress is upward rather than rightward.
+   * When omitted the enemy is gated by x alone (the classic side-scroll rule).
+   */
+  readonly triggerY?: number
 }
 
 /**
@@ -47,12 +53,26 @@ export interface SpawnStep {
 }
 
 /**
- * Wake every enemy whose trigger point the player has come within
- * `ACTIVATION_RANGE` of; return them and remove them from `pending`.
+ * Has the player reached this event's trigger? Always gated on x (approaching
+ * from the left, as in a side-scroller). Events that also set `triggerY` add a
+ * vertical gate so tower stages wake foes as the player climbs up to them —
+ * `playerY` shrinks as the knight ascends, so "within range below" means
+ * `playerY − triggerY ≤ range`.
  */
-export const stepSpawner = (s: Spawner, playerX: number): SpawnStep => {
-  const reach = playerX + ACTIVATION_RANGE
-  const due = s.pending.filter((e) => triggerOf(e) <= reach)
-  const pending = s.pending.filter((e) => triggerOf(e) > reach)
+const reached = (e: SpawnEvent, playerX: number, playerY: number, range: number): boolean => {
+  if (triggerOf(e) > playerX + range) return false
+  if (e.triggerY !== undefined && playerY - e.triggerY > range) return false
+  return true
+}
+
+/**
+ * Wake every enemy whose trigger point the player has come within
+ * `ACTIVATION_RANGE` of; return them and remove them from `pending`. `playerY`
+ * is only consulted for events with a `triggerY` (vertical stages); omit it for
+ * classic horizontal levels.
+ */
+export const stepSpawner = (s: Spawner, playerX: number, playerY = 0): SpawnStep => {
+  const due = s.pending.filter((e) => reached(e, playerX, playerY, ACTIVATION_RANGE))
+  const pending = s.pending.filter((e) => !reached(e, playerX, playerY, ACTIVATION_RANGE))
   return { spawner: { pending }, due }
 }
