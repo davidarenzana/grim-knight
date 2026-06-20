@@ -99,7 +99,7 @@ stage timer, lives/score/game-over, level transitions and the double loop → "T
 across all 6 levels (chests show floating reward text; stage-clear banner). **Juice**: screen shake, enemy
 hit-flash, i-frame blink. **Art**: characters/enemies/boss are **CraftPix animated spritesheets** (`engine/assets/sprites.ts`, loaded
 in `preload()`); scenery (background, ground/platform/ladder, crate, chest) is the CraftPix "Cartoon Medieval
-Ruins" tileset (`engine/assets/tiles.ts`); only projectiles stay procedural (rectangles). All wired into
+Ruins" tileset (`engine/assets/tiles.ts`); thrown weapons use animated projectile sprites (spear/dagger/torch/axe, `public/assets/sprites/weapons/`), only enemy shots stay procedural rectangles. All wired into
 `GameScene` and the Vue HUD via the bus. **Per-level themes** (ruins/forest/cave/castle/ice/hell) give every
 stage its own ground tile + backdrop (`engine/assets/tiles.ts`; theme art under `public/assets/tiles/<theme>/`).
 **Three more enemies** (centipede/turtle/bloated) and **three escalating boss variants** (one skin per pair of

@@ -47,7 +47,17 @@ import { hasFallenOut } from '@core/rules/fall'
 import { touchesHazard } from '@core/rules/hazard'
 import { addScore, createSession, gainLife, loseLife, win, type Session } from '@core/rules/session'
 import { pickupArmor, type ArmorState } from '@core/rules/armor'
-import { preloadSprites, createAnims, animKey, hasAnim, SPRITES } from '@engine/assets/sprites'
+import {
+  preloadSprites,
+  createAnims,
+  animKey,
+  hasAnim,
+  SPRITES,
+  preloadWeapons,
+  createWeaponAnims,
+  weaponAnimKey,
+  hasWeaponSprite,
+} from '@engine/assets/sprites'
 import { preloadTiles, bgKey, groundKey, hazardKey, TILE } from '@engine/assets/tiles'
 import { bus } from '@shared/events'
 
@@ -103,7 +113,8 @@ export class GameScene extends Phaser.Scene {
   private stageSeconds = 99
 
   private knight!: Phaser.GameObjects.Sprite
-  private projRects: Phaser.GameObjects.Rectangle[] = []
+  private projSprites: Phaser.GameObjects.Sprite[] = []
+  private projRects: Phaser.GameObjects.Rectangle[] = [] // fallback when a weapon has no art
   private enemyProjRects: Phaser.GameObjects.Rectangle[] = []
   private enemySprites: Phaser.GameObjects.Sprite[] = []
   private chestSprites: Phaser.GameObjects.Image[] = []
@@ -133,12 +144,14 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     preloadSprites(this)
+    preloadWeapons(this)
     preloadTiles(this)
   }
 
   create(): void {
     const height = this.scale.height
     createAnims(this)
+    createWeaponAnims(this)
     const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
     this.start = { ...level.playerStart }
     // Loop 2 (the classic "second quest") is harder: less time on the clock.
@@ -203,6 +216,7 @@ export class GameScene extends Phaser.Scene {
     this.chests = (level.chests ?? []).map((c) => ({ ...c }))
     // Reset render pools: scene.restart() destroys all GameObjects, so the old
     // pooled sprites are dead — start fresh or we'd touch destroyed objects.
+    this.projSprites = []
     this.projRects = []
     this.enemyProjRects = []
     this.enemySprites = []
@@ -610,10 +624,37 @@ export class GameScene extends Phaser.Scene {
     axe: 0x66ccff,
   }
 
-  /** Sync the projectile rectangle pool to the current weapon state. */
+  /**
+   * Sync the player projectile pool. Uses the active weapon's animated sprite
+   * (spear/dagger/torch/axe) centered on each projectile and flipped by travel
+   * direction; falls back to a colored rectangle if a weapon has no art.
+   */
   private renderProjectiles(): void {
     const projectiles = this.weapon.projectiles
-    const color = GameScene.WEAPON_COLOR[this.activeWeapon.id] ?? 0xffcc00
+    const id = this.activeWeapon.id
+
+    if (hasWeaponSprite(this, id)) {
+      const key = weaponAnimKey(id)
+      while (this.projSprites.length < projectiles.length) {
+        this.projSprites.push(this.add.sprite(0, 0, key).setOrigin(0.5, 0.5).setScale(0.7))
+      }
+      this.projSprites.forEach((spr, i) => {
+        const p = projectiles[i]
+        if (p) {
+          spr.setVisible(true)
+          spr.play(key, true)
+          spr.setPosition(p.pos.x + p.w / 2, p.pos.y + p.h / 2)
+          spr.setFlipX(p.vel.x < 0)
+        } else {
+          spr.setVisible(false)
+        }
+      })
+      this.projRects.forEach((r) => r.setVisible(false))
+      return
+    }
+
+    // Fallback: colored rectangles (a weapon without art).
+    const color = GameScene.WEAPON_COLOR[id] ?? 0xffcc00
     while (this.projRects.length < projectiles.length) {
       this.projRects.push(this.add.rectangle(0, 0, LANCE.w, LANCE.h, 0xffcc00).setOrigin(0, 0))
     }
@@ -623,6 +664,7 @@ export class GameScene extends Phaser.Scene {
         rect.setVisible(true).setPosition(p.pos.x, p.pos.y).setSize(p.w, p.h).setFillStyle(color)
       else rect.setVisible(false)
     })
+    this.projSprites.forEach((s) => s.setVisible(false))
   }
 
   /** Sync the enemy-projectile rectangle pool. */
