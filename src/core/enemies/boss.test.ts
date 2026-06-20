@@ -35,6 +35,8 @@ describe('boss', () => {
     expect(vys[2]!).toBeGreaterThan(0)
     // All travelling toward the player (left).
     expect(fired.every((p) => p.vel.x < 0)).toBe(true)
+    // All carry the fireball art tag for the engine.
+    expect(fired.every((p) => p.sprite === 'fire')).toBe(true)
   })
 
   it('does not fire before its cadence', () => {

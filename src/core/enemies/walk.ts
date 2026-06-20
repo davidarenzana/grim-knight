@@ -1,11 +1,19 @@
 import type { Body, Solid } from '@core/physics/body'
 
 /**
- * Shared ledge-aware walking for ground enemies. Walkers chase the player but
- * must not stroll off a ledge into a pit — so they only step in a direction
- * where there is floor just ahead, turning around (or stopping) at an edge.
- * Pure helpers, used by zombie/ogre/centipede/turtle/boss.
+ * Shared ledge-aware walking for ground enemies. Walkers never stroll off a
+ * ledge into a pit nor press forever into a wall. Two movement styles:
+ *  - melee (`patrolDir`): chase the player when close & reachable, otherwise
+ *    patrol — keep heading the current way, flipping at a ledge or wall and
+ *    carrying on (no freezing/jittering at an edge).
+ *  - ranged (`advanceDir`): advance toward the player where there's floor, else
+ *    hold position (it keeps firing across the gap; aiming is handled by the
+ *    caller's `facing`, which always tracks the player).
+ * Pure helpers, used by zombie/ogre/centipede (melee) and turtle/boss (ranged).
  */
+
+/** Horizontal distance within which a melee walker locks onto and chases the player. */
+export const AGGRO_RANGE = 200
 
 /** Is there floor to stand on just ahead of the body in direction `dir`? */
 export const groundAhead = (body: Body, dir: 1 | -1, solids: readonly Solid[]): boolean => {
@@ -18,15 +26,50 @@ export const groundAhead = (body: Body, dir: 1 | -1, solids: readonly Solid[]): 
   )
 }
 
+/** Is there a (non-one-way) wall blocking the body's path just ahead in `dir`? */
+export const wallAhead = (body: Body, dir: 1 | -1, solids: readonly Solid[]): boolean => {
+  const aheadX = dir > 0 ? body.pos.x + body.w + 2 : body.pos.x - 2
+  const midY = body.pos.y + body.h / 2 // mid-height: the floor underfoot never matches
+  return solids.some(
+    (s) => !s.oneWay && aheadX >= s.x && aheadX <= s.x + s.w && midY >= s.y && midY <= s.y + s.h,
+  )
+}
+
+/** Can the body keep walking one step in `dir` (floor ahead and no wall)? */
+export const canStep = (body: Body, dir: 1 | -1, solids: readonly Solid[]): boolean =>
+  groundAhead(body, dir, solids) && !wallAhead(body, dir, solids)
+
 /**
- * Ledge-safe direction toward `targetX`. Heads toward the target if there is
- * floor that way; otherwise turns around if the other way has floor; otherwise
- * holds (0). While airborne it doesn't restrict (so it lands normally).
+ * Melee movement. Chases the player when within {@link AGGRO_RANGE} and there's
+ * a clear step that way; otherwise patrols in `facing`, flipping at a ledge or
+ * wall and continuing. Returns 0 only when truly boxed in (pits/walls both
+ * sides). While airborne it keeps `facing` so it lands normally.
  */
-export const chooseDir = (body: Body, targetX: number, solids: readonly Solid[]): -1 | 0 | 1 => {
-  const want: 1 | -1 = targetX < body.pos.x + body.w / 2 ? -1 : 1
-  if (!body.grounded) return want
-  if (groundAhead(body, want, solids)) return want
-  if (groundAhead(body, -want as 1 | -1, solids)) return -want as 1 | -1
+export const patrolDir = (
+  body: Body,
+  facing: 1 | -1,
+  targetX: number,
+  solids: readonly Solid[],
+  aggroRange = AGGRO_RANGE,
+): -1 | 0 | 1 => {
+  if (!body.grounded) return facing
+  const cx = body.pos.x + body.w / 2
+  const toward: 1 | -1 = targetX < cx ? -1 : 1
+  if (Math.abs(targetX - cx) <= aggroRange && canStep(body, toward, solids)) return toward
+  if (canStep(body, facing, solids)) return facing
+  const back = -facing as 1 | -1
+  if (canStep(body, back, solids)) return back
   return 0
+}
+
+/**
+ * Ranged movement. Advances toward the player where there's a clear step,
+ * otherwise holds position (0) so it doesn't dive into a pit or shove a wall —
+ * it keeps firing across the gap. While airborne it heads toward the player.
+ */
+export const advanceDir = (body: Body, targetX: number, solids: readonly Solid[]): -1 | 0 | 1 => {
+  const cx = body.pos.x + body.w / 2
+  const toward: 1 | -1 = targetX < cx ? -1 : 1
+  if (!body.grounded) return toward
+  return canStep(body, toward, solids) ? toward : 0
 }

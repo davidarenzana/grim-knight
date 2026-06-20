@@ -41,9 +41,5 @@ export const frozenSpires: LevelDef = {
     { kind: 'boss', x: 2800, y: GROUND_Y },
   ],
   durationSeconds: 140,
-  chests: [
-    createChest(580, CHEST_Y, { kind: 'weapon', weaponId: 'torch' }),
-    createChest(1120, CHEST_Y, { kind: 'armor' }),
-    createChest(2420, CHEST_Y, { kind: 'points', points: 1000 }),
-  ],
+  chests: [createChest(580, CHEST_Y), createChest(1120, CHEST_Y), createChest(2420, CHEST_Y)],
 }

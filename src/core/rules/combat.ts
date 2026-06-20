@@ -45,6 +45,31 @@ export const resolveCombat = (
   return { projectiles: survivors, enemies: next, playerHit, kills }
 }
 
+export interface MeleeResult {
+  readonly enemies: readonly Enemy[]
+  /** Number of enemies that died from the swing (for scoring). */
+  readonly kills: number
+}
+
+/**
+ * Resolve a melee swing: every living enemy overlapping `meleeBox` takes one
+ * hit. Used for the point-blank jab on every throw so arcing weapons (which fly
+ * over a foe right next to the player) can still hit adjacent enemies.
+ */
+export const resolveMelee = (meleeBox: AABB, enemies: readonly Enemy[]): MeleeResult => {
+  const next: Enemy[] = [...enemies]
+  let kills = 0
+  for (let i = 0; i < next.length; i++) {
+    const e = next[i]!
+    if (e.state !== 'dead' && intersects(meleeBox, enemyBox(e))) {
+      const hurt = hitEnemy(e)
+      if (hurt.state === 'dead') kills++
+      next[i] = hurt
+    }
+  }
+  return { enemies: next, kills }
+}
+
 export interface EnemyProjectileResult {
   /** Enemy projectiles still in flight (those that did not hit the player). */
   readonly projectiles: readonly Projectile[]

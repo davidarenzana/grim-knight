@@ -8,6 +8,9 @@ const GROUND = aabb(0, 200, 400, 40)
 const GROUND_Y = 200
 const LEFT = { x: 0, y: GROUND_Y }
 const RIGHT = { x: 400, y: GROUND_Y }
+// Targets within the melee aggro range (so the zombie locks on and chases).
+const NEAR_LEFT = { x: 120, y: GROUND_Y }
+const NEAR_RIGHT = { x: 280, y: GROUND_Y }
 
 describe('zombie', () => {
   it('stays rising briefly', () => {
@@ -23,24 +26,34 @@ describe('zombie', () => {
     expect(z.state).toBe('walking')
   })
 
-  it('walks toward player (to the left)', () => {
+  it('chases a nearby player (to the left)', () => {
     let z = createZombie(200, GROUND_Y)
     const steps = Math.ceil(ZOMBIE.riseSeconds / DT) + 1
-    for (let i = 0; i < steps; i++) z = stepZombie(z, LEFT, [GROUND], DT)
+    for (let i = 0; i < steps; i++) z = stepZombie(z, NEAR_LEFT, [GROUND], DT)
     const before = z.body.pos.x
-    z = stepZombie(z, LEFT, [GROUND], DT)
+    z = stepZombie(z, NEAR_LEFT, [GROUND], DT)
     expect(z.facing).toBe(-1)
     expect(z.body.pos.x).toBeLessThan(before)
   })
 
-  it('walks toward player (to the right)', () => {
+  it('chases a nearby player (to the right)', () => {
     let z = createZombie(100, GROUND_Y)
+    const steps = Math.ceil(ZOMBIE.riseSeconds / DT) + 1
+    for (let i = 0; i < steps; i++) z = stepZombie(z, NEAR_RIGHT, [GROUND], DT)
+    const before = z.body.pos.x
+    z = stepZombie(z, NEAR_RIGHT, [GROUND], DT)
+    expect(z.facing).toBe(1)
+    expect(z.body.pos.x).toBeGreaterThan(before)
+  })
+
+  it('patrols (keeps moving) when the player is out of aggro range', () => {
+    // Player far to the right (beyond aggro) → the zombie patrols, not chases.
+    let z = createZombie(200, GROUND_Y)
     const steps = Math.ceil(ZOMBIE.riseSeconds / DT) + 1
     for (let i = 0; i < steps; i++) z = stepZombie(z, RIGHT, [GROUND], DT)
     const before = z.body.pos.x
     z = stepZombie(z, RIGHT, [GROUND], DT)
-    expect(z.facing).toBe(1)
-    expect(z.body.pos.x).toBeGreaterThan(before)
+    expect(z.body.pos.x).not.toBe(before) // moving, not frozen at an edge
   })
 
   it('dies when HP hits 0', () => {

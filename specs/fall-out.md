@@ -31,11 +31,21 @@ lose a life and respawn at the stage start (or game over if no lives remain).
 - **When** checked
 - **Then** it has fallen out
 
+### Scenario: enemy wedged under the floor (safety net)
+
+- **Given** a ground enemy whose top edge has dropped below the ground surface
+  (`groundY`) — somewhere the player can't reach it
+- **When** checked with `hasSunkUnderFloor(body, groundY)`
+- **Then** it is "sunk"; the engine marks such enemies (except flyers, which
+  hover low legitimately) dead so a stuck enemy can never block stage-clear
+
 ## Acceptance criteria
 
 - [x] `hasFallenOut(body, deathY)` is a pure predicate (`body.pos.y > deathY`).
 - [x] The engine calls it each tick and routes a true result through the normal
       lose-a-life / respawn / game-over flow.
+- [x] `hasSunkUnderFloor(body, groundY)` is a pure predicate (`body.pos.y > groundY`);
+      the engine culls sunk non-flyer enemies (safety net against a stage-clear soft-lock).
 
 ## Test mapping
 
@@ -44,3 +54,4 @@ lose a life and respawn at the stage start (or game over if no lives remain).
 | above    | `src/core/rules/fall.test.ts` | `fall-out rule > is false while ... above`           |
 | on line  | `src/core/rules/fall.test.ts` | `fall-out rule > is false exactly at the death line` |
 | below    | `src/core/rules/fall.test.ts` | `fall-out rule > is true once the body drops below`  |
+| sunk     | `src/core/rules/fall.test.ts` | `sunk-under-floor safety net > ...`                  |

@@ -35,6 +35,7 @@ describe('bloated', () => {
     expect(fired[0]!.vel.x).toBeLessThan(0) // toward the player (left)
     expect(fired[0]!.vel.y).toBeLessThan(0) // launched upward
     expect(fired[0]!.ay ?? 0).toBeGreaterThan(0) // falls back down (arc)
+    expect(fired[0]!.sprite).toBe('bolt') // art tag for the engine
   })
 
   it('does not fire before its interval elapses', () => {

@@ -22,6 +22,7 @@ describe('plant', () => {
     const { fired } = stepPlant(createPlant(300, GROUND_Y), target, PLANT.fireInterval + 0.01)
     expect(fired).toHaveLength(1)
     expect(fired[0]!.vel.x).toBeLessThan(0) // player is to the left
+    expect(fired[0]!.sprite).toBe('spore') // art tag for the engine
   })
 
   it('fires to the right when the player is on the right', () => {

@@ -40,9 +40,5 @@ export const swampCaverns: LevelDef = {
     { kind: 'boss', x: 2700, y: GROUND_Y },
   ],
   durationSeconds: 140,
-  chests: [
-    createChest(560, CHEST_Y, { kind: 'weapon', weaponId: 'axe' }),
-    createChest(1080, CHEST_Y, { kind: 'points', points: 750 }),
-    createChest(2280, CHEST_Y, { kind: 'armor' }),
-  ],
+  chests: [createChest(560, CHEST_Y), createChest(1080, CHEST_Y), createChest(2280, CHEST_Y)],
 }

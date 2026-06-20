@@ -2,7 +2,7 @@ import { vec2 } from '@core/math/vector'
 import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Projectile } from '@core/weapons/weapon'
 import type { Enemy, EnemyTarget } from './enemy'
-import { chooseDir } from './walk'
+import { advanceDir } from './walk'
 
 /**
  * Battle turtle: a slow, armored walker that advances on the player and fires a
@@ -47,7 +47,7 @@ export const stepTurtle = (
   // Aim at the player always (fires across pits); only move where there's floor.
   const center = e.body.pos.x + e.body.w / 2
   const facing: 1 | -1 = target.x < center ? -1 : 1
-  const moveDir = chooseDir(e.body, target.x, solids)
+  const moveDir = advanceDir(e.body, target.x, solids)
   const body = stepBody(
     { ...e.body, vel: vec2(TURTLE.speed * moveDir, e.body.vel.y) },
     solids,
@@ -66,6 +66,7 @@ export const stepTurtle = (
           vel: vec2(TURTLE.projectileSpeed * facing, 0),
           w: TURTLE.projW,
           h: TURTLE.projH,
+          sprite: 'bullet',
         },
       ]
     : []

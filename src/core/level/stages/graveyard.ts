@@ -39,9 +39,9 @@ export const graveyard: LevelDef = {
   ],
   durationSeconds: 140,
   chests: [
-    createChest(500, CHEST_Y, { kind: 'weapon', weaponId: 'dagger' }),
-    createChest(940, CHEST_Y, { kind: 'points', points: 500 }),
-    createChest(1550, CHEST_Y, { kind: 'armor' }),
-    createChest(2280, CHEST_Y, { kind: 'points', points: 750 }),
+    createChest(500, CHEST_Y),
+    createChest(940, CHEST_Y),
+    createChest(1550, CHEST_Y),
+    createChest(2280, CHEST_Y),
   ],
 }

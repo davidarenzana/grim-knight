@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  advanceProjectilesDetailed,
   AXE,
   createWeapon,
   DAGGER,
@@ -76,6 +77,17 @@ describe('weapon', () => {
     }
     const stepped = stepWeapon(w, 0.05, BOUNDS, [wall])
     expect(stepped.projectiles).toHaveLength(0)
+  })
+
+  it('reports the cull reason: wall vs out-of-bounds', () => {
+    const wall = { x: 100, y: 0, w: 20, h: 200 }
+    const intoWall = { pos: { x: 96, y: 50 }, vel: { x: 360, y: 0 }, w: 16, h: 4 }
+    const offRight = { pos: { x: 790, y: 50 }, vel: { x: 360, y: 0 }, w: 16, h: 4 }
+    const r = advanceProjectilesDetailed([intoWall, offRight], 0.05, BOUNDS, [wall])
+    expect(r.alive).toHaveLength(0)
+    expect(r.culled.map((c) => c.reason).sort()).toEqual(['bounds', 'wall'])
+    const wallHit = r.culled.find((c) => c.reason === 'wall')!
+    expect(wallHit.projectile.pos.x).toBeGreaterThan(96) // last position, at the wall
   })
 
   it('lets projectiles pass through one-way platforms', () => {

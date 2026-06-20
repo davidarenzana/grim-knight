@@ -224,10 +224,124 @@ browser in the dev env); the user play-tested in the real game.
   `core/level/stages/` (+ `STAGES` order in `index.ts`); `level.ts` re-exports the types and `LEVELS`.
   Pure refactor; new `stages.test.ts` locks each stage's identity + order. 178 tests green.
 
+### Effects VFX + random chest loot + reward icons (Phase 5)
+
+- **Random chest loot** (core, TDD): `core/level/chest.ts` gains `rollReward(rng)` over a weighted
+  `REWARD_TABLE` (weapon/points common, armor uncommon, curse occasional, 1UP rare) with `CHEST_WEAPONS`
+  /`CHEST_POINTS` pools. `Chest` gains `random`; `createChest(x, y)` (reward omitted) marks it random,
+  `createChest(x, y, reward)` stays fixed. All 6 stages now place chests by **position only** → loot is
+  rolled per run. The engine seeds an `Rng` off the wall clock (mixed with level/loop) in
+  `create()` and rolls each random chest's reward (`this.chests = … rollReward(lootRng)`). 6 new chest
+  tests (determinism, valid kinds, pools, every entry reachable, random/fixed flag). Spec `chests.md` updated.
+- **Effects pipeline** (engine): `engine/assets/effects.ts` — `EFFECTS` registry with two shapes:
+  `frames` (per-frame PNGs `assets/effects/<name>/1..N.png`, stitched via an anim with mixed texture
+  keys — used for the 256px CraftPix `explosion`) and `sheet` (one horizontal spritesheet — the 72px
+  `magic_ring`). `preloadEffects`/`createEffectAnims`/`playEffect(scene,name,x,y,scale)` (one-shot sprite
+  that self-destroys on `ANIMATION_COMPLETE`, no pool). Reward **icons** (CraftPix dungeon items, 32px:
+  heart/coin/crystal/star) via `preloadIcons`/`ICON`/`rewardIcon(reward)` (weapon → its projectile art
+  frame 0; life→heart, points→coin, armor→gem, curse→purple-tinted star).
+- **GameScene wiring:** preloads/creates the effects+icons; **enemy/boss death** pops `explosion` at the
+  body center (0.32, boss 0.7) once via an `enemyExploded[]` flag + a small camera shake; **chest open**
+  plays `magic_ring` at the chest and `floatRewardIcon` pops the item icon out (bounce-up-fade) alongside
+  the existing label, positioned from the newly-opened chest (diffed `prevChests`).
+- Assets copied to `public/assets/effects/{explosion/*,magic_ring.png}` + `public/assets/icons/*` (+ CraftPix
+  licenses). 184 tests green; typecheck/lint/build/dev(200) green. Not eyeballed in a real browser this
+  session — `pnpm dev` to confirm the VFX/icons visually.
+
+### Hit sparks + sprite-based enemy projectiles (Phase 5)
+
+- **Enemy projectile art** (core tag + engine render): `Projectile` gains a presentation-only `sprite?:
+string` (pure data). Each ranged enemy tags its shots — plant→`spore`, turtle→`bullet`,
+  bloated→`bolt`, boss→`fire` — asserted in each enemy's fire test. Engine pipeline in
+  `engine/assets/sprites.ts`: `ENEMY_PROJECTILES` registry (`frames` = animated fireball from
+  `assets/sprites/enemy/fire/1..6.png`; `image` = static `bolt`/`bullet`, `spore` reuses bolt art),
+  `preloadEnemyProjectiles`/`createEnemyProjectileAnims`/`enemyProjectileVisual(id)`.
+  `GameScene.renderEnemyProjectiles` now keeps **two pools** (sprite + the old rect) and per index shows
+  one: a known tag → animated/`setTintFill`-colored sprite (fireball orange, bullet natural, spore green,
+  bolt purple), flipped by `vel.x`; unknown/none → red rectangle fallback. Enemy shots no longer look
+  procedural.
+- **Hit effects** (engine): new one-shot `spark` effect (golden `Circle_explosion`, 10 frames, fast) in
+  `effects.ts`. Played at an enemy on a **surviving** HP drop (a kill keeps the bigger death explosion);
+  at the knight on a **fresh non-fatal hit** (detected via `iFramesLeft` 0→>0 around `stepPlayer`); and a
+  death `explosion` at the knight in `onPlayerDead`.
+- Assets: `public/assets/effects/spark/*`, `public/assets/sprites/enemy/{fire/*,bolt.png,bullet.png}` (+
+  CraftPix license). 184 tests green (4 new enemy assertions); typecheck/lint/build/dev(200) green.
+- **Follow-up tweaks** (after first eyeball): static orb projectiles were too big → display scale
+  `p.w*2`→`p.w*1.3`. **Wall-impact spark**: `advanceProjectilesDetailed` (pure) returns `{ alive, culled }`
+  with a `CullReason` (`wall`/`bounds`/`range`); `advanceProjectiles` is now a thin wrapper over it.
+  `GameScene` uses the detailed form for both player and enemy projectiles and pops a small `spark` at each
+  `wall` cull (`sparkWallHits`); off-bounds/range culls don't spark. `stepWeapon` no longer used by the
+  scene (inlined cooldown decay + advance). 185 tests green.
+
+### Walker AI: patrol + proximity chase (no ledge jitter) (Phase 5)
+
+- **Fix:** walkers jittered/froze at a ledge — `chooseDir` turned them _away_ from the player at an edge,
+  then re-targeted the player next tick, oscillating in place. Reported in-game ("se quedan enganchados").
+- `core/enemies/walk.ts` rewritten. New helpers: `wallAhead` (turn at walls too, not just ledges),
+  `canStep` (= `groundAhead && !wallAhead`), and two movement modes:
+  - **`patrolDir(body, facing, targetX, solids, aggro=AGGRO_RANGE)`** (melee: zombie/ogre/centipede) —
+    chase the player only within `AGGRO_RANGE` (200px) **and** when reachable; otherwise **patrol**:
+    keep the current `facing`, flip at a ledge/wall and carry on. Returns 0 only when boxed in both sides.
+    So enemies no longer beeline the moment they wake (spawner range ~480px), and they turn at edges and
+    keep walking instead of sticking.
+  - **`advanceDir(body, targetX, solids)`** (ranged: turtle/boss) — advance toward the player where
+    there's floor, else **hold** position and keep firing across the gap (aim `facing` still tracks the
+    player). No pit dives, no jitter.
+- `chooseDir` removed; `walk.test.ts` rewritten (patrol turn-and-continue, out-of-range patrol, wall probe,
+  ranged hold-at-ledge). Zombie tests updated for proximity chase + a patrol-when-far case. 191 tests green;
+  typecheck/lint/build green. Tune `AGGRO_RANGE` on feedback.
+
+### Soft-lock safety net: enemies under the floor (Phase 5)
+
+- **Report:** an enemy "under the floor" couldn't be killed → stage never cleared (win needs every enemy
+  dead). Tried hard to reproduce a physics sink: a faithful headless engine loop (player walks/jumps each
+  level, world boundary walls included) — **no enemy ever sinks** in pure core (vertical resolution always
+  lands a falling body _on top_ of a solid; walkers have no upward velocity to be pushed under). So the
+  cause isn't core physics.
+- **Fix (safety net):** `core/rules/fall.ts` adds `hasSunkUnderFloor(body, groundY)` (`pos.y > groundY`).
+  `GameScene` culls (marks dead) any living **non-flyer** enemy whose top edge is below the ground line
+  (`GROUND_Y`) — no legit ground enemy rests that low (they stand on top; flyers hover low legitimately and
+  are exempt). Guarantees a wedged enemy can never block stage-clear, whatever the trigger. 6 fall tests
+  (incl. 3 new sunk cases). 194 tests green; typecheck/lint/build green.
+- **Likely real cause to watch:** the reported enemy looked like a short/low green one (centipede/bloated).
+  Arcing weapons (axe/torch) fly _over_ a point-blank low enemy, so with random loot the player can be
+  holding an axe that can't hit it — **swap to the lance with Q** (straight, always hits). If this recurs,
+  consider giving arc weapons a flatter point-blank hit or a small melee hitbox.
+
+### Point-blank jab + dagger start + enemy drops (Phase 5)
+
+- **Arc weapons hit point-blank** (the soft-lock cause): `core/rules/combat.ts` adds `resolveMelee(box,
+enemies)` (every living enemy overlapping the box takes a hit). On a throw that actually fires, `GameScene`
+  builds a small jab box (`MELEE_REACH=26`px, full body height) in front of the knight and applies it after
+  the projectile pass — so axe/torch (which fly over an adjacent foe) still connect. Applies to all weapons
+  (a consistent jab); merged into the tick's kill count/scoring. 3 melee tests.
+- **Starting loadout:** the knight now starts with the **dagger** (+armor), not the lance. `activeWeapon`
+  default + `create()` set to `DAGGER`. The lance remains the curse-downgrade weapon and `CHEST_WEAPONS`
+  is unchanged (dagger/torch/axe).
+- **Enemy item drops:** `core/level/chest.ts` adds `createDrop(x,y,reward)` (a `Chest` flagged `drop`,
+  collected on touch via `openChests`). `rollReward(rng, includeCurse=true)` refactored (split
+  `POSITIVE_TABLE` + `CURSE_ENTRY`); enemy drops pass `false` (a slain foe never hands you a curse).
+  `GameScene.maybeDropItem` on a kill: bosses always drop, regular enemies at `DROP_CHANCE=0.18`, rolled
+  with the per-run `lootRng` (now a field). Drops live in `this.drops`, render as the reward's bobbing icon
+  (`renderDrops`), and are collected with the same magic-ring + icon + label feedback as chests
+  (`collectReward` helper, shared by chests and drops). 4 new chest/drop tests.
+- 200 tests green; typecheck/lint/build green. Not eyeballed in a browser this session.
+
+### Bugfix: enemy spawned inside a crate (stage-clear soft-lock) (Phase 5)
+
+- **Root cause found** (user pinpointed it): two stages spawned a walker at the **same x as a crate**:
+  Haunted Forest `zombie@2100` + crate@2100, Iron Fortress `turtle@1150` + crate@1150. The enemy lands on
+  top of the crate where ground throws hit the crate instead → unkillable → stage never clears.
+- **Fix (data):** moved the crates clear — Haunted Forest crate 2100→1980, Iron Fortress crate 1150→1090.
+- **Guard (test):** new `stages.test.ts` invariant — no ground-enemy spawn box may overlap a non-one-way
+  solid (crate/pillar), across all six stages. Catches this class of bug for good. 201 tests green;
+  typecheck/lint/build green.
+
 ## In progress 🔧
 
 - Phase 5 art/levels overhaul is **done** (themes, 3 new enemies, pits + hazards, 3 boss variants, level
-  refactor). Remaining Phase 5 work: audio, then optional juice (kill particles, transition fades).
+  refactor, **death/hit VFX + chest VFX/icons + random loot + sprite enemy projectiles**). Remaining
+  Phase 5 work: audio, then optional juice (more particles, transition fades).
 
 ## Next ⏭️ (Phase 5 — audio & polish, then Phase 6)
 

@@ -52,6 +52,7 @@ export const stepBloated = (e: Enemy, target: EnemyTarget, dt: number): BloatedS
           ay: BLOATED.projectileAy,
           w: BLOATED.projW,
           h: BLOATED.projH,
+          sprite: 'bolt',
         },
       ]
     : []

@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { aabb, type AABB } from '@core/math/aabb'
 import type { Solid } from '@core/physics/body'
 import { lerp } from '@core/math/vector'
+import { createRng, type Rng } from '@core/math/rng'
 import { createStepper, type Stepper } from '@core/sim/loop'
 import {
   createPlayer,
@@ -14,14 +15,15 @@ import {
 import {
   createWeapon,
   fire,
-  stepWeapon,
-  advanceProjectiles,
+  advanceProjectilesDetailed,
   nextWeapon,
   weaponById,
   LANCE,
+  DAGGER,
   type WeaponDef,
   type WeaponState,
   type Projectile,
+  type ProjectileCull,
 } from '@core/weapons/weapon'
 import {
   createZombie,
@@ -41,9 +43,18 @@ import {
 import { createSpawner, isFinished, stepSpawner, type Spawner } from '@core/level/spawner'
 import { createTimer, tickTimer, type StageTimer } from '@core/level/timer'
 import { LEVELS } from '@core/level/level'
-import { openChests, type Chest, type ChestReward } from '@core/level/chest'
-import { resolveCombat, resolveEnemyProjectiles } from '@core/rules/combat'
-import { hasFallenOut } from '@core/rules/fall'
+import { GROUND_Y } from '@core/level/geometry'
+import {
+  openChests,
+  rollReward,
+  createDrop,
+  DROP_W,
+  DROP_H,
+  type Chest,
+  type ChestReward,
+} from '@core/level/chest'
+import { resolveCombat, resolveEnemyProjectiles, resolveMelee } from '@core/rules/combat'
+import { hasFallenOut, hasSunkUnderFloor } from '@core/rules/fall'
 import { touchesHazard } from '@core/rules/hazard'
 import { addScore, createSession, gainLife, loseLife, win, type Session } from '@core/rules/session'
 import { pickupArmor, type ArmorState } from '@core/rules/armor'
@@ -57,8 +68,19 @@ import {
   createWeaponAnims,
   weaponAnimKey,
   hasWeaponSprite,
+  preloadEnemyProjectiles,
+  createEnemyProjectileAnims,
+  enemyProjectileVisual,
 } from '@engine/assets/sprites'
 import { preloadTiles, bgKey, groundKey, hazardKey, TILE } from '@engine/assets/tiles'
+import {
+  preloadEffects,
+  createEffectAnims,
+  preloadIcons,
+  playEffect,
+  rewardIcon,
+  ICON,
+} from '@engine/assets/effects'
 import { bus } from '@shared/events'
 
 /** Map a core enemy state to a sprite animation state (idle/walk/dead). */
@@ -70,6 +92,8 @@ const SCORE_PER_KILL = 100
 const CROUCH_H = Math.round(PLAYER_H * 0.6) // shorter profile while crouching (dodge high shots)
 const HIT_FLASH = 0.1 // seconds an enemy flashes white after taking a hit
 const STAGE_CLEAR_MS = 1700 // banner hold before advancing to the next stage
+const MELEE_REACH = 26 // px in front of the knight that a throw also jabs (point-blank)
+const DROP_CHANCE = 0.18 // chance a slain regular enemy drops an item (a boss always does)
 
 /** Format a 0xRRGGBB number as a CSS hex string for Phaser text colors. */
 const hexColor = (n: number): string => `#${n.toString(16).padStart(6, '0')}`
@@ -85,11 +109,14 @@ export class GameScene extends Phaser.Scene {
   private player!: Player
   private prev!: Player
   private weapon!: WeaponState
-  private activeWeapon: WeaponDef = LANCE
+  private activeWeapon: WeaponDef = DAGGER
   private enemies: Enemy[] = []
   private enemyFlash: number[] = [] // per-enemy hit-flash timer (juice)
+  private enemyExploded: boolean[] = [] // per-enemy: death burst already played
   private enemyProjectiles: Projectile[] = []
   private chests: Chest[] = []
+  private drops: Chest[] = [] // items dropped by slain enemies (collected like chests)
+  private lootRng!: Rng // per-run RNG for chest rolls + enemy drops
   private spawner!: Spawner
   private timer!: StageTimer
   private session!: Session
@@ -116,8 +143,11 @@ export class GameScene extends Phaser.Scene {
   private projSprites: Phaser.GameObjects.Sprite[] = []
   private projRects: Phaser.GameObjects.Rectangle[] = [] // fallback when a weapon has no art
   private enemyProjRects: Phaser.GameObjects.Rectangle[] = []
+  private enemyProjSprites: Phaser.GameObjects.Sprite[] = []
   private enemySprites: Phaser.GameObjects.Sprite[] = []
   private chestSprites: Phaser.GameObjects.Image[] = []
+  private dropSprites: Phaser.GameObjects.Image[] = []
+  private meleeBox: AABB | null = null // point-blank jab box for the current tick
   private keys!: {
     left: Phaser.Input.Keyboard.Key[]
     right: Phaser.Input.Keyboard.Key[]
@@ -146,12 +176,17 @@ export class GameScene extends Phaser.Scene {
     preloadSprites(this)
     preloadWeapons(this)
     preloadTiles(this)
+    preloadEffects(this)
+    preloadIcons(this)
+    preloadEnemyProjectiles(this)
   }
 
   create(): void {
     const height = this.scale.height
     createAnims(this)
     createWeaponAnims(this)
+    createEffectAnims(this)
+    createEnemyProjectileAnims(this)
     const level = LEVELS[this.levelIndex] ?? LEVELS[0]!
     this.start = { ...level.playerStart }
     // Loop 2 (the classic "second quest") is harder: less time on the clock.
@@ -206,21 +241,34 @@ export class GameScene extends Phaser.Scene {
     this.player = createPlayer(this.start.x, this.start.y)
     this.prev = this.player
     this.weapon = createWeapon()
-    this.activeWeapon = LANCE
+    // The knight starts with the dagger (plus armor); other weapons come from loot.
+    this.activeWeapon = DAGGER
     this.session = this.carriedSession ?? createSession()
     this.over = false
     this.lastArmor = 'armored'
     this.enemies = []
     this.enemyFlash = []
+    this.enemyExploded = []
     this.enemyProjectiles = []
-    this.chests = (level.chests ?? []).map((c) => ({ ...c }))
+    // Roll each random chest's reward fresh per run/stage so loot is unpredictable.
+    // Seed off the wall clock (engine-side, allowed) mixed with stage/loop so two
+    // chests on the same screen don't share a roll.
+    this.lootRng = createRng(
+      (Date.now() ^ (this.levelIndex * 0x9e3779b1) ^ (this.loop * 0x85ebca6b)) >>> 0,
+    )
+    this.chests = (level.chests ?? []).map((c) =>
+      c.random ? { ...c, reward: rollReward(this.lootRng) } : { ...c },
+    )
+    this.drops = []
     // Reset render pools: scene.restart() destroys all GameObjects, so the old
     // pooled sprites are dead — start fresh or we'd touch destroyed objects.
     this.projSprites = []
     this.projRects = []
     this.enemyProjRects = []
+    this.enemyProjSprites = []
     this.enemySprites = []
     this.chestSprites = []
+    this.dropSprites = []
     this.timer = createTimer(this.stageSeconds)
     this.lastSecond = -1
     this.lastBossHp = -1
@@ -326,6 +374,7 @@ export class GameScene extends Phaser.Scene {
     this.renderEnemyProjectiles()
     this.renderEnemies()
     this.renderChests()
+    this.renderDrops()
   }
 
   /** One fixed simulation step: enemies, weapon, combat, player, session. */
@@ -354,29 +403,55 @@ export class GameScene extends Phaser.Scene {
     const b0 = this.player.body
     const target = { x: b0.pos.x + b0.w / 2, y: b0.pos.y + b0.h / 2 }
     const stepped = this.enemies.map((e) => stepEnemy(e, target, this.solids, FIXED_DT))
-    // Walkers that chase the player off a ledge fall to their death too — cull
-    // them (mark dead) so they don't drop forever and block the stage-clear.
-    this.enemies = stepped.map((r) =>
-      r.enemy.state !== 'dead' && hasFallenOut(r.enemy.body, this.deathY)
-        ? { ...r.enemy, state: 'dead' as const, hp: 0 }
-        : r.enemy,
-    )
+    // Cull (mark dead) any living enemy that fell out of the world, or — safety
+    // net against a soft-lock — a ground enemy wedged below the floor surface
+    // where the player can't reach it (flyers legitimately hover low, so exempt).
+    this.enemies = stepped.map((r) => {
+      const e = r.enemy
+      if (e.state === 'dead') return e
+      const gone =
+        hasFallenOut(e.body, this.deathY) ||
+        (e.kind !== 'flyer' && hasSunkUnderFloor(e.body, GROUND_Y))
+      return gone ? { ...e, state: 'dead' as const, hp: 0 } : e
+    })
     for (const r of stepped) if (r.fired.length) this.enemyProjectiles.push(...r.fired)
-    this.enemyProjectiles = advanceProjectiles(
+    const eadv = advanceProjectilesDetailed(
       this.enemyProjectiles,
       FIXED_DT,
       this.bounds,
       this.solids,
     )
+    this.enemyProjectiles = eadv.alive
+    this.sparkWallHits(eadv.culled)
 
+    this.meleeBox = null
     if (input.attack) {
-      const b = this.player.body
+      const pb = this.player.body
       const w = this.activeWeapon
-      const originX = this.player.facing > 0 ? b.pos.x + b.w : b.pos.x - w.w
-      const originY = b.pos.y + b.h / 2
+      const originX = this.player.facing > 0 ? pb.pos.x + pb.w : pb.pos.x - w.w
+      const originY = pb.pos.y + pb.h / 2
+      const fireCount = this.weapon.projectiles.length
       this.weapon = fire(this.weapon, w, originX, originY, this.player.facing)
+      // A throw that actually fires also lands a point-blank jab in front of the
+      // knight, so arcing weapons (which fly over a foe right next to you) connect.
+      if (this.weapon.projectiles.length > fireCount) {
+        this.meleeBox =
+          this.player.facing > 0
+            ? aabb(pb.pos.x + pb.w, pb.pos.y, MELEE_REACH, pb.h)
+            : aabb(pb.pos.x - MELEE_REACH, pb.pos.y, MELEE_REACH, pb.h)
+      }
     }
-    this.weapon = stepWeapon(this.weapon, FIXED_DT, this.bounds, this.solids)
+    const wadv = advanceProjectilesDetailed(
+      this.weapon.projectiles,
+      FIXED_DT,
+      this.bounds,
+      this.solids,
+    )
+    this.weapon = {
+      cooldownLeft: Math.max(0, this.weapon.cooldownLeft - FIXED_DT),
+      projectiles: wadv.alive,
+    }
+    this.sparkWallHits(wadv.culled)
 
     // Crouching shrinks the player's hitbox (feet planted) so it can duck shots.
     const b = this.player.body
@@ -385,17 +460,34 @@ export class GameScene extends Phaser.Scene {
     const before = this.enemies
     const result = resolveCombat(playerBox, this.weapon.projectiles, this.enemies)
     this.weapon = { ...this.weapon, projectiles: result.projectiles }
-    this.enemies = result.enemies as Enemy[]
+    let enemiesAfter = result.enemies as Enemy[]
+    let kills = result.kills
+    // Apply the point-blank jab (if any) on the post-projectile enemy state.
+    if (this.meleeBox) {
+      const melee = resolveMelee(this.meleeBox, enemiesAfter)
+      enemiesAfter = melee.enemies as Enemy[]
+      kills += melee.kills
+    }
+    this.enemies = enemiesAfter
     // Juice: flash an enemy white the moment its HP drops (index order is stable).
     this.enemyFlash = this.enemyFlash.map((t) => Math.max(0, t - FIXED_DT))
     this.enemies.forEach((e, i) => {
       const prev = before[i]
-      if (prev && e.hp < prev.hp) this.enemyFlash[i] = HIT_FLASH
+      if (prev && e.hp < prev.hp) {
+        this.enemyFlash[i] = HIT_FLASH
+        if (e.state !== 'dead') {
+          // Spark on a surviving hit; a kill instead gets the death explosion.
+          playEffect(this, 'spark', e.body.pos.x + e.body.w / 2, e.body.pos.y + e.body.h / 2, 0.14)
+        } else {
+          // Killed by this hit: maybe drop an item the player can pick up.
+          this.maybeDropItem(e)
+        }
+      }
     })
     this.emitBossHp()
 
-    if (result.kills > 0) {
-      this.session = addScore(this.session, result.kills * SCORE_PER_KILL)
+    if (kills > 0) {
+      this.session = addScore(this.session, kills * SCORE_PER_KILL)
       bus.emit('game:score-changed', { score: this.session.score })
       this.cameras.main.shake(90, 0.006) // a small kick on each kill
     }
@@ -405,12 +497,22 @@ export class GameScene extends Phaser.Scene {
     this.enemyProjectiles = [...ep.projectiles]
     const damaged = result.playerHit || ep.playerHit || touchesHazard(playerBox, this.hazards)
 
+    const prevIFrames = this.player.armor.iFramesLeft
     this.player = stepPlayer(
       this.player,
       input,
       { solids: this.solids, ladders: this.ladders, damaged },
       FIXED_DT,
     )
+    // Fresh non-fatal hit: i-frames just opened and the knight survived → spark.
+    if (
+      prevIFrames === 0 &&
+      this.player.armor.iFramesLeft > 0 &&
+      this.player.armor.state !== 'dead'
+    ) {
+      const hb = this.player.body
+      playEffect(this, 'spark', hb.pos.x + hb.w / 2, hb.pos.y + hb.h / 2, 0.18)
+    }
 
     // Fell into a pit: drop below the world bottom costs a life (classic rule).
     if (hasFallenOut(this.player.body, this.deathY)) {
@@ -418,16 +520,25 @@ export class GameScene extends Phaser.Scene {
       return
     }
 
-    // Open any chest the knight is touching, apply its reward and announce it.
+    // Collect any chest or enemy-dropped item the knight is touching.
+    const pb = this.player.body
+    const pickBox = aabb(pb.pos.x, pb.pos.y, pb.w, pb.h)
     if (this.chests.length > 0) {
-      const pb = this.player.body
-      const opened = openChests(aabb(pb.pos.x, pb.pos.y, pb.w, pb.h), this.chests)
+      const prev = this.chests
+      const opened = openChests(pickBox, this.chests)
       if (opened.rewards.length > 0) {
         this.chests = opened.chests as Chest[]
-        opened.rewards.forEach((reward, n) => {
-          const fb = this.applyChestReward(reward)
-          this.floatReward(pb.pos.x + pb.w / 2, pb.pos.y - n * 18, fb.label, fb.color)
-        })
+        const popped = this.chests.filter((c, i) => c.opened && !prev[i]!.opened)
+        opened.rewards.forEach((reward, n) => this.collectReward(reward, popped[n], pb, n))
+      }
+    }
+    if (this.drops.length > 0) {
+      const prev = this.drops
+      const got = openChests(pickBox, this.drops)
+      if (got.rewards.length > 0) {
+        this.drops = got.chests as Chest[]
+        const popped = this.drops.filter((c, i) => c.opened && !prev[i]!.opened)
+        got.rewards.forEach((reward, n) => this.collectReward(reward, popped[n], pb, n))
       }
     }
 
@@ -449,6 +560,38 @@ export class GameScene extends Phaser.Scene {
     ) {
       this.onWin()
     }
+  }
+
+  /**
+   * Apply a collected reward (from a chest or a drop) and play its feedback: a
+   * magic-ring burst, the item icon popping out, and the floating label.
+   * `source` is the chest/drop box for positioning (falls back to the player).
+   */
+  private collectReward(
+    reward: ChestReward,
+    source: Chest | undefined,
+    pb: Player['body'],
+    n: number,
+  ): void {
+    const fb = this.applyChestReward(reward)
+    const cx = source ? source.x + source.w / 2 : pb.pos.x + pb.w / 2
+    const top = source ? source.y : pb.pos.y
+    const mid = source ? source.y + source.h / 2 : pb.pos.y + pb.h / 2
+    playEffect(this, 'magic_ring', cx, mid, 1.1) // a burst of sparkles
+    this.floatRewardIcon(cx, top - 6, reward) // the item icon pops out
+    this.floatReward(cx, top - 30 - n * 18, fb.label, fb.color)
+  }
+
+  /**
+   * On a kill, maybe drop a pickup at the enemy: bosses always drop, regular
+   * enemies do so with {@link DROP_CHANCE}. Enemy drops never roll a curse.
+   */
+  private maybeDropItem(e: Enemy): void {
+    if (e.kind !== 'boss' && this.lootRng.next() >= DROP_CHANCE) return
+    const reward = rollReward(this.lootRng, false)
+    const cx = e.body.pos.x + e.body.w / 2
+    const cy = e.body.pos.y + e.body.h / 2
+    this.drops.push(createDrop(cx - DROP_W / 2, cy - DROP_H / 2, reward))
   }
 
   /**
@@ -483,6 +626,38 @@ export class GameScene extends Phaser.Scene {
         bus.emit('game:lives-changed', { lives: this.session.lives })
         return { label: '1UP!', color: '#7cfc00' }
     }
+  }
+
+  /**
+   * Pop a chest reward's icon out of the chest: it scales up with a little
+   * bounce, then drifts up and fades. Weapons show their projectile art, the
+   * rest show a dungeon item icon (heart/coin/gem/star).
+   */
+  private floatRewardIcon(x: number, y: number, reward: ChestReward): void {
+    const icon = rewardIcon(reward)
+    const spr = this.add
+      .image(x, y, icon.key, icon.frame)
+      .setOrigin(0.5, 0.5)
+      .setDepth(1450)
+      .setScale(0.4)
+    if (icon.tint !== undefined) spr.setTint(icon.tint)
+    this.tweens.add({
+      targets: spr,
+      scale: 0.95,
+      y: y - 22,
+      duration: 600,
+      ease: 'Back.out',
+      onComplete: () => {
+        this.tweens.add({
+          targets: spr,
+          y: y - 44,
+          alpha: 0,
+          duration: 650,
+          ease: 'Cubic.in',
+          onComplete: () => spr.destroy(),
+        })
+      },
+    })
   }
 
   /** A short-lived label that floats up and fades (chest pickups). */
@@ -574,6 +749,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onPlayerDead(): void {
+    const pb = this.player.body
+    playEffect(this, 'explosion', pb.pos.x + pb.w / 2, pb.pos.y + pb.h / 2, 0.42) // death burst
     this.cameras.main.shake(320, 0.02) // juice: heavy shake on death
     this.session = loseLife(this.session)
     bus.emit('game:lives-changed', { lives: this.session.lives })
@@ -667,16 +844,66 @@ export class GameScene extends Phaser.Scene {
     this.projSprites.forEach((s) => s.setVisible(false))
   }
 
-  /** Sync the enemy-projectile rectangle pool. */
+  /**
+   * Sync the enemy-projectile pools. A shot with a known `sprite` tag (fireball,
+   * bullet, spore, bolt) draws an animated/tinted sprite; anything else falls
+   * back to the red rectangle. Each pool index shows at most one of the two.
+   */
   private renderEnemyProjectiles(): void {
-    while (this.enemyProjRects.length < this.enemyProjectiles.length) {
-      this.enemyProjRects.push(this.add.rectangle(0, 0, 1, 1, 0xff4444).setOrigin(0, 0))
+    const ps = this.enemyProjectiles
+    while (this.enemyProjRects.length < ps.length) {
+      this.enemyProjRects.push(this.add.rectangle(0, 0, 1, 1, 0xff4444).setOrigin(0.5, 0.5))
     }
-    this.enemyProjRects.forEach((rect, i) => {
-      const p = this.enemyProjectiles[i]
-      if (p) rect.setVisible(true).setPosition(p.pos.x, p.pos.y).setSize(p.w, p.h)
-      else rect.setVisible(false)
-    })
+    while (this.enemyProjSprites.length < ps.length) {
+      this.enemyProjSprites.push(this.add.sprite(0, 0, 'eproj-img-bolt').setOrigin(0.5, 0.5))
+    }
+    const n = Math.max(this.enemyProjRects.length, this.enemyProjSprites.length)
+    for (let i = 0; i < n; i++) {
+      const p = ps[i]
+      const rect = this.enemyProjRects[i]
+      const spr = this.enemyProjSprites[i]
+      const visual = p?.sprite ? enemyProjectileVisual(p.sprite) : undefined
+      if (p && visual && spr) {
+        const cx = p.pos.x + p.w / 2
+        const cy = p.pos.y + p.h / 2
+        spr
+          .setVisible(true)
+          .setPosition(cx, cy)
+          .setFlipX(p.vel.x < 0)
+        if (visual.anim) {
+          spr.play(visual.anim, true)
+          const d = Math.max(p.w, p.h) * 2.4
+          spr.setDisplaySize(d, d)
+        } else {
+          // Stop any anim left over from a previous (animated) projectile reusing
+          // this pooled sprite, else it would override the static texture frame.
+          spr.anims.stop()
+          spr.setTexture(visual.texture)
+          spr.setDisplaySize(p.w * 1.3, p.h * 1.3)
+        }
+        if (visual.tint !== undefined) spr.setTintFill(visual.tint)
+        else spr.clearTint()
+        rect?.setVisible(false)
+      } else if (p && rect) {
+        rect
+          .setVisible(true)
+          .setPosition(p.pos.x + p.w / 2, p.pos.y + p.h / 2)
+          .setSize(p.w, p.h)
+        spr?.setVisible(false)
+      } else {
+        rect?.setVisible(false)
+        spr?.setVisible(false)
+      }
+    }
+  }
+
+  /** Pop a small spark where each wall-culled projectile struck (ignore bounds/range). */
+  private sparkWallHits(culls: readonly ProjectileCull[]): void {
+    for (const c of culls) {
+      if (c.reason !== 'wall') continue
+      const p = c.projectile
+      playEffect(this, 'spark', p.pos.x + p.w / 2, p.pos.y + p.h / 2, 0.1)
+    }
   }
 
   /** Sync the enemy sprite pool; dead enemies are hidden, animated per kind. */
@@ -694,6 +921,15 @@ export class GameScene extends Phaser.Scene {
         if ((this.enemyFlash[i] ?? 0) > 0) sprite.setTintFill(0xffffff)
         else sprite.clearTint()
       } else {
+        // First frame an enemy is dead: pop a one-shot explosion at its center
+        // (bigger for a boss), then leave the sprite hidden for good.
+        if (e && e.state === 'dead' && !this.enemyExploded[i]) {
+          this.enemyExploded[i] = true
+          const cx = e.body.pos.x + e.body.w / 2
+          const cy = e.body.pos.y + e.body.h / 2
+          playEffect(this, 'explosion', cx, cy, e.kind === 'boss' ? 0.7 : 0.32)
+          this.cameras.main.shake(e.kind === 'boss' ? 260 : 80, e.kind === 'boss' ? 0.012 : 0.004)
+        }
         sprite.setVisible(false)
       }
     })
@@ -760,6 +996,27 @@ export class GameScene extends Phaser.Scene {
           .setPosition(c.x + c.w / 2, c.y + c.h)
       } else {
         sprite.setVisible(false)
+      }
+    })
+  }
+
+  /** Sync the enemy-drop pool: each uncollected drop shows its reward icon, bobbing. */
+  private renderDrops(): void {
+    while (this.dropSprites.length < this.drops.length) {
+      this.dropSprites.push(this.add.image(0, 0, ICON.heart).setOrigin(0.5, 0.5).setDepth(60))
+    }
+    const t = this.time.now
+    this.dropSprites.forEach((spr, i) => {
+      const d = this.drops[i]
+      if (d && !d.opened) {
+        const icon = rewardIcon(d.reward)
+        spr.setVisible(true).setTexture(icon.key, icon.frame ?? 0)
+        if (icon.tint !== undefined) spr.setTint(icon.tint)
+        else spr.clearTint()
+        const bob = Math.sin(t / 220 + i) * 3
+        spr.setDisplaySize(d.w + 6, d.h + 6).setPosition(d.x + d.w / 2, d.y + d.h / 2 + bob)
+      } else {
+        spr.setVisible(false)
       }
     })
   }

@@ -20,7 +20,9 @@ export const hauntedForest: LevelDef = {
     aabb(820, 360, 40, 50),
     oneWay(1100, 300, 200, 20),
     oneWay(1700, 260, 180, 20),
-    aabb(2100, 360, 40, 50),
+    // Crate moved off the zombie spawn at x=2100 (the zombie used to land on top
+    // of the crate, where ground throws can't reach it → unkillable, blocking clear).
+    aabb(1980, 360, 40, 50),
     oneWay(2500, 300, 200, 20),
   ],
   ladders: [aabb(320, 300, 16, 110), aabb(1160, 300, 16, 110), aabb(2560, 300, 16, 110)],
@@ -40,9 +42,5 @@ export const hauntedForest: LevelDef = {
     { kind: 'boss', x: 2800, y: GROUND_Y },
   ],
   durationSeconds: 145,
-  chests: [
-    createChest(520, CHEST_Y, { kind: 'weapon', weaponId: 'torch' }),
-    createChest(1180, CHEST_Y, { kind: 'life' }),
-    createChest(2080, CHEST_Y, { kind: 'points', points: 750 }),
-  ],
+  chests: [createChest(520, CHEST_Y), createChest(1180, CHEST_Y), createChest(2080, CHEST_Y)],
 }

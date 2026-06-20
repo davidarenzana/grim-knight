@@ -1,7 +1,7 @@
 import { vec2 } from '@core/math/vector'
 import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
-import { chooseDir } from './walk'
+import { patrolDir } from './walk'
 
 /**
  * Centipede: a fast, low-HP ground crawler that rushes the player. Like the
@@ -34,7 +34,7 @@ export const stepCentipede = (
 ): Enemy => {
   if (e.state === 'dead') return e
 
-  const dir = chooseDir(e.body, target.x, solids) // stops/turns at ledges
+  const dir = patrolDir(e.body, e.facing, target.x, solids) // chase near, else patrol
   const facing = dir !== 0 ? dir : e.facing
   const vx = CENTIPEDE.speed * dir
 

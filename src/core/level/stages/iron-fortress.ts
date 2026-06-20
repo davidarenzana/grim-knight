@@ -17,7 +17,8 @@ export const ironFortress: LevelDef = {
     ]),
     aabb(500, 360, 40, 50),
     oneWay(750, 300, 200, 20),
-    aabb(1150, 360, 40, 50),
+    // Crate moved off the turtle spawn at x=1150 (same overlap bug as stage 2).
+    aabb(1090, 360, 40, 50),
     oneWay(1450, 290, 200, 20),
     aabb(1950, 360, 40, 50),
     oneWay(2350, 300, 200, 20),
@@ -40,11 +41,12 @@ export const ironFortress: LevelDef = {
     { kind: 'boss', x: 2900, y: GROUND_Y },
   ],
   durationSeconds: 145,
+  // Random loot: each chest rolls its reward per run (rollReward) — could be a
+  // weapon, armor, points, a 1UP, or the magician's curse back to the lance.
   chests: [
-    createChest(520, CHEST_Y, { kind: 'weapon', weaponId: 'dagger' }),
-    // A risky magician chest: opening it curses you back to the lance.
-    createChest(1180, CHEST_Y, { kind: 'curse' }),
-    createChest(1980, CHEST_Y, { kind: 'armor' }),
-    createChest(2780, CHEST_Y, { kind: 'life' }),
+    createChest(520, CHEST_Y),
+    createChest(1180, CHEST_Y),
+    createChest(1980, CHEST_Y),
+    createChest(2780, CHEST_Y),
   ],
 }

@@ -104,9 +104,22 @@ Ruins" tileset (`engine/assets/tiles.ts`); thrown weapons use animated projectil
 stage its own ground tile + backdrop (`engine/assets/tiles.ts`; theme art under `public/assets/tiles/<theme>/`).
 **Three more enemies** (centipede/turtle/bloated) and **three escalating boss variants** (one skin per pair of
 stages). **GnG-style level geometry**: jumpable pits (`floor(width, pits)`) with **fall-out** death (`core/rules/fall.ts`)
-and **contact hazards** (spikes/lava, `core/rules/hazard.ts`); ground enemies are **ledge-aware** (turn around at
-edges instead of falling, `core/enemies/walk.ts`). Levels are split per stage under `core/level/stages/` (types in
-`types.ts`, shared helpers in `geometry.ts`, ordered campaign via `LEVELS`). 178 tests green. Next within Phase 5:
+and **contact hazards** (spikes/lava, `core/rules/hazard.ts`); ground enemies are **ledge/wall-aware**
+(`core/enemies/walk.ts`): melee walkers `patrolDir` (chase within `AGGRO_RANGE`, else patrol — turn at
+ledges/walls and keep going), ranged turtle/boss `advanceDir` (advance where there's floor, else hold and
+fire across the gap). Levels are split per stage under `core/level/stages/` (types in
+`types.ts`, shared helpers in `geometry.ts`, ordered campaign via `LEVELS`). **Random chest loot**: chests are
+placed by position only and `rollReward(rng)` (weighted `REWARD_TABLE` in `core/level/chest.ts`) rolls each
+chest's reward per run (engine seeds an `Rng` in `create()`). **Enemy drops**: slain foes may drop a pickup
+(`createDrop`, collected like a chest; `rollReward(rng,false)` so drops never curse; bosses always drop).
+The knight **starts with the dagger** (+armor). Every throw also lands a **point-blank jab** (`resolveMelee`)
+so arcing weapons hit adjacent foes. **Effects/VFX**: `engine/assets/effects.ts` plays
+one-shot CraftPix art — an explosion on enemy/boss/player death, a `spark` on a non-fatal hit (enemy or
+knight), and a magic-ring burst + the **reward icon** when a chest opens (`playEffect`/`rewardIcon`; art
+under `public/assets/effects/` + `public/assets/icons/`). **Enemy projectiles** are real sprites, not
+rectangles: each shot carries a presentation `sprite` tag in core (`spore`/`bullet`/`bolt`/`fire`) that
+`engine/assets/sprites.ts` (`ENEMY_PROJECTILES`/`enemyProjectileVisual`) renders animated/tinted (rect
+fallback). 184 tests green. Next within Phase 5:
 audio, fine-tune sprite scales; then Phase 6 (build/deploy). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents

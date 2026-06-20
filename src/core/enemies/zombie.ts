@@ -1,7 +1,7 @@
 import { vec2 } from '@core/math/vector'
 import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
-import { chooseDir } from './walk'
+import { patrolDir } from './walk'
 
 /**
  * Zombie: rises from the ground, then walks toward the player.
@@ -45,7 +45,7 @@ export const stepZombie = (
   let facing = e.facing
   let vx = 0
   if (state === 'walking') {
-    const dir = chooseDir(e.body, target.x, solids) // stops/turns at ledges
+    const dir = patrolDir(e.body, e.facing, target.x, solids) // chase near, else patrol
     if (dir !== 0) facing = dir
     vx = ZOMBIE.speed * dir
   }

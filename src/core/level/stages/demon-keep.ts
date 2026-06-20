@@ -46,9 +46,9 @@ export const demonKeep: LevelDef = {
   ],
   durationSeconds: 150,
   chests: [
-    createChest(620, CHEST_Y, { kind: 'weapon', weaponId: 'axe' }),
-    createChest(1320, CHEST_Y, { kind: 'life' }),
-    createChest(2200, CHEST_Y, { kind: 'armor' }),
-    createChest(3000, CHEST_Y, { kind: 'points', points: 1000 }),
+    createChest(620, CHEST_Y),
+    createChest(1320, CHEST_Y),
+    createChest(2200, CHEST_Y),
+    createChest(3000, CHEST_Y),
   ],
 }

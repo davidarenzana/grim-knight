@@ -50,6 +50,7 @@ export const stepPlant = (e: Enemy, target: EnemyTarget, dt: number): PlantStep 
           vel: vec2(PLANT.projectileSpeed * facing, 0),
           w: PLANT.projectileW,
           h: PLANT.projectileH,
+          sprite: 'spore',
         },
       ]
     : []

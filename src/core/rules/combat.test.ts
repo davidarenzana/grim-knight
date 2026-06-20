@@ -3,7 +3,7 @@ import { aabb } from '@core/math/aabb'
 import { hitEnemy, type Enemy } from '@core/enemies/enemy'
 import { createZombie } from '@core/enemies/zombie'
 import type { Projectile } from '@core/weapons/weapon'
-import { resolveCombat, resolveEnemyProjectiles } from './combat'
+import { resolveCombat, resolveEnemyProjectiles, resolveMelee } from './combat'
 
 const GROUND_Y = 200
 const FAR = aabb(-1000, -1000, 1, 1) // player box well out of the way
@@ -86,5 +86,31 @@ describe('resolveEnemyProjectiles', () => {
     const res = resolveEnemyProjectiles(playerBox, [proj(500, 110)])
     expect(res.playerHit).toBe(false)
     expect(res.projectiles).toHaveLength(1)
+  })
+})
+
+describe('resolveMelee', () => {
+  it('hits and can kill an adjacent enemy (point-blank jab)', () => {
+    const z = createZombie(120, GROUND_Y) // body at x:120, w:24
+    const swing = aabb(100, GROUND_Y - 40, 40, 40) // overlaps the zombie
+    const r = resolveMelee(swing, [z])
+    expect(r.kills).toBe(1)
+    expect(r.enemies[0]!.state).toBe('dead')
+  })
+
+  it('does not touch enemies outside the swing box', () => {
+    const z = createZombie(400, GROUND_Y)
+    const swing = aabb(100, GROUND_Y - 40, 40, 40)
+    const r = resolveMelee(swing, [z])
+    expect(r.kills).toBe(0)
+    expect(r.enemies[0]!.state).not.toBe('dead')
+  })
+
+  it('hits every enemy overlapping the swing', () => {
+    const a = createZombie(110, GROUND_Y)
+    const b = createZombie(125, GROUND_Y)
+    const swing = aabb(100, GROUND_Y - 40, 60, 40)
+    const r = resolveMelee(swing, [a, b])
+    expect(r.kills).toBe(2)
   })
 })

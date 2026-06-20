@@ -34,6 +34,7 @@ describe('turtle', () => {
     expect(fired[0]!.vel.x).toBeLessThan(0)
     expect(fired[0]!.vel.y).toBe(0)
     expect(fired[0]!.ay ?? 0).toBe(0)
+    expect(fired[0]!.sprite).toBe('bullet') // art tag for the engine
   })
 
   it('does not fire before its interval elapses', () => {

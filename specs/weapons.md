@@ -75,6 +75,10 @@ Weapons are swapped via the `WEAPONS` registry (`nextWeapon`/`weaponById`); ches
       culls out-of-bounds, wall hits and projectiles past their max range.
 - [x] `WEAPONS` registry + `nextWeapon`/`weaponById` for swapping; lance/dagger/torch/axe defined.
 - [x] Pure and deterministic (no wall-clock time, no globals).
+- [x] `Projectile.sprite?` carries an optional presentation tag (e.g. enemy shots `spore`/`bullet`/`bolt`/
+      `fire`); pure data only — the engine maps it to art (`enemyProjectileVisual`), rect fallback otherwise.
+- [x] `advanceProjectilesDetailed` returns `{ alive, culled }` with a `CullReason` (`wall`/`bounds`/`range`)
+      so the engine can spark wall impacts; `advanceProjectiles` is a thin wrapper returning `.alive`.
 
 ## Test mapping
 

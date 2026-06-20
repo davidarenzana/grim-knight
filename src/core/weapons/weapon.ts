@@ -17,6 +17,12 @@ export interface Projectile {
   readonly traveled?: number
   /** Max travel distance before culling; undefined = unlimited. */
   readonly maxRange?: number
+  /**
+   * Presentation tag selecting the projectile's art (e.g. enemy shots: 'fire',
+   * 'bolt', 'spore', 'bullet'). Pure data; the engine maps it to a sprite and
+   * falls back to a rectangle when absent/unknown.
+   */
+  readonly sprite?: string
 }
 
 export interface WeaponDef {
@@ -131,32 +137,64 @@ export const fire = (
   return { cooldownLeft: def.cooldown, projectiles: [...w.projectiles, projectile] }
 }
 
+/** Why a projectile was removed this step (the engine sparks on `wall`). */
+export type CullReason = 'wall' | 'bounds' | 'range'
+
+export interface ProjectileCull {
+  readonly projectile: Projectile
+  readonly reason: CullReason
+}
+
+export interface AdvanceResult {
+  /** Projectiles that survived the step (already moved). */
+  readonly alive: Projectile[]
+  /** Projectiles removed this step, with the reason, at their last position. */
+  readonly culled: ProjectileCull[]
+}
+
 /**
- * Move projectiles by `dt`; cull those out of horizontal bounds or hitting a
- * solid wall. One-way platforms are ignored (projectiles pass through them).
- * Reusable for any projectile list.
+ * Move projectiles by `dt` and partition them into survivors and culled (with a
+ * reason: out of horizontal bounds, past max range, or hit a solid wall; one-way
+ * platforms are ignored). The detailed form lets the engine show wall impacts.
+ */
+export const advanceProjectilesDetailed = (
+  projectiles: readonly Projectile[],
+  dt: number,
+  bounds: Bounds,
+  solids: readonly Solid[] = [],
+): AdvanceResult => {
+  const alive: Projectile[] = []
+  const culled: ProjectileCull[] = []
+  for (const p0 of projectiles) {
+    // Semi-implicit Euler: apply gravity to velocity, then integrate position.
+    const vel = vec2(p0.vel.x, p0.vel.y + (p0.ay ?? 0) * dt)
+    const pos = vec2(p0.pos.x + vel.x * dt, p0.pos.y + vel.y * dt)
+    const traveled = (p0.traveled ?? 0) + Math.hypot(vel.x * dt, vel.y * dt)
+    const p = { ...p0, vel, pos, traveled }
+    if (solids.some((s) => !s.oneWay && intersects(aabb(p.pos.x, p.pos.y, p.w, p.h), s))) {
+      culled.push({ projectile: p, reason: 'wall' })
+    } else if (!(p.pos.x + p.w > bounds.minX && p.pos.x < bounds.maxX)) {
+      culled.push({ projectile: p, reason: 'bounds' })
+    } else if (p.maxRange !== undefined && (p.traveled ?? 0) > p.maxRange) {
+      culled.push({ projectile: p, reason: 'range' })
+    } else {
+      alive.push(p)
+    }
+  }
+  return { alive, culled }
+}
+
+/**
+ * Move projectiles by `dt`; cull those out of horizontal bounds, past max range
+ * or hitting a solid wall. One-way platforms are ignored. Reusable for any
+ * projectile list. (Thin wrapper over {@link advanceProjectilesDetailed}.)
  */
 export const advanceProjectiles = (
   projectiles: readonly Projectile[],
   dt: number,
   bounds: Bounds,
   solids: readonly Solid[] = [],
-): Projectile[] =>
-  projectiles
-    .map((p) => {
-      // Semi-implicit Euler: apply gravity to velocity, then integrate position.
-      const vel = vec2(p.vel.x, p.vel.y + (p.ay ?? 0) * dt)
-      const pos = vec2(p.pos.x + vel.x * dt, p.pos.y + vel.y * dt)
-      const traveled = (p.traveled ?? 0) + Math.hypot(vel.x * dt, vel.y * dt)
-      return { ...p, vel, pos, traveled }
-    })
-    .filter(
-      (p) =>
-        p.pos.x + p.w > bounds.minX &&
-        p.pos.x < bounds.maxX &&
-        (p.maxRange === undefined || (p.traveled ?? 0) <= p.maxRange) &&
-        !solids.some((s) => !s.oneWay && intersects(aabb(p.pos.x, p.pos.y, p.w, p.h), s)),
-    )
+): Projectile[] => advanceProjectilesDetailed(projectiles, dt, bounds, solids).alive
 
 /** Advance projectiles and cooldown by `dt`, culling out-of-bounds or wall-hitting projectiles. */
 export const stepWeapon = (
