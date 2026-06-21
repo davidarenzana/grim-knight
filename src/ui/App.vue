@@ -6,6 +6,7 @@ import LevelSelect from '@ui/views/LevelSelect.vue'
 import GameHud from '@ui/components/GameHud.vue'
 import PauseOverlay from '@ui/views/PauseOverlay.vue'
 import GameOver from '@ui/views/GameOver.vue'
+import AudioToggle from '@ui/components/AudioToggle.vue'
 
 const game = useGameStore()
 </script>
@@ -26,6 +27,9 @@ const game = useGameStore()
         <GameHud v-if="game.screen === 'playing'" />
         <PauseOverlay v-if="game.screen === 'paused'" />
         <GameOver v-if="game.screen === 'gameover' || game.screen === 'won'" />
+
+        <!-- Global audio on/off, always reachable. -->
+        <AudioToggle />
       </div>
     </div>
 

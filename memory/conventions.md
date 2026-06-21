@@ -71,4 +71,12 @@
   (`menu | levels | playing | paused | gameover | won`); `App.vue` renders the matching view. The engine only
   emits `game:over`/`game:won` (the store flips the screen) and reads `consumeStartLevel()` for the
   stage-select choice. Add a new screen by extending the union + a view, not by touching `GameScene`.
+- **Audio is a procedural Web Audio adapter** (`engine/audio.ts`): no audio files ship; SFX/music are
+  synthesized. `stepMatch` emits `{type:'sound', name}` effects (data) and the scene plays them via
+  `playSfx`; the `AudioContext` is created lazily on the first gesture (browser autoplay policy — the START
+  click). Mute is a master-gain ramp driven by the `ui:audio` bus command; the store owns the persisted
+  on/off (`localStorage`).
+- **Guard `localStorage` in the store:** `src/ui/stores/game.ts` is unit-tested in the **node** env where
+  `localStorage` is undefined — wrap any access in `typeof localStorage !== 'undefined'` + try/catch (see
+  the audio preference helpers), or the store tests throw at import/setup.
 - (Add every new gotcha discovered here — living project.)

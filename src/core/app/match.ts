@@ -253,6 +253,7 @@ const handleDeath = (config: MatchConfig, state: MatchState): StepResult => {
   const effects: Effect[] = [
     { type: 'vfx', name: 'explosion', x: pb.pos.x + pb.w / 2, y: pb.pos.y + pb.h / 2, scale: 0.42 },
     { type: 'shake', ms: 320, intensity: 0.02 },
+    { type: 'sound', name: 'die' },
   ]
   const session = loseLife(state.session)
   effects.push(notify({ kind: 'lives', lives: session.lives }))
@@ -363,6 +364,7 @@ export const stepMatch = (
     const fireCount = weapon.projectiles.length
     weapon = fire(weapon, w, originX, originY, state.player.facing)
     if (weapon.projectiles.length > fireCount) {
+      effects.push({ type: 'sound', name: 'throw' })
       meleeBox =
         state.player.facing > 0
           ? aabb(pb.pos.x + pb.w, pb.pos.y, MELEE_REACH, pb.h)
@@ -413,16 +415,20 @@ export const stepMatch = (
           y: e.body.pos.y + e.body.h / 2,
           scale: 0.14,
         })
-      } else if (e.kind === 'boss' || rng.next() < DROP_CHANCE) {
-        const reward = rollReward(rng, false)
-        drops = [
-          ...drops,
-          createDrop(
-            e.body.pos.x + e.body.w / 2 - DROP_W / 2,
-            e.body.pos.y + e.body.h / 2 - DROP_H / 2,
-            reward,
-          ),
-        ]
+        effects.push({ type: 'sound', name: 'hit' })
+      } else {
+        effects.push({ type: 'sound', name: 'kill' })
+        if (e.kind === 'boss' || rng.next() < DROP_CHANCE) {
+          const reward = rollReward(rng, false)
+          drops = [
+            ...drops,
+            createDrop(
+              e.body.pos.x + e.body.w / 2 - DROP_W / 2,
+              e.body.pos.y + e.body.h / 2 - DROP_H / 2,
+              reward,
+            ),
+          ]
+        }
       }
     }
   })
@@ -434,6 +440,11 @@ export const stepMatch = (
     session = addScore(session, kills * SCORE_PER_KILL)
     effects.push(notify({ kind: 'score', score: session.score }))
     effects.push({ type: 'shake', ms: 90, intensity: 0.006 }) // a small kick per kill
+  }
+
+  // Jump cue: the FSM jumps when grounded + jump pressed and not crouching.
+  if (input.jump && state.player.body.grounded && state.player.state !== 'crouch') {
+    effects.push({ type: 'sound', name: 'jump' })
   }
 
   // 5. Enemy projectiles + hazards vs the player → step the FSM.
@@ -457,6 +468,7 @@ export const stepMatch = (
       y: hb.pos.y + hb.h / 2,
       scale: 0.18,
     })
+    effects.push({ type: 'sound', name: 'hurt' })
   }
 
   let next: MatchState = {
@@ -499,6 +511,7 @@ export const stepMatch = (
       const top = src ? src.y : player.body.pos.y
       const mid = src ? src.y + src.h / 2 : player.body.pos.y + player.body.h / 2
       effects.push({ type: 'vfx', name: 'magic_ring', x: cx, y: mid, scale: 1.1 })
+      effects.push({ type: 'sound', name: 'pickup' })
       effects.push({
         type: 'float',
         label: r.label,
@@ -527,7 +540,10 @@ export const stepMatch = (
 
   // 9. Stage cleared: spawner done and every spawned enemy dead.
   if (isFinished(spawner) && enemies.length > 0 && enemies.every((e) => e.state === 'dead')) {
-    return { state: { ...next, phase: 'cleared' }, effects }
+    return {
+      state: { ...next, phase: 'cleared' },
+      effects: [...effects, { type: 'sound', name: 'stage-clear' }],
+    }
   }
 
   return { state: next, effects }

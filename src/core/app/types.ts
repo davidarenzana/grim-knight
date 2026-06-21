@@ -83,6 +83,17 @@ export interface MatchConfig {
 /** One-shot visual effect the adapter plays at a world position. */
 export type VfxName = 'spark' | 'explosion' | 'magic_ring'
 
+/** A gameplay sound cue the adapter plays (positionless; the audio is 2D). */
+export type SoundName =
+  | 'throw'
+  | 'jump'
+  | 'hit'
+  | 'kill'
+  | 'hurt'
+  | 'die'
+  | 'pickup'
+  | 'stage-clear'
+
 /**
  * The output port, as DATA. The use case never calls Phaser/the bus directly;
  * it returns the effects it wants, and the adapter interprets them (camera
@@ -105,6 +116,7 @@ export type Effect =
       readonly x: number
       readonly y: number
     }
+  | { readonly type: 'sound'; readonly name: SoundName }
   | { readonly type: 'notify'; readonly notification: GameNotification }
 
 /**

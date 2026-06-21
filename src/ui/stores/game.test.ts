@@ -119,6 +119,22 @@ describe('game store', () => {
       expect(resumed.value).toBe(true)
     })
 
+    it('toggleAudio flips the flag and emits ui:audio', () => {
+      const store = useGameStore()
+      const audio = capture('ui:audio')
+      const before = store.audioOn
+      store.toggleAudio()
+      expect(store.audioOn).toBe(!before)
+      expect(audio.value).toEqual({ on: !before })
+    })
+
+    it('bind emits the initial audio preference', () => {
+      const store = useGameStore()
+      const audio = capture('ui:audio')
+      store.bind()
+      expect(audio.value).toEqual({ on: store.audioOn })
+    })
+
     it('restart → playing + ui:restart; quitToMenu → menu + ui:quit', () => {
       const store = useGameStore()
       const restarted = fired('ui:restart')

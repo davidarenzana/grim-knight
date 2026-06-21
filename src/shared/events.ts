@@ -29,6 +29,8 @@ export type GameEvents = {
   'ui:resume': void
   'ui:restart': void
   'ui:quit': void
+  /** Audio on/off toggle (the audio adapter mutes its master gain). */
+  'ui:audio': { on: boolean }
 }
 
 export const bus = mitt<GameEvents>()

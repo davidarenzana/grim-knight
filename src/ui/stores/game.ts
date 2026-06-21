@@ -4,6 +4,23 @@ import { bus, type ArmorState } from '@shared/events'
 
 export type Screen = 'menu' | 'levels' | 'playing' | 'paused' | 'gameover' | 'won'
 
+const AUDIO_KEY = 'grim:audio'
+/** Read the persisted audio preference (default ON). Guarded for the node test env. */
+const loadAudioPref = (): boolean => {
+  try {
+    return typeof localStorage === 'undefined' || localStorage.getItem(AUDIO_KEY) !== 'off'
+  } catch {
+    return true
+  }
+}
+const saveAudioPref = (on: boolean): void => {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(AUDIO_KEY, on ? 'on' : 'off')
+  } catch {
+    /* ignore (private mode / no storage) */
+  }
+}
+
 /**
  * Game state exposed to the UI. It is a MIRROR of what happens in the
  * simulation: it updates by listening to the event bus, never the other way around.
@@ -23,6 +40,8 @@ export const useGameStore = defineStore('game', () => {
   const bossMaxHp = ref(0)
   /** 0-based stage the next run begins at (set by the level-select screen). */
   const startLevel = ref(0)
+  /** Audio on/off (persisted). The audio adapter listens for `ui:audio`. */
+  const audioOn = ref(loadAudioPref())
 
   /** Subscribes the store to the bus. Called once at app bootstrap. */
   function bind(): void {
@@ -46,6 +65,15 @@ export const useGameStore = defineStore('game', () => {
     })
     bus.on('game:over', () => (screen.value = 'gameover'))
     bus.on('game:won', () => (screen.value = 'won'))
+    // Tell the audio adapter the persisted preference at boot.
+    bus.emit('ui:audio', { on: audioOn.value })
+  }
+
+  /** Flip audio on/off, persist it, and notify the audio adapter. */
+  function toggleAudio(): void {
+    audioOn.value = !audioOn.value
+    saveAudioPref(audioOn.value)
+    bus.emit('ui:audio', { on: audioOn.value })
   }
 
   function startGame(): void {
@@ -104,7 +132,9 @@ export const useGameStore = defineStore('game', () => {
     bossHp,
     bossMaxHp,
     startLevel,
+    audioOn,
     bind,
+    toggleAudio,
     startGame,
     openLevels,
     startAtLevel,

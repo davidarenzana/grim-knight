@@ -443,6 +443,20 @@ it (projectiles pass through off-screen foes and keep flying). The adapter (`Gam
 `cameras.main.worldView` into `stepMatch` each tick (and `stepMatch`/`StepMatch` forward it). Omitting
 `view` disables the gate, so all existing tests/usages are unaffected. Spec `combat.md` + 3 tests. 242 green.
 
+### Audio (procedural SFX + music) + on/off toggle (Phase 5)
+
+Audio is an **output adapter**, so it rides the same effects pipeline. `stepMatch` now emits
+`{type:'sound', name}` effects (`SoundName`: throw/jump/hit/kill/hurt/die/pickup/stage-clear) at the right
+moments; `GameScene.runEffects` plays them. `src/engine/audio.ts` is a tiny **Web Audio synth** (no audio
+files shipped — fits "original IP, no external assets"): lazy `AudioContext` (created on the first
+gesture/START), a master `GainNode` for mute, oscillator/noise SFX, and a subtle low arpeggio
+`startMusic`/`stopMusic` (started in `create()`, stopped on scene SHUTDOWN; idempotent). **On/off toggle**:
+store `audioOn` (persisted to `localStorage`, guarded for the node test env) + `toggleAudio()` emit
+`ui:audio {on}`; the audio adapter subscribes and ramps the master gain. `bind()` emits the persisted pref
+at boot. UI: `AudioToggle.vue` (🔊/🔇) pinned top-right in `App.vue`, on every screen. 245 unit + 5 E2E
+green. (The corner button's pixel diff is under the 2% visual-snapshot threshold, so menu baselines were
+unchanged.)
+
 ## In progress 🔧
 
 - Phase 5 art/levels overhaul is **done** (themes, 3 new enemies, pits + hazards, 3 boss variants, level

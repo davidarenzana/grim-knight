@@ -41,6 +41,7 @@ import {
   ICON,
 } from '@engine/assets/effects'
 import { bus } from '@shared/events'
+import { playSfx, startMusic, stopMusic } from '@engine/audio'
 
 /** Registry key the first GameScene reads to learn which stage to start at. */
 export const START_LEVEL_KEY = 'startLevel'
@@ -252,9 +253,11 @@ export class GameScene extends Phaser.Scene {
     // Pause/resume driven by the UI; cleaned up when the scene shuts down.
     bus.on('ui:pause', this.onPause)
     bus.on('ui:resume', this.onResume)
+    startMusic() // idempotent; the master gain honours the mute toggle
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       bus.off('ui:pause', this.onPause)
       bus.off('ui:resume', this.onResume)
+      stopMusic()
     })
 
     // Initial HUD state (read from the freshly-built match).
@@ -359,6 +362,9 @@ export class GameScene extends Phaser.Scene {
           break
         case 'vfx':
           playEffect(this, e.name, e.x, e.y, e.scale)
+          break
+        case 'sound':
+          playSfx(e.name)
           break
         case 'float':
           // The sparkle burst comes through as its own `vfx` effect; here we pop

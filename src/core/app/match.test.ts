@@ -132,6 +132,14 @@ describe('stepMatch', () => {
     expect(notifies(r.effects, 'score')).toBe(true)
   })
 
+  it('emits sound cues: throw on firing, kill when an enemy dies', () => {
+    const z = createZombie(130, GROUND_Y - PLAYER_H)
+    const r = run(makeConfig(), makeState({ enemies: [z] }), press({ attack: true }), 60)
+    const sounds = r.effects.filter((e) => e.type === 'sound').map((e) => e.name)
+    expect(sounds).toContain('throw')
+    expect(sounds).toContain('kill')
+  })
+
   it('applies a points chest on contact: score + HUD notify + float label', () => {
     const chest = createChest(START.x, START.y, { kind: 'points', points: 500 })
     const r = stepMatch(makeConfig(), makeState({ chests: [chest] }), NO_INPUT, 1 / 60)
