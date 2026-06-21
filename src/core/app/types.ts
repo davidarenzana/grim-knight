@@ -38,6 +38,9 @@ export interface MatchState {
   readonly player: Player
   readonly weapon: WeaponState
   readonly activeWeapon: WeaponDef
+  /** Weapon ids the knight owns (swap cycles only these). Always includes the
+   *  active weapon; grows as weapon chests/drops are collected. */
+  readonly ownedWeapons: readonly string[]
   readonly enemies: readonly Enemy[]
   readonly enemyProjectiles: readonly Projectile[]
   readonly chests: readonly Chest[]

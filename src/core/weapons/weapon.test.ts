@@ -7,6 +7,7 @@ import {
   fire,
   LANCE,
   nextWeapon,
+  nextOwnedWeapon,
   stepWeapon,
   TORCH,
   weaponById,
@@ -139,5 +140,17 @@ describe('weapon', () => {
     }
     expect(ids.size).toBe(WEAPONS.length) // visited each exactly once
     expect(cur).toBe(LANCE) // wrapped back around
+  })
+
+  it('nextOwnedWeapon cycles only the owned ids, wrapping around', () => {
+    const owned = [DAGGER.id, TORCH.id]
+    expect(nextOwnedWeapon(DAGGER.id, owned).id).toBe(TORCH.id)
+    expect(nextOwnedWeapon(TORCH.id, owned).id).toBe(DAGGER.id) // wraps, skips axe/lance
+    // The axe isn't owned yet, so it's never reached by swapping.
+    expect([DAGGER.id, TORCH.id]).not.toContain(AXE.id)
+  })
+
+  it('nextOwnedWeapon falls back to the current weapon when nothing is owned', () => {
+    expect(nextOwnedWeapon(DAGGER.id, []).id).toBe(DAGGER.id)
   })
 })

@@ -71,12 +71,13 @@ export const ironFortress: LevelDef = {
     rungs(LCOL, T6, T5), //      T5 → T6 (left)
     rungs(RCOL, ARENA, T6), //   T6 → arena (right)
   ],
-  // Spikes sit mid-shelf, clear of both ladder columns (200 / 660) and ≤ jump width.
+  // Spikes sit mid-shelf, clear of both ladder columns (200 / 660). Kept narrow
+  // (40px) so they're comfortably jumpable on the cramped tower shelves.
   hazards: [
-    spikesOn(500, T1, 56),
-    spikesOn(300, T2, 56),
-    spikesOn(500, T3, 56),
-    spikesOn(300, T4, 56),
+    spikesOn(500, T1, 40),
+    spikesOn(300, T2, 40),
+    spikesOn(500, T3, 40),
+    spikesOn(300, T4, 40),
   ],
   spawns: [
     // Bottom floor — walkers, between the start and the first ladder.

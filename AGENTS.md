@@ -127,7 +127,9 @@ fire across the gap). Levels are split per stage under `core/level/stages/` (typ
 placed by position only and `rollReward(rng)` (weighted `REWARD_TABLE` in `core/level/chest.ts`) rolls each
 chest's reward per run (engine seeds an `Rng` in `create()`). **Enemy drops**: slain foes may drop a pickup
 (`createDrop`, collected like a chest; `rollReward(rng,false)` so drops never curse; bosses always drop).
-The knight **starts with the dagger** (+armor). Every throw also lands a **point-blank jab** (`resolveMelee`)
+The knight **starts owning only the dagger + torch** (active = dagger, +armor); **swap (X) cycles only owned
+weapons** (`nextOwnedWeapon` over `MatchState.ownedWeapons`) and weapon chests/drops **add** new ones (axe;
+the curse's lance) — so picking weapons up actually matters. Every throw also lands a **point-blank jab** (`resolveMelee`)
 so arcing weapons hit adjacent foes. **Effects/VFX**: `engine/assets/effects.ts` plays
 one-shot CraftPix art — an explosion on enemy/boss/player death, a `spark` on a non-fatal hit (enemy or
 knight), and a magic-ring burst + the **reward icon** when a chest opens (`playEffect`/`rewardIcon`; art

@@ -3,7 +3,7 @@ import { aabb } from '@core/math/aabb'
 import { createRng } from '@core/math/rng'
 import { GROUND_Y } from '@core/level/geometry'
 import { createPlayer, PLAYER_H, NO_INPUT, type PlayerInput } from '@core/fsm/player'
-import { createWeapon, DAGGER } from '@core/weapons/weapon'
+import { createWeapon, DAGGER, TORCH } from '@core/weapons/weapon'
 import { createSession } from '@core/rules/session'
 import { createTimer } from '@core/level/timer'
 import { createSpawner } from '@core/level/spawner'
@@ -38,6 +38,7 @@ const makeState = (over: Partial<MatchState> = {}): MatchState => ({
   player: createPlayer(START.x, START.y),
   weapon: createWeapon(),
   activeWeapon: DAGGER,
+  ownedWeapons: [DAGGER.id, TORCH.id],
   enemies: [],
   enemyProjectiles: [],
   chests: [],
@@ -140,10 +141,11 @@ describe('stepMatch', () => {
     expect(r.effects.some((e) => e.type === 'float')).toBe(true)
   })
 
-  it('applies a weapon chest: swaps the active weapon + notifies', () => {
+  it('applies a weapon chest: equips it, adds it to the owned set + notifies', () => {
     const chest = createChest(START.x, START.y, { kind: 'weapon', weaponId: 'axe' })
     const r = stepMatch(makeConfig(), makeState({ chests: [chest] }), NO_INPUT, 1 / 60)
     expect(r.state.activeWeapon.id).toBe('axe')
+    expect(r.state.ownedWeapons).toContain('axe') // earned, not owned from the start
     expect(notifies(r.effects, 'weapon')).toBe(true)
   })
 })
@@ -158,6 +160,7 @@ describe('createMatch', () => {
     })
     expect(state.phase).toBe('playing')
     expect(state.activeWeapon.id).toBe('dagger')
+    expect(state.ownedWeapons).toEqual(['dagger', 'torch']) // earn the rest from chests
     expect(state.player.body.pos.x).toBe(LEVELS[0]!.playerStart.x)
     expect(config.bounds.maxX).toBe(LEVELS[0]!.worldWidth)
     expect(config.stageSeconds).toBe(LEVELS[0]!.durationSeconds) // loop 1: no time scale

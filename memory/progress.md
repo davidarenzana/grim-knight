@@ -420,6 +420,20 @@ another OS must regenerate. 5 E2E pass; 237 unit pass; typecheck/lint green.
 
 **All four testing layers (A–D) and the hexagonal review (H1–H5) are now complete.**
 
+### Playtest fixes: boss arena, tower spikes, starting weapons (Phase 5)
+
+- **Demon Keep (stage 6) boss reachable:** removed the pit at `x:2700` that sat right before the boss
+  arena — the boss (ranged `advanceDir`, slow 36px/s) held at the pit edge raining its 5-way volley while
+  the player died trying to jump across. The final boss now has a flat approach/arena. (The boss was never
+  code-stuck — confirmed headlessly it advances on flat ground; the pit was the death trap.)
+- **Iron Fortress (stage 4) spikes:** narrowed the tower-shelf spikes 56→40px so they're comfortably
+  jumpable on the cramped one-way shelves.
+- **Starting weapons:** previously swap (X) cycled the whole 4-weapon registry, so you effectively had every
+  weapon from the start and chests were pointless. Added `MatchState.ownedWeapons` (starts `[dagger, torch]`);
+  swap uses `nextOwnedWeapon` (cycles only owned), and weapon chests/drops/curse `equip()` → add to owned +
+  set active (invariant: active ∈ owned). New tests: `nextOwnedWeapon`, `createMatch` owned set, chest adds
+  to owned. 239 tests green; typecheck/lint green.
+
 ## In progress 🔧
 
 - Phase 5 art/levels overhaul is **done** (themes, 3 new enemies, pits + hazards, 3 boss variants, level

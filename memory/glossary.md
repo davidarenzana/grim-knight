@@ -6,7 +6,7 @@
 - **Armor (2 hits)**: the knight withstands one hit by losing the armor (`armored` → `underwear`); the
   second hit kills him (`dead`). States in `shared/events.ts:ArmorState`.
 - **Underwear (`underwear`)**: vulnerable state after losing the armor.
-- **Weapon**: equippable projectile/tool (lance, dagger, torch, axe, shield...). Only one active at a time.
+- **Weapon**: equippable projectile/tool (lance, dagger, torch, axe). Only one active at a time. The knight **owns only the dagger + torch at the start** (`MatchState.ownedWeapons`); **swap (X) cycles only owned** weapons (`nextOwnedWeapon`), and weapon chests/drops add new ones (the active weapon is always in the owned set). So loot matters.
 - **Chest / loot**: container that drops a weapon or power-up; some may be a trap.
 - **Double loop**: after finishing the levels, the game repeats (harder) and only then is it considered
   completed. Classic genre mechanic.

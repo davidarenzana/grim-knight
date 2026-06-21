@@ -22,8 +22,10 @@ import {
   advanceProjectilesDetailed,
   weaponById,
   DAGGER,
+  TORCH,
   LANCE,
   type Projectile,
+  type WeaponDef,
 } from '@core/weapons/weapon'
 import {
   openChests,
@@ -168,8 +170,10 @@ export const createMatch = (
   const state: MatchState = {
     player: createPlayer(start.x, start.y),
     weapon: createWeapon(),
-    // The knight starts with the dagger (plus armor); other weapons come from loot.
+    // The knight starts with the dagger + torch (plus armor); the axe (and the
+    // curse's lance) are earned from chests/drops, so picking weapons up matters.
     activeWeapon: DAGGER,
+    ownedWeapons: [DAGGER.id, TORCH.id],
     enemies: [],
     enemyProjectiles: [],
     chests,
@@ -192,29 +196,33 @@ const applyReward = (
   player: Player
   session: Session
   activeWeapon: MatchState['activeWeapon']
+  ownedWeapons: readonly string[]
   effects: Effect[]
   label: string
   color: string
 } => {
   let { player, session, activeWeapon } = state
+  let ownedWeapons = state.ownedWeapons
   const effects: Effect[] = []
   let label: string
   let color: string
+  /** Equip a weapon, adding it to the owned set (keeps active ∈ owned). */
+  const equip = (def: WeaponDef) => {
+    activeWeapon = def
+    if (!ownedWeapons.includes(def.id)) ownedWeapons = [...ownedWeapons, def.id]
+    effects.push(notify({ kind: 'weapon', weapon: def.id }))
+  }
   switch (reward.kind) {
     case 'weapon': {
       const def = weaponById(reward.weaponId)
-      if (def) {
-        activeWeapon = def
-        effects.push(notify({ kind: 'weapon', weapon: def.id }))
-      }
+      if (def) equip(def)
       color = hexColor(WEAPON_COLOR[reward.weaponId] ?? 0xffffff)
       label = `${reward.weaponId.toUpperCase()}!`
       break
     }
     case 'curse':
-      // The magician's curse downgrades you back to the starting lance.
-      activeWeapon = LANCE
-      effects.push(notify({ kind: 'weapon', weapon: LANCE.id }))
+      // The magician's curse downgrades you to the lance (and adds it to the cycle).
+      equip(LANCE)
       label = 'CURSED!'
       color = '#ff5555'
       break
@@ -236,7 +244,7 @@ const applyReward = (
       color = '#7cfc00'
       break
   }
-  return { player, session, activeWeapon, effects, label, color }
+  return { player, session, activeWeapon, ownedWeapons, effects, label, color }
 }
 
 /** Death of the knight: lose a life, then game-over or respawn (state + effects). */
@@ -482,7 +490,7 @@ export const stepMatch = (
       const r = applyReward({ ...next, player, session, activeWeapon: next.activeWeapon }, reward)
       player = r.player
       session = r.session
-      next = { ...next, activeWeapon: r.activeWeapon }
+      next = { ...next, activeWeapon: r.activeWeapon, ownedWeapons: r.ownedWeapons }
       effects.push(...r.effects)
       const src = popped[n]
       const cx = src ? src.x + src.w / 2 : player.body.pos.x + player.body.w / 2

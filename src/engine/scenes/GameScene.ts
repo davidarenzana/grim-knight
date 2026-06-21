@@ -3,7 +3,7 @@ import { lerp } from '@core/math/vector'
 import { createRng } from '@core/math/rng'
 import { createStepper, type Stepper } from '@core/sim/loop'
 import { type Player, type PlayerInput, PLAYER_W, PLAYER_H } from '@core/fsm/player'
-import { nextWeapon, LANCE } from '@core/weapons/weapon'
+import { nextOwnedWeapon, LANCE } from '@core/weapons/weapon'
 import { LEVELS } from '@core/level/level'
 import { type ChestReward } from '@core/level/chest'
 import { win, type Session } from '@core/rules/session'
@@ -287,7 +287,10 @@ export class GameScene extends Phaser.Scene {
       this.state.phase === 'playing' &&
       this.keys.swap.some((key) => Phaser.Input.Keyboard.JustDown(key))
     ) {
-      this.state = { ...this.state, activeWeapon: nextWeapon(this.state.activeWeapon) }
+      this.state = {
+        ...this.state,
+        activeWeapon: nextOwnedWeapon(this.state.activeWeapon.id, this.state.ownedWeapons),
+      }
       bus.emit('game:weapon-changed', { weapon: this.state.activeWeapon.id })
     }
 

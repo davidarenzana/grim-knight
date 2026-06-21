@@ -111,6 +111,18 @@ export const nextWeapon = (def: WeaponDef): WeaponDef => {
   return WEAPONS[(i + 1) % WEAPONS.length]!
 }
 
+/**
+ * The next weapon among the ones the player OWNS (by id), wrapping around. The
+ * knight starts with only a couple and earns the rest from chests, so swapping
+ * cycles just the owned set — not the whole registry.
+ */
+export const nextOwnedWeapon = (currentId: string, owned: readonly string[]): WeaponDef => {
+  const defs = owned.map(weaponById).filter((d): d is WeaponDef => d !== undefined)
+  if (defs.length === 0) return weaponById(currentId) ?? DAGGER
+  const i = defs.findIndex((d) => d.id === currentId)
+  return defs[(i + 1) % defs.length]!
+}
+
 export const createWeapon = (): WeaponState => ({ cooldownLeft: 0, projectiles: [] })
 
 /** Throw a projectile from (originX, originY) toward `facing`, if allowed. */

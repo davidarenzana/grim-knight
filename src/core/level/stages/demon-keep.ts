@@ -10,11 +10,12 @@ export const demonKeep: LevelDef = {
   worldWidth: 3400,
   playerStart: { x: 80, y: PLAYER_START_Y },
   solids: [
+    // No pit in the final stretch (≥2050): the boss arena/approach is flat so the
+    // fight isn't gated by a jump across its volley (was a soft-lock-ish death trap).
     ...floor(3400, [
       { x: 980, w: 65 },
       { x: 1480, w: 70 },
       { x: 1980, w: 70 },
-      { x: 2700, w: 70 },
     ]),
     aabb(450, 360, 40, 50),
     oneWay(700, 300, 180, 20),
