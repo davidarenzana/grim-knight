@@ -317,17 +317,19 @@ export class GameScene extends Phaser.Scene {
     const kb = this.input.keyboard!
     const k = (code: number) => kb.addKey(code)
     const K = Phaser.Input.Keyboard.KeyCodes
-    // Controls: arrows move; Up jumps (or climbs on a ladder); Down crouches
-    // (or climbs down); Space throws. Up is mapped to both `up` and `jump` — the
-    // FSM climbs when on a ladder and jumps otherwise.
+    // Controls (NES-style): arrows move with the right hand; Z throws and X
+    // swaps weapons with the left hand. Up jumps (or climbs on a ladder); Down
+    // crouches (or climbs down). Up is mapped to both `up` and `jump` — the FSM
+    // climbs when on a ladder and jumps otherwise. WASD and Space are kept as
+    // alternates so either hand layout still works.
     this.keys = {
       left: [k(K.LEFT), k(K.A)],
       right: [k(K.RIGHT), k(K.D)],
       up: [k(K.UP), k(K.W)],
       jump: [k(K.UP), k(K.W)],
       down: [k(K.DOWN), k(K.S)],
-      attack: [k(K.SPACE)],
-      swap: [k(K.Q)],
+      attack: [k(K.Z), k(K.SPACE)],
+      swap: [k(K.X)],
     }
 
     // Pause/resume driven by the UI; cleaned up when the scene shuts down.
