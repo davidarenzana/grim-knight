@@ -99,7 +99,20 @@ const game = useGameStore()
 }
 .actions {
   display: flex;
-  align-items: center;
-  gap: 2.4cqw;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.6cqw;
+}
+/* Smaller, stacked menu buttons (scoped so other views keep the larger ones). */
+.actions .btn-pixel {
+  font-size: 1.7cqw;
+  padding: 1.3cqw 2.4cqw;
+  border-width: 1.7cqw;
+  border-image-width: 1.7cqw;
+  min-width: 26cqw;
+}
+.actions .btn-pixel.is-primary {
+  font-size: 1.8cqw;
+  padding: 1.3cqw 2.4cqw;
 }
 </style>
