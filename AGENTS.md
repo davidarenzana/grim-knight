@@ -28,9 +28,10 @@ never touches the DOM.** Enforced by ESLint (`no-restricted-imports` + `no-restr
 `eslint.config.js`). If you need data from the outside, pass it as arguments; if you need to talk to the
 UI, **return effects/notifications as data** (see `core/app`) — the adapter, not the core, calls the bus.
 
-We follow a **hexagonal (ports & adapters)** layout: `core/` is the domain + application; `engine/` and
-`ui/` are adapters; nothing points out of the core (verified acyclic). See `docs/TESTING-PLAN.md` §3 for
-the in-progress `stepMatch` extraction (the application use case).
+We follow a **hexagonal (ports & adapters)** layout: `core/` is the domain + application (the `stepMatch`
+use case in `core/app`); `engine/` and `ui/` are adapters; nothing points out of the core (verified
+acyclic). The application returns presentation **effects as data**; the adapter interprets them. See ADR
+[[0006-hexagonal-application-layer]].
 
 ```
 src/
