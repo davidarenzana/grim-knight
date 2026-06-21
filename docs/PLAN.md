@@ -127,6 +127,14 @@ sessions (agents read fresh memory instead of reconstructing context from code).
 - **Phase 5 — Art pass & juice:** integrate CC0/original assets over defined asset contracts; animations,
   particles, screen shake, transitions, music. Code unchanged, placeholders swapped.
 - **Phase 6 — Build & publish:** production build, asset optimization, static deploy (GitHub Pages), README.
+  - **Code-split the Phaser chunk** (the build is one ~1.6 MB / 384 kB-gzip JS bundle, ~90% Phaser). Plan:
+    1. **Lazy-load Phaser** — make `GameCanvas`/`@engine/game` a dynamic `import()` (e.g. `defineAsyncComponent`)
+       so the Vue **menu boots without Phaser**; the engine chunk loads on START. Biggest perceived-load win
+       (the player sits on the title screen first; Phaser isn't needed until `playing`). Mask the first-START
+       delay with a "Loading…" state or background-prefetch while on the menu.
+    2. Optionally a `build.rollupOptions.output.manualChunks` **vendor split** (Phaser in its own chunk) for
+       caching across deploys + to silence the >500 kB warning. Secondary — it doesn't defer the download.
+  - Deploy: static host (GitHub Pages); `base` is already `./` in `vite.config.ts`.
 
 ## Verification (end-to-end)
 

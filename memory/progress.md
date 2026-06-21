@@ -463,14 +463,20 @@ unchanged.)
   refactor, **death/hit VFX + chest VFX/icons + random loot + sprite enemy projectiles**). Remaining
   Phase 5 work: audio, then optional juice (more particles, transition fades).
 
-## Next ⏭️ (Phase 5 — audio & polish, then Phase 6)
+## Next ⏭️ (remaining Phase 5 polish, then Phase 6)
 
-- Audio (SFX/music) via Phaser (procedural synth or CC0 files).
 - More juice if wanted: particles on kill, transition fades.
 - Polish: time/no-damage score bonuses, extra lives at score thresholds (reuse `gainLife`), high-score
   table, torch ground-fire hazard.
 - Richer boss/hazard designs from the GDD (unique boss patterns; water/crushers/wind/collapsing floors).
-- Phase 6: production build optimization (code-split the Phaser chunk) + static deploy (GitHub Pages).
+- **Phase 6 — build optimization + deploy** (deferred together, per the user):
+  - **Code-split the Phaser chunk.** Build is one ~1.6 MB (384 kB gzip) JS bundle, ~90% Phaser.
+    1. **Lazy-load Phaser**: dynamic-`import()` `GameCanvas`/`@engine/game` (e.g. `defineAsyncComponent`) so
+       the Vue menu boots without Phaser; the engine chunk loads on START (biggest perceived-load win — the
+       player sits on the title screen first). Mask the first-START delay with a "Loading…"/background prefetch.
+    2. Optional `manualChunks` vendor split (Phaser → own chunk) for cross-deploy caching + to silence the
+       > 500 kB warning (secondary; doesn't defer the download).
+  - **Static deploy** (GitHub Pages); `vite.config.ts` `base` is already `./`. See `docs/PLAN.md` Phase 6.
 
 ## Recent decisions
 
