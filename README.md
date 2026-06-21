@@ -17,6 +17,20 @@ pnpm lint         # ESLint
 pnpm build        # production build
 ```
 
+## Controls
+
+NES-style: move with the right hand, act with the left.
+
+| Key           | Action                          |
+| ------------- | ------------------------------- |
+| Arrows / WASD | Move                            |
+| Up / W        | Jump (climb up on a ladder)     |
+| Down / S      | Crouch (climb down on a ladder) |
+| Z (or Space)  | Throw the active weapon         |
+| X             | Swap to the next weapon         |
+
+A title screen (START / SELECT STAGE) and a stage-select screen front the game.
+
 ## Architecture
 
 Three layers with one golden rule — **`src/core/` is pure TS** (no Phaser/Vue/DOM), so ~80% of the

@@ -95,7 +95,10 @@ zombie/flyer/ogre/plant and a boss (HP bar); enemy projectiles, projectile-vs-wa
 **proximity-triggered spawner** (enemies wake as you approach their zone, not on a timer — so the boss no
 longer marches at you from across the stage if you stand still), long horizontally-scrolling stages,
 stage timer, lives/score/game-over, level transitions and the double loop → "True Victory". **Weapon variety**
-(lance/dagger/torch/axe with arc + limited-reach), Q to swap. **Chests/pickups** (weapon/armor/points/life/curse)
+(lance/dagger/torch/axe with arc + limited-reach). **Controls are NES-style**: arrows (or WASD) move, **Z (or Space)
+throws**, **X swaps weapon**. **Front-end menus** (Vue, `src/ui/views/`): a title screen (START / SELECT STAGE,
+backdrop + boss art) and a stage-select screen gate the game; the store's `Screen` (menu/levels/playing/paused/
+gameover/won) drives which view shows. **Chests/pickups** (weapon/armor/points/life/curse)
 across all 6 levels (chests show floating reward text; stage-clear banner). **Juice**: screen shake, enemy
 hit-flash, i-frame blink. **Art**: characters/enemies/boss are **CraftPix animated spritesheets** (`engine/assets/sprites.ts`, loaded
 in `preload()`); scenery (background, ground/platform/ladder, crate, chest) is the CraftPix "Cartoon Medieval
@@ -104,7 +107,10 @@ Ruins" tileset (`engine/assets/tiles.ts`); thrown weapons use animated projectil
 stage its own ground tile + backdrop (`engine/assets/tiles.ts`; theme art under `public/assets/tiles/<theme>/`).
 **Three more enemies** (centipede/turtle/bloated) and **three escalating boss variants** (one skin per pair of
 stages). **GnG-style level geometry**: jumpable pits (`floor(width, pits)`) with **fall-out** death (`core/rules/fall.ts`)
-and **contact hazards** (spikes/lava, `core/rules/hazard.ts`); ground enemies are **ledge/wall-aware**
+and **contact hazards** (spikes/lava, `core/rules/hazard.ts`; `lava(x,w)` is a recessed-into-the-ground pool, sized
+so a jump clears it). A **jumpable-hazard guardrail** (`level/jumpable.test.ts`) asserts every authored hazard stays
+within `SAFE_HAZARD_W` (< `MAX_JUMP_GAP`) so no stage soft-locks. **Iron Fortress is a vertical tower stage** (tall
+`worldHeight`, vertical camera scroll). Ground enemies are **ledge/wall-aware**
 (`core/enemies/walk.ts`): melee walkers `patrolDir` (chase within `AGGRO_RANGE`, else patrol — turn at
 ledges/walls and keep going), ranged turtle/boss `advanceDir` (advance where there's floor, else hold and
 fire across the gap). Levels are split per stage under `core/level/stages/` (types in
@@ -119,8 +125,10 @@ knight), and a magic-ring burst + the **reward icon** when a chest opens (`playE
 under `public/assets/effects/` + `public/assets/icons/`). **Enemy projectiles** are real sprites, not
 rectangles: each shot carries a presentation `sprite` tag in core (`spore`/`bullet`/`bolt`/`fire`) that
 `engine/assets/sprites.ts` (`ENEMY_PROJECTILES`/`enemyProjectileVisual`) renders animated/tinted (rect
-fallback). 184 tests green. Next within Phase 5:
-audio, fine-tune sprite scales; then Phase 6 (build/deploy). Live detail in `memory/progress.md`.
+fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch art, so `GameScene` squashes the
+idle pose vertically (foot-aligned) while the FSM is in `crouch` (the state + shrunk hitbox are real). 211 tests
+green. Next within Phase 5: audio, fine-tune sprite scales; then Phase 6 (build/deploy). Live detail in
+`memory/progress.md`.
 
 ## 9. Parallel agents
 

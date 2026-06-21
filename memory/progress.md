@@ -305,7 +305,7 @@ string` (pure data). Each ranged enemy tags its shots — plant→`spore`, turtl
   (incl. 3 new sunk cases). 194 tests green; typecheck/lint/build green.
 - **Likely real cause to watch:** the reported enemy looked like a short/low green one (centipede/bloated).
   Arcing weapons (axe/torch) fly _over_ a point-blank low enemy, so with random loot the player can be
-  holding an axe that can't hit it — **swap to the lance with Q** (straight, always hits). If this recurs,
+  holding an axe that can't hit it — **swap to the lance with X** (straight, always hits). If this recurs,
   consider giving arc weapons a flatter point-blank hit or a small melee hitbox.
 
 ### Point-blank jab + dagger start + enemy drops (Phase 5)
@@ -336,6 +336,29 @@ enemies)` (every living enemy overlapping the box takes a hit). On a throw that 
 - **Guard (test):** new `stages.test.ts` invariant — no ground-enemy spawn box may overlap a non-one-way
   solid (crate/pillar), across all six stages. Catches this class of bug for good. 201 tests green;
   typecheck/lint/build green.
+
+### Front-end menus, vertical tower & control polish (Phase 5)
+
+- **Title + stage-select menus** (Vue, `src/ui/views/`): `MainMenu.vue` (title screen — START / SELECT
+  STAGE over a stage backdrop with boss art) and `LevelSelect.vue` (pick any stage) front the game. The
+  store (`src/ui/stores/game.ts`) gained a `Screen` union (`menu | levels | playing | paused | gameover |
+won`) plus `startGame()` / `openLevels()` / `selectLevel(index)` / a `startLevel` ref consumed by the
+  engine (`consumeStartLevel`) so the scene boots at the chosen stage. Menu buttons share `.btn-pixel`
+  (`style.css`); the title's two buttons are **stacked and shrunk** via scoped overrides in `MainMenu.vue`
+  (left other views' buttons untouched).
+- **Vertical tower stage:** Iron Fortress is now a vertical climb — a tall `worldHeight` (≫ screen) with the
+  camera scrolling vertically as the knight ascends ladders. Plus a **ladder-dismount fix**.
+- **Lava recessed + jumpable:** `lava(x, w)` (`core/level/geometry.ts`) now sits INTO the ground band (top
+  2px above the surface) so it reads as a recessed pool, not a floating bar, and pools were narrowed to stay
+  jumpable. New guardrail `core/level/jumpable.test.ts` asserts every authored hazard width ≤ `SAFE_HAZARD_W`
+  (< `MAX_JUMP_GAP`) so a too-wide spike/lava strip can never soft-lock a stage.
+- **NES-style controls:** remapped from `Space` throw + `Q` swap to **`Z` (or `Space`) throw** and **`X`
+  swap** (`GameScene` key bindings) — move with the right hand on arrows, act with the left on Z/X. Arrows
+  and WASD both still move.
+- **Crouch squash:** the CraftPix knight pack has no Crouch sheet, so ducking froze on the idle pose.
+  `GameScene` now squashes the sprite vertically (×0.62 Y, slight ×1.08 widen, foot-aligned origin) while
+  `player.state === 'crouch'`, so the duck reads. The FSM `crouch` state + shrunk hitbox were already real.
+- 211 tests green; typecheck/lint/build green.
 
 ## In progress 🔧
 

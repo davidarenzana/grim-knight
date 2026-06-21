@@ -57,4 +57,18 @@
     frame's transparent bottom padding (alpha bbox via a canvas) and set `foot` to that. Flyers use `center`.
 - **`scene.load.*` needs `preload()`:** file-based assets (spritesheets, tile images) must be queued in the
   scene's `preload()`, not `create()`; anims are built in `create()` after the load completes.
+- **No crouch sprite sheet:** the CraftPix knight pack ships idle/run/jump/attack/hurt/dead only — no Crouch.
+  `knightAnim()` maps `crouch → idle`, so without help the knight freezes upright when ducking. `GameScene`
+  squashes the sprite (Y ×0.62, X ×1.08) while `player.state === 'crouch'`; the foot-aligned origin (0.5,1)
+  keeps the boots planted so the head drops. `setScale` after `applySprite` leaves its `setFlipX` intact, so
+  keep the X factor positive (don't multiply by `facing`, or you double-flip). The FSM `crouch` state and its
+  shrunk hitbox (`CROUCH_H`) are real gameplay; this is presentation-only. Drop a real `Crouch.png` + a
+  `crouch` state entry in `sprites.ts` to replace the squash with art.
+- **Control bindings live in `GameScene` (engine), not specs:** specs use abstract commands (`attack`,
+  `jump`, `down`); the physical keys are an engine concern. Current scheme is NES-style — arrows/WASD move,
+  `Z`/`Space` throw (`attack`), `X` swaps weapon. Remapping keys never touches `core/` or its specs.
+- **Screen flow lives in the Vue store, not the engine:** `src/ui/stores/game.ts` holds a `Screen` union
+  (`menu | levels | playing | paused | gameover | won`); `App.vue` renders the matching view. The engine only
+  emits `game:over`/`game:won` (the store flips the screen) and reads `consumeStartLevel()` for the
+  stage-select choice. Add a new screen by extending the union + a view, not by touching `GameScene`.
 - (Add every new gotcha discovered here — living project.)

@@ -80,11 +80,16 @@ weapon yields the **true ending**.
 
 ## 9. Controls (default)
 
+NES-style layout: move with the right hand (arrows), act with the left hand (Z/X).
+
 - Left / Right (or A / D): move
 - Up (or W): jump — or climb up when on a ladder
 - Down (or S): crouch — or climb down when on a ladder
-- Space: throw the active weapon
+- Z (or Space): throw the active weapon
+- X: swap to the next weapon
 - Pause: via the HUD button (Esc/P planned)
+
+Entry flow: a title screen (START / SELECT STAGE) and a stage-select screen front the game (`src/ui/views/`).
 
 ## 10. Build order (see `docs/PLAN.md`)
 
