@@ -60,18 +60,35 @@ describe('game store', () => {
       expect(store.bossActive).toBe(false)
     })
 
-    it('switches screen on terminal events', () => {
+    it('a qualifying terminal event routes to initials entry', () => {
+      // With an empty table any score makes the top ten → enter initials first.
       const over = useGameStore()
       over.bind()
       bus.emit('game:over', { score: 999 })
-      expect(over.screen).toBe('gameover')
+      expect(over.screen).toBe('enterscore')
+      expect(over.pendingScore).toBe(999)
+      expect(over.lastOutcome).toBe('gameover')
 
       bus.all.clear()
       setActivePinia(createPinia())
       const won = useGameStore()
       won.bind()
       bus.emit('game:won', { score: 5000 })
-      expect(won.screen).toBe('won')
+      expect(won.screen).toBe('enterscore')
+      expect(won.lastOutcome).toBe('won')
+    })
+
+    it('a non-qualifying terminal event shows the outcome screen directly', () => {
+      const store = useGameStore()
+      store.bind()
+      // Fill the table with ten unbeatable runs.
+      for (let i = 0; i < 10; i++) {
+        bus.emit('game:over', { score: 10000 })
+        store.submitScore('AAA')
+      }
+      bus.emit('game:over', { score: 5 })
+      expect(store.screen).toBe('gameover')
+      expect(store.lastRank).toBe(-1)
     })
   })
 
@@ -133,6 +150,24 @@ describe('game store', () => {
       const audio = capture('ui:audio')
       store.bind()
       expect(audio.value).toEqual({ on: store.audioOn })
+    })
+
+    it('submitScore commits the run with sanitized initials and shows the table', () => {
+      const store = useGameStore()
+      store.bind()
+      bus.emit('game:level-changed', { level: 4, loop: 2 })
+      bus.emit('game:over', { score: 999 })
+      store.submitScore('dav')
+      expect(store.scores[0]).toEqual({ name: 'DAV', score: 999, level: 4, loop: 2 })
+      expect(store.lastRank).toBe(0)
+      expect(store.screen).toBe('highscores')
+    })
+
+    it('openHighScores → highscores with no highlighted row', () => {
+      const store = useGameStore()
+      store.openHighScores()
+      expect(store.screen).toBe('highscores')
+      expect(store.lastRank).toBe(-1)
     })
 
     it('restart → playing + ui:restart; quitToMenu → menu + ui:quit', () => {

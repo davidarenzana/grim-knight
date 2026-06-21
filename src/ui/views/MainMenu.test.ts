@@ -17,10 +17,10 @@ describe('MainMenu', () => {
   const findButton = (wrapper: ReturnType<typeof mount>, text: string) =>
     wrapper.findAll('button').find((b) => b.text().toUpperCase().includes(text))!
 
-  it('renders the title and both call-to-actions', () => {
+  it('renders the title and the call-to-actions', () => {
     const wrapper = mount(MainMenu, { global: { plugins: [pinia] } })
     expect(wrapper.text()).toContain('GRIM')
-    expect(wrapper.findAll('button').length).toBe(2)
+    expect(wrapper.findAll('button').length).toBe(3)
   })
 
   it('START begins a run at the first stage', async () => {
@@ -35,5 +35,11 @@ describe('MainMenu', () => {
     const wrapper = mount(MainMenu, { global: { plugins: [pinia] } })
     await findButton(wrapper, 'SELECT').trigger('click')
     expect(useGameStore().screen).toBe('levels')
+  })
+
+  it('HIGH SCORES opens the ranking', async () => {
+    const wrapper = mount(MainMenu, { global: { plugins: [pinia] } })
+    await findButton(wrapper, 'HIGH SCORES').trigger('click')
+    expect(useGameStore().screen).toBe('highscores')
   })
 })

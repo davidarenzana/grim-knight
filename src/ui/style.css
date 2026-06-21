@@ -92,3 +92,39 @@ body,
 .btn-pixel.is-primary:hover {
   filter: brightness(1.22);
 }
+
+/* Small cream/parchment icon buttons for the top-right corner controls
+   (pause, audio). Flat parchment + brown ink border so the pair matches the
+   wood-panel HUD chips and sits together without the green CTA chrome. */
+.hud-btn {
+  width: 4.2cqw;
+  height: 4.2cqw;
+  display: grid;
+  place-items: center;
+  padding: 0.7cqw;
+  background: #efe2c0;
+  color: var(--ink);
+  border: 0.45cqw solid #7a4a12;
+  border-radius: 0.6cqw;
+  box-shadow:
+    inset 0 0 0 0.2cqw #fff7,
+    0 0.3cqw 0 #00000033;
+  cursor: pointer;
+  image-rendering: pixelated;
+  transition:
+    filter 80ms,
+    transform 60ms;
+}
+.hud-btn:hover {
+  filter: brightness(1.07);
+}
+.hud-btn:active {
+  transform: translateY(1px);
+  filter: brightness(0.96);
+}
+.hud-btn svg {
+  width: 100%;
+  height: 100%;
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+}

@@ -21,6 +21,7 @@ const game = useGameStore()
       <div class="actions">
         <button class="btn-pixel is-primary" @click="game.startGame()">START</button>
         <button class="btn-pixel" @click="game.openLevels()">SELECT STAGE</button>
+        <button class="btn-pixel" @click="game.openHighScores()">HIGH SCORES</button>
       </div>
     </div>
   </div>
@@ -73,14 +74,14 @@ const game = useGameStore()
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4cqw;
+  gap: 2.4cqw;
   text-align: center;
-  padding-bottom: 2cqw;
+  padding: 2cqw 0;
 }
 .title {
   margin: 0;
-  font-size: 7.4cqw;
-  line-height: 1.15;
+  font-size: 6.2cqw;
+  line-height: 1.1;
   letter-spacing: 3px;
   color: var(--accent);
   text-shadow:
@@ -88,12 +89,12 @@ const game = useGameStore()
     -2px -2px 0 #000,
     2px -2px 0 #000,
     -2px 2px 0 #000,
-    0 0 22px #ff8a00aa;
+    0 0 18px #ff8a00aa;
 }
 .tagline {
   margin: 0;
-  font-size: 1.9cqw;
-  line-height: 1.7;
+  font-size: 1.7cqw;
+  line-height: 1.6;
   color: #e8dcc0;
   text-shadow: 2px 2px 0 #000;
 }
@@ -101,18 +102,18 @@ const game = useGameStore()
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 1.6cqw;
+  gap: 1.2cqw;
 }
-/* Smaller, stacked menu buttons (scoped so other views keep the larger ones). */
+/* Compact, stacked menu buttons (scoped so other views keep the larger ones). */
 .actions .btn-pixel {
-  font-size: 1.7cqw;
-  padding: 1.3cqw 2.4cqw;
-  border-width: 1.7cqw;
-  border-image-width: 1.7cqw;
-  min-width: 26cqw;
+  font-size: 1.4cqw;
+  padding: 0.9cqw 2cqw;
+  border-width: 1.3cqw;
+  border-image-width: 1.3cqw;
+  min-width: 24cqw;
 }
 .actions .btn-pixel.is-primary {
-  font-size: 1.8cqw;
-  padding: 1.3cqw 2.4cqw;
+  font-size: 1.5cqw;
+  padding: 0.9cqw 2cqw;
 }
 </style>

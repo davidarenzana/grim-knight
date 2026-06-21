@@ -44,8 +44,15 @@ const lowTime = computed(() => Math.ceil(game.secondsLeft) <= 10)
       </span>
     </div>
 
-    <!-- Pause: corner button, kept out of the stat row so chips have full width -->
-    <button class="btn-pixel pause" @click="game.pause()">II</button>
+    <!-- Pause: corner button, paired with the audio toggle (same cream chrome) -->
+    <button class="hud-btn pause" aria-label="Pause" title="Pause" @click="game.pause()">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <g fill="#3a2417">
+          <rect x="4" y="3" width="3" height="10" />
+          <rect x="9" y="3" width="3" height="10" />
+        </g>
+      </svg>
+    </button>
 
     <!-- Boss health -->
     <div v-if="game.bossActive" class="boss">
@@ -134,16 +141,13 @@ const lowTime = computed(() => Math.ceil(game.secondsLeft) <= 10)
   }
 }
 
+/* Lower control of the corner stack: same column as the audio button, with a
+   matching gap (4.2cqw button + 1.2cqw gap below its 1.6cqw top). */
 .pause {
   position: absolute;
-  top: 1.6cqw;
-  right: 1.8cqw;
+  top: 7cqw;
+  right: 4.15cqw;
   pointer-events: auto;
-  font-size: 1.6cqw;
-  padding: 1cqw 1.2cqw;
-  letter-spacing: 1px;
-  border-width: 2cqw;
-  border-image-width: 2cqw;
 }
 
 /* Boss bar */

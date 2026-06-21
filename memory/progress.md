@@ -466,8 +466,14 @@ unchanged.)
 ## Next ⏭️ (remaining Phase 5 polish, then Phase 6)
 
 - More juice if wanted: particles on kill, transition fades.
-- Polish: time/no-damage score bonuses, extra lives at score thresholds (reuse `gainLife`), high-score
-  table, torch ground-fire hazard.
+- Polish: time/no-damage score bonuses, extra lives at score thresholds (reuse `gainLife`),
+  torch ground-fire hazard.
+- **High-score table — DONE.** Classic top-ten with 3-letter initials. Pure core
+  `core/rules/highscores.ts` (`qualifies`/`insertScore`/`sanitizeName`, stable ties, cap 10) + spec
+  `specs/highscores.md`. Persistence in the store (`grim:highscores` in `localStorage`, mirrors the
+  audio-pref pattern). Flow: any qualifying run-end → `EnterScore.vue` (type initials, Enter) →
+  `submitScore` → `HighScores.vue` (table, fresh row pulses); non-qualifying → normal gameover/won.
+  `HIGH SCORES` button on the title screen. See glossary "High score table".
 - Richer boss/hazard designs from the GDD (unique boss patterns; water/crushers/wind/collapsing floors).
 - **Phase 6 — build optimization + deploy** (deferred together, per the user):
   - **Code-split the Phaser chunk.** Build is one ~1.6 MB (384 kB gzip) JS bundle, ~90% Phaser.

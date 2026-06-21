@@ -1,8 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { bus, type ArmorState } from '@shared/events'
+import { insertScore, qualifies, sanitizeName, type HighScore } from '@core/rules/highscores'
 
-export type Screen = 'menu' | 'levels' | 'playing' | 'paused' | 'gameover' | 'won'
+export type Screen =
+  | 'menu'
+  | 'levels'
+  | 'playing'
+  | 'paused'
+  | 'gameover'
+  | 'won'
+  | 'enterscore'
+  | 'highscores'
 
 const AUDIO_KEY = 'grim:audio'
 /** Read the persisted audio preference (default ON). Guarded for the node test env. */
@@ -16,6 +25,44 @@ const loadAudioPref = (): boolean => {
 const saveAudioPref = (on: boolean): void => {
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(AUDIO_KEY, on ? 'on' : 'off')
+  } catch {
+    /* ignore (private mode / no storage) */
+  }
+}
+
+const SCORES_KEY = 'grim:highscores'
+/** Is this a structurally valid persisted entry? Guards against corrupt JSON. */
+const isHighScore = (v: unknown): v is HighScore => {
+  const e = v as Partial<HighScore>
+  return (
+    !!e &&
+    typeof e.name === 'string' &&
+    typeof e.score === 'number' &&
+    Number.isFinite(e.score) &&
+    typeof e.level === 'number' &&
+    typeof e.loop === 'number'
+  )
+}
+/** Read the persisted high-score table (sorted, capped). Tolerant of garbage. */
+const loadScores = (): HighScore[] => {
+  try {
+    if (typeof localStorage === 'undefined') return []
+    const raw = localStorage.getItem(SCORES_KEY)
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter(isHighScore)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+  } catch {
+    return []
+  }
+}
+const saveScores = (scores: HighScore[]): void => {
+  try {
+    if (typeof localStorage !== 'undefined')
+      localStorage.setItem(SCORES_KEY, JSON.stringify(scores))
   } catch {
     /* ignore (private mode / no storage) */
   }
@@ -43,6 +90,27 @@ export const useGameStore = defineStore('game', () => {
   /** Audio on/off (persisted). The audio adapter listens for `ui:audio`. */
   const audioOn = ref(loadAudioPref())
 
+  /** Persisted high-score table (top 10, descending). */
+  const scores = ref<HighScore[]>(loadScores())
+  /** Row index just inserted (for highlight on the table); -1 when none. */
+  const lastRank = ref(-1)
+  /** Outcome of the run feeding the entry screen ('gameover' | 'won'). */
+  const lastOutcome = ref<'gameover' | 'won'>('gameover')
+  /** The run's final score awaiting initials (set when a run ends qualifying). */
+  const pendingScore = ref(0)
+
+  /** End-of-run router: jump to initials entry if the score makes the table. */
+  function finishRun(finalScore: number, outcome: 'gameover' | 'won'): void {
+    if (qualifies(scores.value, finalScore)) {
+      pendingScore.value = finalScore
+      lastOutcome.value = outcome
+      screen.value = 'enterscore'
+    } else {
+      lastRank.value = -1
+      screen.value = outcome
+    }
+  }
+
   /** Subscribes the store to the bus. Called once at app bootstrap. */
   function bind(): void {
     bus.on('game:ready', () => {
@@ -63,8 +131,8 @@ export const useGameStore = defineStore('game', () => {
       level.value = e.level
       loop.value = e.loop
     })
-    bus.on('game:over', () => (screen.value = 'gameover'))
-    bus.on('game:won', () => (screen.value = 'won'))
+    bus.on('game:over', (e) => finishRun(e.score, 'gameover'))
+    bus.on('game:won', (e) => finishRun(e.score, 'won'))
     // Tell the audio adapter the persisted preference at boot.
     bus.emit('ui:audio', { on: audioOn.value })
   }
@@ -97,6 +165,28 @@ export const useGameStore = defineStore('game', () => {
   /** Return to the title screen from level select. */
   function backToMenu(): void {
     screen.value = 'menu'
+  }
+
+  /** Open the high-score table (from the menu); no row is highlighted. */
+  function openHighScores(): void {
+    scores.value = loadScores()
+    lastRank.value = -1
+    screen.value = 'highscores'
+  }
+
+  /** Commit the pending run with the typed initials, persist, show the table. */
+  function submitScore(rawInitials: string): void {
+    const entry: HighScore = {
+      name: sanitizeName(rawInitials),
+      score: pendingScore.value,
+      level: level.value,
+      loop: loop.value,
+    }
+    const { table, rank } = insertScore(scores.value, entry)
+    scores.value = table
+    lastRank.value = rank
+    saveScores(table)
+    screen.value = 'highscores'
   }
 
   function pause(): void {
@@ -133,12 +223,18 @@ export const useGameStore = defineStore('game', () => {
     bossMaxHp,
     startLevel,
     audioOn,
+    scores,
+    lastRank,
+    lastOutcome,
+    pendingScore,
     bind,
     toggleAudio,
     startGame,
     openLevels,
     startAtLevel,
     backToMenu,
+    openHighScores,
+    submitScore,
     pause,
     resume,
     restart,
