@@ -6,6 +6,16 @@ A 2D arcade action-platformer inspired by the 90s classics (Ghosts'n Goblins and
 
 > Project language is **English** (code, docs, specs, UI). Development follows **SDD + TDD**.
 
+## Stack
+
+- **TypeScript** (strict, incl. `noUncheckedIndexedAccess` / `exactOptionalPropertyTypes`) everywhere.
+- **Phaser 3** — rendering, input, audio, presentation game loop.
+- **Vue 3** (`<script setup>`, Composition API) — title/stage-select menus, HUD, overlays.
+- **Pinia** (UI state) + **mitt** event bus (`src/shared/events.ts`) — decoupled UI ↔ game bridge.
+- Pure-TS logic core (`src/core/`) — physics, collisions, FSM, rules, AI; no engine/UI deps, fully unit-tested.
+- **Vitest** (tests) · **ESLint + Prettier** (lint/format) · **Husky + lint-staged + commitlint** (git hooks).
+- **Vite** (dev server + build) · **pnpm** (package manager).
+
 ## Quick start
 
 ```bash

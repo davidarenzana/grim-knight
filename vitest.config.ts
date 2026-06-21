@@ -23,13 +23,26 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      // Quality contract: the logic core must be highly covered.
-      include: ['src/core/**'],
+      // Report the WHOLE app so the real gap is visible (engine/UI are largely
+      // untested today). `all: true` lists files even when no test imports them.
+      all: true,
+      include: ['src/**/*.{ts,vue}'],
+      exclude: [
+        'src/**/*.{test,spec}.ts',
+        'src/**/*.d.ts',
+        'src/main.ts', // app bootstrap, no logic to assert
+        'src/engine/assets/**', // asset manifests/loaders (verified visually)
+      ],
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 75,
-        statements: 80,
+        // Quality contract: the pure logic core must stay highly covered. The
+        // engine/UI are reported but NOT yet enforced — ratchet thresholds up as
+        // the integration/component/E2E layers land (see docs/TESTING-PLAN.md).
+        'src/core/**': {
+          lines: 80,
+          functions: 80,
+          branches: 75,
+          statements: 80,
+        },
       },
     },
   },
