@@ -1,36 +1,134 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { bus } from '@shared/events'
+import { bus, type GameEvents } from '@shared/events'
 import { useGameStore } from './game'
 
-// Smoke tests for the UI<->game bridge. Pinia runs headless (no DOM needed).
+// The store is a pure mirror of the bus + the source of `ui:*` commands. Pinia
+// runs headless (no DOM). Reset the shared bus between tests so a previous
+// test's `bind()` listeners don't linger on the singleton.
 describe('game store', () => {
-  beforeEach(() => setActivePinia(createPinia()))
-
-  it('mirrors game events into state', () => {
-    const store = useGameStore()
-    store.bind()
-    bus.emit('game:score-changed', { score: 300 })
-    bus.emit('game:lives-changed', { lives: 2 })
-    bus.emit('game:armor-changed', { armor: 'underwear' })
-    expect(store.score).toBe(300)
-    expect(store.lives).toBe(2)
-    expect(store.armor).toBe('underwear')
+  beforeEach(() => {
+    bus.all.clear()
+    setActivePinia(createPinia())
   })
 
-  it('switches to gameover on game:over', () => {
-    const store = useGameStore()
-    store.bind()
-    bus.emit('game:over', { score: 999 })
-    expect(store.screen).toBe('gameover')
+  /** Capture the payload of the next `ui:*` command of the given type. */
+  const capture = <K extends keyof GameEvents>(event: K): { value: GameEvents[K] | undefined } => {
+    const box: { value: GameEvents[K] | undefined } = { value: undefined }
+    bus.on(event, (p) => (box.value = p as GameEvents[K]))
+    return box
+  }
+
+  /** Track whether a (possibly void-payload) command fired. */
+  const fired = (event: keyof GameEvents): { value: boolean } => {
+    const box = { value: false }
+    bus.on(event, () => (box.value = true))
+    return box
+  }
+
+  describe('mirrors bus events into state (with the right values)', () => {
+    it('mirrors the HUD values', () => {
+      const store = useGameStore()
+      store.bind()
+      bus.emit('game:score-changed', { score: 1300 })
+      bus.emit('game:lives-changed', { lives: 2 })
+      bus.emit('game:armor-changed', { armor: 'underwear' })
+      bus.emit('game:weapon-changed', { weapon: 'axe' })
+      bus.emit('game:time-changed', { secondsLeft: 87 })
+      bus.emit('game:level-changed', { level: 4, loop: 2 })
+      expect(store.score).toBe(1300)
+      expect(store.lives).toBe(2)
+      expect(store.armor).toBe('underwear')
+      expect(store.weapon).toBe('axe')
+      expect(store.secondsLeft).toBe(87)
+      expect(store.level).toBe(4)
+      expect(store.loop).toBe(2)
+    })
+
+    it('tracks the boss bar: hp on game:boss-hp, hidden on cleared/ready', () => {
+      const store = useGameStore()
+      store.bind()
+      bus.emit('game:boss-hp', { hp: 7, maxHp: 10 })
+      expect(store.bossActive).toBe(true)
+      expect(store.bossHp).toBe(7)
+      expect(store.bossMaxHp).toBe(10)
+      bus.emit('game:boss-cleared')
+      expect(store.bossActive).toBe(false)
+      bus.emit('game:boss-hp', { hp: 3, maxHp: 10 })
+      expect(store.bossActive).toBe(true)
+      bus.emit('game:ready')
+      expect(store.bossActive).toBe(false)
+    })
+
+    it('switches screen on terminal events', () => {
+      const over = useGameStore()
+      over.bind()
+      bus.emit('game:over', { score: 999 })
+      expect(over.screen).toBe('gameover')
+
+      bus.all.clear()
+      setActivePinia(createPinia())
+      const won = useGameStore()
+      won.bind()
+      bus.emit('game:won', { score: 5000 })
+      expect(won.screen).toBe('won')
+    })
   })
 
-  it('startGame moves to playing and emits ui:start', () => {
-    const store = useGameStore()
-    let started = false
-    bus.on('ui:start', () => (started = true))
-    store.startGame()
-    expect(store.screen).toBe('playing')
-    expect(started).toBe(true)
+  describe('UI actions switch screens and emit ui:* commands', () => {
+    it('startGame → playing, startLevel 0, ui:start', () => {
+      const store = useGameStore()
+      const started = capture('ui:start')
+      store.startGame()
+      expect(store.screen).toBe('playing')
+      expect(store.startLevel).toBe(0)
+      expect(started.value).toEqual({})
+    })
+
+    it('openLevels → levels (no command)', () => {
+      const store = useGameStore()
+      store.openLevels()
+      expect(store.screen).toBe('levels')
+    })
+
+    it('startAtLevel(i) → playing, startLevel i, ui:start{level:i}', () => {
+      const store = useGameStore()
+      const started = capture('ui:start')
+      store.startAtLevel(3)
+      expect(store.screen).toBe('playing')
+      expect(store.startLevel).toBe(3)
+      expect(started.value).toEqual({ level: 3 })
+    })
+
+    it('backToMenu → menu', () => {
+      const store = useGameStore()
+      store.openLevels()
+      store.backToMenu()
+      expect(store.screen).toBe('menu')
+    })
+
+    it('pause / resume emit their commands and toggle the screen', () => {
+      const store = useGameStore()
+      const paused = fired('ui:pause')
+      const resumed = fired('ui:resume')
+      store.pause()
+      expect(store.screen).toBe('paused')
+      expect(paused.value).toBe(true)
+      store.resume()
+      expect(store.screen).toBe('playing')
+      expect(resumed.value).toBe(true)
+    })
+
+    it('restart → playing + ui:restart; quitToMenu → menu + ui:quit', () => {
+      const store = useGameStore()
+      const restarted = fired('ui:restart')
+      const quit = fired('ui:quit')
+      store.restart()
+      expect(store.screen).toBe('playing')
+      expect(restarted.value).toBe(true)
+      store.quitToMenu()
+      expect(store.screen).toBe('menu')
+      expect(quit.value).toBe(true)
+    })
   })
 })

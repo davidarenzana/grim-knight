@@ -398,6 +398,15 @@ lived inside the Phaser adapter). Incremental, behavior-preserving:
   (`core/app/`) pure and airtight; `engine/` (driven) and `ui/` (driving) are adapters; the `mitt` bus is the
   engine↔ui bridge port. 225 tests / typecheck / lint / build green.
 
+### Testing layers — Phase C: Vue component + store tests (Phase 5)
+
+Per `docs/TESTING-PLAN.md` (Layer 3). The store's 3 smoke tests grew to 9 that assert the **correct**
+mirrored HUD values (score/lives/armor/weapon/time/level/loop), the boss-bar flow, the terminal-screen
+switches, and every `ui:*` command + payload — with `bus.all.clear()` between tests to isolate the shared
+mitt singleton. Added component tests (`@vue/test-utils` + jsdom) for `MainMenu` (START → playing/level 0,
+SELECT STAGE → levels) and `LevelSelect` (one button per stage, click → startAtLevel, BACK → menu). 237
+tests green; typecheck/lint green. Remaining: Phase D (Playwright E2E + visual regression).
+
 ## In progress 🔧
 
 - Phase 5 art/levels overhaul is **done** (themes, 3 new enemies, pits + hazards, 3 boss variants, level
