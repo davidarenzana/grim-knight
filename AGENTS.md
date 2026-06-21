@@ -23,18 +23,24 @@ music or names.
 
 ## 3. Architectural golden rule
 
-**`src/core/` is PURE TS: it imports neither Phaser, nor Vue, nor Pinia, and never touches the DOM.**
-Enforced by ESLint (`no-restricted-imports` in `eslint.config.js`). If you need data from the outside,
-pass it as arguments; if you need to talk to the UI, do it via bus events.
+**`src/core/` is PURE TS: it imports neither Phaser, Vue, Pinia, the `mitt` bus nor `@shared`, and
+never touches the DOM.** Enforced by ESLint (`no-restricted-imports` + `no-restricted-globals` in
+`eslint.config.js`). If you need data from the outside, pass it as arguments; if you need to talk to the
+UI, **return effects/notifications as data** (see `core/app`) — the adapter, not the core, calls the bus.
+
+We follow a **hexagonal (ports & adapters)** layout: `core/` is the domain + application; `engine/` and
+`ui/` are adapters; nothing points out of the core (verified acyclic). See `docs/TESTING-PLAN.md` §3 for
+the in-progress `stepMatch` extraction (the application use case).
 
 ```
 src/
-  core/     pure TS · game logic · TDD mandatory
-    math/ sim/ physics/ entities/ fsm/ rules/ weapons/ enemies/ level/
-  engine/   Phaser adapter (renders core state + input + audio)
-    scenes/ render/ input/ audio/ assets/
-  ui/       Vue 3 (views/, components/, stores/)
-  shared/   shared types and events (mitt bus)
+  core/     pure TS · domain + application · TDD mandatory
+    math/ sim/ physics/ fsm/ rules/ weapons/ enemies/ level/
+    app/    application layer (use cases + ports): MatchState, Effect (output port as data), stepMatch
+  engine/   Phaser DRIVEN adapter (renders core state + interprets effects + keyboard input + audio)
+    scenes/ assets/
+  ui/       Vue 3 DRIVING adapter (views/, components/, stores/)
+  shared/   port contract: the `mitt` event bus that bridges engine ↔ ui
 ```
 
 ## 4. Commands
