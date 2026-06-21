@@ -384,6 +384,14 @@ export class GameScene extends Phaser.Scene {
       { pos, w: PLAYER_W, h: PLAYER_H },
       this.player.facing,
     )
+    // The knight pack has no crouch sheet, so ducking would just freeze on idle.
+    // Squash the pose vertically (and widen slightly) so the crouch reads: the
+    // foot-aligned origin keeps the boots planted while the head drops.
+    if (this.player.state === 'crouch') {
+      // setScale leaves the flipX set by applySprite intact, so keep X positive.
+      const s = SPRITES[skin]!.scale
+      this.knight.setScale(s * 1.08, s * 0.62)
+    }
     // Blink while invulnerable (i-frames) after a hit.
     const blinking = this.player.armor.iFramesLeft > 0
     this.knight.setAlpha(blinking && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
