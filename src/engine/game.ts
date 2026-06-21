@@ -1,6 +1,5 @@
 import Phaser from 'phaser'
-import { GameScene } from './scenes/GameScene'
-import { setStartLevel } from './session-start'
+import { GameScene, START_LEVEL_KEY } from './scenes/GameScene'
 
 export const GAME_WIDTH = 800
 export const GAME_HEIGHT = 450
@@ -10,8 +9,7 @@ export const GAME_HEIGHT = 450
  * 0-based stage the run begins at (from the menu's level select; defaults to 0).
  */
 export function createGame(parent: HTMLElement, startLevel = 0): Phaser.Game {
-  setStartLevel(startLevel)
-  return new Phaser.Game({
+  const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
     width: GAME_WIDTH,
@@ -30,6 +28,11 @@ export function createGame(parent: HTMLElement, startLevel = 0): Phaser.Game {
     },
     scene: [GameScene],
   })
+  // Hand the chosen start level to the first GameScene via the game-scoped
+  // registry (set synchronously, before the scene boots) instead of a module
+  // global.
+  game.registry.set(START_LEVEL_KEY, Math.max(0, startLevel))
+  return game
 }
 
 // Phaser does not hot-reload cleanly: an HMR update to any engine module (this

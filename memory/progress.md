@@ -388,9 +388,15 @@ lived inside the Phaser adapter). Incremental, behavior-preserving:
   `spawnEnemy`/`bossVariant`/`sparkWallHits`) are gone. Render-only flourishes stay in the adapter: the
   enemy death-burst (in `renderEnemies`) and the white hit-flash (now derived by an HP diff per frame).
   `GameScene` shrank 1048→727 lines; no game logic remains in it. 225 tests green; typecheck/lint/build
-  green. **Behavior-preserving but not yet eyeballed in a browser** (no headless browser in the dev env) —
-  run `pnpm dev` to playtest. Also fixed the stale in-canvas help text (now ←→ / Z / X) and added an initial
-  `game:time-changed` emit so the HUD clock shows immediately.
+  green. Also fixed the stale in-canvas help text (now ←→ / Z / X) and added an initial
+  `game:time-changed` emit so the HUD clock shows immediately. **User play-tested H4 in the real game — it
+  works** (combat, pickups, death/respawn, stage clear).
+- **H5 — boundary cleanup + close-out**: replaced the `engine/session-start.ts` module-global (a
+  service-locator smell) with the Phaser game **registry** (`START_LEVEL_KEY`, set in `createGame`, read in
+  `GameScene.init`); deleted that file. Documented the whole decision in ADR
+  [[0006-hexagonal-application-layer]]. The hexagonal review is complete: domain (`core/`) + application
+  (`core/app/`) pure and airtight; `engine/` (driven) and `ui/` (driving) are adapters; the `mitt` bus is the
+  engine↔ui bridge port. 225 tests / typecheck / lint / build green.
 
 ## In progress 🔧
 

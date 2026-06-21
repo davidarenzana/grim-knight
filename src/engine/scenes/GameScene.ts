@@ -40,7 +40,9 @@ import {
   ICON,
 } from '@engine/assets/effects'
 import { bus } from '@shared/events'
-import { consumeStartLevel } from '@engine/session-start'
+
+/** Registry key the first GameScene reads to learn which stage to start at. */
+export const START_LEVEL_KEY = 'startLevel'
 
 /** Map a core enemy state to a sprite animation state (idle/walk/dead). */
 const enemyAnim = (state: string): string =>
@@ -105,8 +107,9 @@ export class GameScene extends Phaser.Scene {
   /** Receives the level index, loop number and carried session across transitions. */
   init(data: { levelIndex?: number; loop?: number; session?: Session }): void {
     // On the first boot there's no transition data: start at the level the menu
-    // picked (level select), defaulting to the first stage.
-    this.levelIndex = data.levelIndex ?? consumeStartLevel()
+    // picked (read from the game registry), defaulting to the first stage.
+    this.levelIndex =
+      data.levelIndex ?? (this.registry.get(START_LEVEL_KEY) as number | undefined) ?? 0
     this.loop = data.loop ?? 1
     this.carriedSession = data.session ?? null
   }

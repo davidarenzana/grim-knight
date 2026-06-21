@@ -12,3 +12,4 @@ One line per file. Read this first; open only what you need. Keeping it in sync 
   - [0003-one-way-platforms.md](./decisions/0003-one-way-platforms.md) — semi-solid platforms (pass up, land on top).
   - [0004-level-themes.md](./decisions/0004-level-themes.md) — per-level visual themes (ground tile + backdrop).
   - [0005-hazards-and-pits.md](./decisions/0005-hazards-and-pits.md) — fall-out (pits) and contact hazards.
+  - [0006-hexagonal-application-layer.md](./decisions/0006-hexagonal-application-layer.md) — pure `core/app` use case (`stepMatch`) + effects as data; thin Phaser adapter.
