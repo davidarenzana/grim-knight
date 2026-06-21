@@ -35,6 +35,33 @@ describe('combat', () => {
     expect(res.kills).toBe(0)
   })
 
+  it('does NOT hit an enemy outside the view (no killing the unseen)', () => {
+    const z = createZombie(100, GROUND_Y)
+    const p = projAt(z.body.pos.x, z.body.pos.y)
+    const offscreen = aabb(1000, 0, 800, 450) // view far from the zombie
+    const res = resolveCombat(FAR, [p], [z], offscreen)
+    expect(res.enemies[0]!.state).not.toBe('dead')
+    expect(res.projectiles).toHaveLength(1) // passes through, keeps flying
+    expect(res.kills).toBe(0)
+  })
+
+  it('hits an enemy inside the view as usual', () => {
+    const z = createZombie(100, GROUND_Y)
+    const p = projAt(z.body.pos.x, z.body.pos.y)
+    const onscreen = aabb(z.body.pos.x - 50, z.body.pos.y - 50, 800, 450)
+    const res = resolveCombat(FAR, [p], [z], onscreen)
+    expect(res.enemies[0]!.state).toBe('dead')
+    expect(res.kills).toBe(1)
+  })
+
+  it('melee respects the view too', () => {
+    const z = createZombie(100, GROUND_Y)
+    const box = aabb(z.body.pos.x, z.body.pos.y, z.body.w, z.body.h)
+    const offscreen = aabb(2000, 0, 100, 100)
+    expect(resolveMelee(box, [z], offscreen).enemies[0]!.state).not.toBe('dead')
+    expect(resolveMelee(box, [z]).enemies[0]!.state).toBe('dead') // no view ⇒ hits
+  })
+
   it('one enemy per projectile', () => {
     const a = createZombie(100, GROUND_Y)
     const b = createZombie(100, GROUND_Y) // overlapping a

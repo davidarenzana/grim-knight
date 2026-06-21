@@ -139,4 +139,6 @@ export type StepMatch = (
   state: MatchState,
   input: PlayerInput,
   dt: number,
+  /** Visible world region; the player can only damage enemies overlapping it. */
+  view?: AABB,
 ) => StepResult

@@ -434,6 +434,15 @@ another OS must regenerate. 5 E2E pass; 237 unit pass; typecheck/lint green.
   set active (invariant: active ∈ owned). New tests: `nextOwnedWeapon`, `createMatch` owned set, chest adds
   to owned. 239 tests green; typecheck/lint green.
 
+### Playtest fix: no killing off-screen enemies (Phase 5)
+
+You could throw and kill enemies you couldn't see (proximity spawns wake ~480px away, just off the ~400px
+half-screen; a fast projectile reached them off-camera). Now the player's combat is **gated to the visible
+region**: `resolveCombat`/`resolveMelee` take an optional `view: AABB` and only damage enemies overlapping
+it (projectiles pass through off-screen foes and keep flying). The adapter (`GameScene.step`) passes
+`cameras.main.worldView` into `stepMatch` each tick (and `stepMatch`/`StepMatch` forward it). Omitting
+`view` disables the gate, so all existing tests/usages are unaffected. Spec `combat.md` + 3 tests. 242 green.
+
 ## In progress 🔧
 
 - Phase 5 art/levels overhaul is **done** (themes, 3 new enemies, pits + hazards, 3 boss variants, level

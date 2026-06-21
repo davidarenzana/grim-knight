@@ -22,14 +22,22 @@ export const resolveCombat = (
   playerBox: AABB,
   projectiles: readonly Projectile[],
   enemies: readonly Enemy[],
+  /**
+   * Visible world region. When given, the player can only damage an enemy whose
+   * box overlaps it — a projectile passes harmlessly over/through off-screen
+   * foes (so you can't kill what you can't see). Omit to disable the gate.
+   */
+  view?: AABB,
 ): CombatResult => {
   const next: Enemy[] = [...enemies]
   const survivors: Projectile[] = []
   let kills = 0
+  const hittable = (e: Enemy): boolean =>
+    e.state !== 'dead' && (view === undefined || intersects(view, enemyBox(e)))
 
   for (const p of projectiles) {
     const box = projBox(p)
-    const idx = next.findIndex((e) => e.state !== 'dead' && intersects(box, enemyBox(e)))
+    const idx = next.findIndex((e) => hittable(e) && intersects(box, enemyBox(e)))
     if (idx === -1) {
       survivors.push(p) // missed: projectile keeps flying
       continue
@@ -56,12 +64,17 @@ export interface MeleeResult {
  * hit. Used for the point-blank jab on every throw so arcing weapons (which fly
  * over a foe right next to the player) can still hit adjacent enemies.
  */
-export const resolveMelee = (meleeBox: AABB, enemies: readonly Enemy[]): MeleeResult => {
+export const resolveMelee = (
+  meleeBox: AABB,
+  enemies: readonly Enemy[],
+  view?: AABB,
+): MeleeResult => {
   const next: Enemy[] = [...enemies]
   let kills = 0
   for (let i = 0; i < next.length; i++) {
     const e = next[i]!
-    if (e.state !== 'dead' && intersects(meleeBox, enemyBox(e))) {
+    const visible = view === undefined || intersects(view, enemyBox(e))
+    if (e.state !== 'dead' && visible && intersects(meleeBox, enemyBox(e))) {
       const hurt = hitEnemy(e)
       if (hurt.state === 'dead') kills++
       next[i] = hurt

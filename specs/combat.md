@@ -42,19 +42,28 @@ flags player damage. Pure function over AABBs.
 - **When** `resolveCombat` runs
 - **Then** `playerHit` is true
 
+### Scenario: you can't kill what you can't see
+
+- **Given** a projectile overlapping an enemy, but the enemy is outside the visible `view`
+- **When** `resolveCombat` runs with that `view`
+- **Then** the enemy is unharmed and the projectile keeps flying (passes through). With the enemy inside
+  the `view`, it is hit as usual. `resolveMelee` applies the same gate. Omitting `view` disables it.
+
 ## Acceptance criteria
 
 - [x] Consumed projectiles are removed; survivors kept in order.
 - [x] Each projectile damages at most one living enemy; `kills` counts enemies that died.
 - [x] `playerHit` is true iff any living enemy overlaps the player box.
+- [x] When a `view` is given, the player can only damage enemies overlapping it (off-screen foes are safe).
 - [x] Pure and deterministic.
 
 ## Test mapping
 
-| Scenario     | Test file                       | Test name                           |
-| ------------ | ------------------------------- | ----------------------------------- |
-| hit + kill   | `src/core/rules/combat.test.ts` | `combat > projectile kills enemy`   |
-| miss         | `src/core/rules/combat.test.ts` | `combat > projectile misses`        |
-| one per shot | `src/core/rules/combat.test.ts` | `combat > one enemy per projectile` |
-| skip dead    | `src/core/rules/combat.test.ts` | `combat > ignores dead enemies`     |
-| player hit   | `src/core/rules/combat.test.ts` | `combat > enemy hits player`        |
+| Scenario     | Test file                       | Test name                                         |
+| ------------ | ------------------------------- | ------------------------------------------------- |
+| hit + kill   | `src/core/rules/combat.test.ts` | `combat > projectile kills enemy`                 |
+| miss         | `src/core/rules/combat.test.ts` | `combat > projectile misses`                      |
+| one per shot | `src/core/rules/combat.test.ts` | `combat > one enemy per projectile`               |
+| skip dead    | `src/core/rules/combat.test.ts` | `combat > ignores dead enemies`                   |
+| player hit   | `src/core/rules/combat.test.ts` | `combat > enemy hits player`                      |
+| view gate    | `src/core/rules/combat.test.ts` | `combat > does NOT hit an enemy outside the view` |

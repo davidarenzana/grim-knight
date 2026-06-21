@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { aabb } from '@core/math/aabb'
 import { lerp } from '@core/math/vector'
 import { createRng } from '@core/math/rng'
 import { createStepper, type Stepper } from '@core/sim/loop'
@@ -336,7 +337,11 @@ export class GameScene extends Phaser.Scene {
   private step(input: PlayerInput): void {
     if (this.state.phase !== 'playing') return
     this.prev = this.state.player
-    const { state, effects } = stepMatch(this.config, this.state, input, FIXED_DT)
+    // Only enemies inside the camera's visible world region can be damaged — no
+    // killing what you can't see (off-screen spawns / foes that left the frame).
+    const v = this.cameras.main.worldView
+    const view = aabb(v.x, v.y, v.width, v.height)
+    const { state, effects } = stepMatch(this.config, this.state, input, FIXED_DT, view)
     this.state = state
     this.runEffects(effects)
     // Stage cleared: the adapter owns the scene transition (banner + advance).

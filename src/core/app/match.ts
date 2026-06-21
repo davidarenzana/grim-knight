@@ -1,4 +1,4 @@
-import { aabb } from '@core/math/aabb'
+import { aabb, type AABB } from '@core/math/aabb'
 import type { Rng } from '@core/math/rng'
 import { createPlayer, stepPlayer, PLAYER_H, type Player } from '@core/fsm/player'
 import {
@@ -298,6 +298,8 @@ export const stepMatch = (
   state: MatchState,
   input: PlayerInput,
   dt: number,
+  /** Visible world region; the player can only damage enemies overlapping it. */
+  view?: AABB,
 ): StepResult => {
   if (state.phase !== 'playing') return { state, effects: [] }
   const effects: Effect[] = []
@@ -385,12 +387,12 @@ export const stepMatch = (
   const ph = state.player.state === 'crouch' ? CROUCH_H : b.h
   const playerBox = aabb(b.pos.x, b.pos.y + (b.h - ph), b.w, ph)
   const before = enemies
-  const combat = resolveCombat(playerBox, weapon.projectiles, enemies)
+  const combat = resolveCombat(playerBox, weapon.projectiles, enemies, view)
   weapon = { ...weapon, projectiles: combat.projectiles }
   let enemiesAfter = combat.enemies as Enemy[]
   let kills = combat.kills
   if (meleeBox) {
-    const melee = resolveMelee(meleeBox, enemiesAfter)
+    const melee = resolveMelee(meleeBox, enemiesAfter, view)
     enemiesAfter = melee.enemies as Enemy[]
     kills += melee.kills
   }
