@@ -24,7 +24,7 @@ export const swampCaverns: LevelDef = {
     oneWay(2600, 300, 180, 20),
   ],
   ladders: [aabb(340, 310, 16, 100), aabb(1460, 300, 16, 110), aabb(2660, 300, 16, 110)],
-  hazards: [lava(1150, 60), lava(1890, 60)],
+  hazards: [lava(1150, 44), lava(1890, 44)],
   spawns: [
     { kind: 'zombie', x: 300, y: GROUND_Y },
     { kind: 'plant', x: 520, y: GROUND_Y },

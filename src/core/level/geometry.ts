@@ -70,9 +70,10 @@ export const spikesOn = (x: number, surfaceY: number, w: number): AABB =>
 /** A spike strip on the ground surface (contact hazard you jump over). */
 export const spikes = (x: number, w: number): AABB => spikesOn(x, GROUND_Y, w)
 /**
- * A lava pool set INTO the ground (contact hazard). It fills the ground band
- * with a small lip above the surface, so it reads as a recessed pool rather than
- * a bar floating over the floor. The lip (top above GROUND_Y) is what overlaps a
- * walking player to deal damage, since exact edge contact doesn't count as a hit.
+ * A lava pool set INTO the ground (contact hazard). It fills the ground band so
+ * it reads as a recessed pool, not a bar floating over the floor. The top sits
+ * just 2px above the surface: enough to overlap (and burn) a walking player —
+ * exact edge contact doesn't count as a hit — but low enough that a jump clears
+ * it the instant the knight leaves the ground, so a sane-width pool is jumpable.
  */
-export const lava = (x: number, w: number): AABB => aabb(x, GROUND_Y - 6, w, GROUND_H + 6)
+export const lava = (x: number, w: number): AABB => aabb(x, GROUND_Y - 2, w, GROUND_H + 2)
