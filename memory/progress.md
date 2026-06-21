@@ -360,6 +360,28 @@ won`) plus `startGame()` / `openLevels()` / `selectLevel(index)` / a `startLevel
   `player.state === 'crouch'`, so the duck reads. The FSM `crouch` state + shrunk hitbox were already real.
 - 211 tests green; typecheck/lint/build green.
 
+### Hexagonal architecture review + testable application layer (Phase 5)
+
+Pairs with `docs/TESTING-PLAN.md` (the gap: engine/integration/visual untested because orchestration
+lived inside the Phaser adapter). Incremental, behavior-preserving:
+
+- **H1 — airtight core purity** (`eslint.config.js`): the core-purity rule now also blocks `mitt`,
+  `@shared`/`@shared/*` and DOM globals (`window`/`document`/`localStorage`/`navigator`) from `src/core`.
+  Effects must cross the boundary as data, not direct calls.
+- **H2 — `core/app` application layer** (`src/core/app/types.ts`): pure port/state contracts —
+  `MatchState`, `MatchConfig`, `PlayerInput` (input port), `Effect` (`shake`/`vfx`/`float`/`notify`, the
+  output port as DATA), `GameNotification`, `MatchPhase` (`playing`/`gameover`/`cleared`), `StepMatch`.
+- **H3 — `stepMatch` extracted** (`src/core/app/match.ts`): the application use case — a pure, faithful
+  re-implementation of `GameScene.tick()` that orchestrates the domain and **returns effects as data**
+  instead of calling Phaser/the bus. Plus `createMatch(level, opts)` (the pure half of `create()`:
+  geometry, spawner, rolled loot, timer). Scene-flow stays in the adapter: terminal `phase`s hand back
+  control (gameover screen / campaign advance), and purely-visual flourishes the adapter can derive from
+  state (enemy death burst, hit-flash) stay in render. **14 headless integration tests** (`match.test.ts`)
+  cover the bug classes unit tests miss: soft-lock cull, win condition, time-out/pit death + respawn,
+  spawn-on-approach, combat→score, chest pickup, determinism, and `createMatch`. 225 tests green;
+  typecheck/lint/coverage green. **Not yet wired**: `GameScene.tick()` is unchanged — H4 swaps its body to
+  `stepMatch` + an effect interpreter (one short-lived duplicate until then).
+
 ## In progress 🔧
 
 - Phase 5 art/levels overhaul is **done** (themes, 3 new enemies, pits + hazards, 3 boss variants, level

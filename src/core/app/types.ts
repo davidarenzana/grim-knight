@@ -47,9 +47,16 @@ export interface MatchState {
   readonly timer: StageTimer
   readonly session: Session
   readonly rng: Rng
-  /** True once the run has ended (death/time-out/win); the loop idles. */
-  readonly over: boolean
+  /**
+   * Lifecycle of the stage run. `playing` keeps stepping; the terminal phases
+   * tell the adapter what transition to drive: `gameover` → show the game-over
+   * screen; `cleared` → advance the campaign (next stage / next loop / victory).
+   */
+  readonly phase: MatchPhase
 }
+
+/** Stage-run lifecycle. Terminal phases are driven by the adapter (scene flow). */
+export type MatchPhase = 'playing' | 'gameover' | 'cleared'
 
 /** Static, per-stage context the use case runs against (does not change mid-run). */
 export interface MatchConfig {
@@ -64,6 +71,10 @@ export interface MatchConfig {
   readonly deathY: number
   /** Y below which a wedged ground enemy is culled (soft-lock safety net). */
   readonly sinkY: number
+  /** Spawn/respawn position for the knight. */
+  readonly start: { readonly x: number; readonly y: number }
+  /** Stage countdown length in seconds (re-applied on respawn). */
+  readonly stageSeconds: number
 }
 
 /** One-shot visual effect the adapter plays at a world position. */
