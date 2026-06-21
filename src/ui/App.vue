@@ -2,6 +2,7 @@
 import { useGameStore } from '@ui/stores/game'
 import GameCanvas from '@ui/components/GameCanvas.vue'
 import MainMenu from '@ui/views/MainMenu.vue'
+import LevelSelect from '@ui/views/LevelSelect.vue'
 import GameHud from '@ui/components/GameHud.vue'
 import PauseOverlay from '@ui/views/PauseOverlay.vue'
 import GameOver from '@ui/views/GameOver.vue'
@@ -21,6 +22,7 @@ const game = useGameStore()
         <GameCanvas v-if="game.screen === 'playing' || game.screen === 'paused'" />
 
         <MainMenu v-if="game.screen === 'menu'" />
+        <LevelSelect v-if="game.screen === 'levels'" />
         <GameHud v-if="game.screen === 'playing'" />
         <PauseOverlay v-if="game.screen === 'paused'" />
         <GameOver v-if="game.screen === 'gameover' || game.screen === 'won'" />

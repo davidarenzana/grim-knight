@@ -117,6 +117,22 @@ describe('player', () => {
     expect(next.state).toBe('climb')
   })
 
+  it('dismounts the ladder when pressing left/right (so it cannot get stuck)', () => {
+    // Climb up onto the ladder, then press sideways: the knight must leave the
+    // ladder (regain gravity + horizontal control) instead of staying glued.
+    const climbing = stepPlayer(grounded(), input({ up: true }), ladderWorld, DT)
+    expect(climbing.state).toBe('climb')
+    const off = stepPlayer(climbing, input({ right: true }), ladderWorld, DT)
+    expect(off.state).not.toBe('climb')
+    expect(off.body.vel.x).toBeGreaterThan(0)
+  })
+
+  it('up overrides sideways: holding up + right keeps climbing', () => {
+    const climbing = stepPlayer(grounded(), input({ up: true }), ladderWorld, DT)
+    const next = stepPlayer(climbing, input({ up: true, right: true }), ladderWorld, DT)
+    expect(next.state).toBe('climb')
+  })
+
   it('no climb without a ladder', () => {
     const next = stepPlayer(grounded(), input({ up: true }), WORLD, DT)
     expect(next.state).not.toBe('climb')

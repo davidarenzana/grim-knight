@@ -2,12 +2,14 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type Phaser from 'phaser'
 import { createGame } from '@engine/game'
+import { useGameStore } from '@ui/stores/game'
 
+const store = useGameStore()
 const container = ref<HTMLDivElement | null>(null)
 let game: Phaser.Game | null = null
 
 onMounted(() => {
-  if (container.value) game = createGame(container.value)
+  if (container.value) game = createGame(container.value, store.startLevel)
 })
 
 onBeforeUnmount(() => {

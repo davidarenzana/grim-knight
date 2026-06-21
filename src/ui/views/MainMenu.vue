@@ -18,8 +18,10 @@ const game = useGameStore()
     <div class="content">
       <h1 class="title">GRIM<br />KNIGHT</h1>
       <p class="tagline">One knight. One suit of armor.<br />Far too many undead.</p>
-      <button class="btn-pixel is-primary" @click="game.startGame()">START</button>
-      <p class="version">v0.0.0 · greybox</p>
+      <div class="actions">
+        <button class="btn-pixel is-primary" @click="game.startGame()">START</button>
+        <button class="btn-pixel" @click="game.openLevels()">SELECT STAGE</button>
+      </div>
     </div>
   </div>
 </template>
@@ -95,10 +97,9 @@ const game = useGameStore()
   color: #e8dcc0;
   text-shadow: 2px 2px 0 #000;
 }
-.version {
-  margin: 0;
-  font-size: 1.6cqw;
-  color: #b6a888;
-  text-shadow: 1px 1px 0 #000;
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2.4cqw;
 }
 </style>

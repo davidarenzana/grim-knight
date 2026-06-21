@@ -1,11 +1,16 @@
 import Phaser from 'phaser'
 import { GameScene } from './scenes/GameScene'
+import { setStartLevel } from './session-start'
 
 export const GAME_WIDTH = 800
 export const GAME_HEIGHT = 450
 
-/** Creates the Phaser instance inside the given container. */
-export function createGame(parent: HTMLElement): Phaser.Game {
+/**
+ * Creates the Phaser instance inside the given container. `startLevel` is the
+ * 0-based stage the run begins at (from the menu's level select; defaults to 0).
+ */
+export function createGame(parent: HTMLElement, startLevel = 0): Phaser.Game {
+  setStartLevel(startLevel)
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent,

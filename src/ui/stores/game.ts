@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { bus, type ArmorState } from '@shared/events'
 
-export type Screen = 'menu' | 'playing' | 'paused' | 'gameover' | 'won'
+export type Screen = 'menu' | 'levels' | 'playing' | 'paused' | 'gameover' | 'won'
 
 /**
  * Game state exposed to the UI. It is a MIRROR of what happens in the
@@ -21,6 +21,8 @@ export const useGameStore = defineStore('game', () => {
   const bossActive = ref(false)
   const bossHp = ref(0)
   const bossMaxHp = ref(0)
+  /** 0-based stage the next run begins at (set by the level-select screen). */
+  const startLevel = ref(0)
 
   /** Subscribes the store to the bus. Called once at app bootstrap. */
   function bind(): void {
@@ -47,8 +49,26 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function startGame(): void {
+    startLevel.value = 0
     screen.value = 'playing'
     bus.emit('ui:start', {})
+  }
+
+  /** Open the stage-select screen. */
+  function openLevels(): void {
+    screen.value = 'levels'
+  }
+
+  /** Begin a run at the given 0-based stage index. */
+  function startAtLevel(index: number): void {
+    startLevel.value = index
+    screen.value = 'playing'
+    bus.emit('ui:start', { level: index })
+  }
+
+  /** Return to the title screen from level select. */
+  function backToMenu(): void {
+    screen.value = 'menu'
   }
 
   function pause(): void {
@@ -83,8 +103,12 @@ export const useGameStore = defineStore('game', () => {
     bossActive,
     bossHp,
     bossMaxHp,
+    startLevel,
     bind,
     startGame,
+    openLevels,
+    startAtLevel,
+    backToMenu,
     pause,
     resume,
     restart,

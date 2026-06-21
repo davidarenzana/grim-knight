@@ -117,10 +117,14 @@ export const stepPlayer = (
   const playerBox = aabb(player.body.pos.x, player.body.pos.y, player.body.w, player.body.h)
   const onLadder = ladders.some((l) => intersects(playerBox, l))
   const wasClimbing = player.state === 'climb'
+  const steering = input.left || input.right
 
-  // Climbing: attached while overlapping a ladder and either pressing up/down or
-  // already climbing. On a ladder, up/down take priority over jump.
-  const climbing = onLadder && !hurting && (input.up || input.down || wasClimbing)
+  // Climbing: attach while overlapping a ladder and pressing up/down, or stay
+  // attached if already climbing. Pressing left/right (with no up/down) DISMOUNTS
+  // — the knight steps off sideways onto an adjacent platform or drops off the
+  // ladder — so it can never get trapped where two ladders overlap a ledge.
+  // Up/down still take priority over both sideways input and jump.
+  const climbing = onLadder && !hurting && (input.up || input.down || (wasClimbing && !steering))
 
   const crouching = grounded && input.down && !climbing && !hurting
 
