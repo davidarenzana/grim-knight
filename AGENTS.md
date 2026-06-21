@@ -45,16 +45,18 @@ src/
 
 ## 4. Commands
 
-| Action           | Command                       |
-| ---------------- | ----------------------------- |
-| Dev server       | `pnpm dev`                    |
-| Tests (once)     | `pnpm test`                   |
-| Tests (watch)    | `pnpm test:watch`             |
-| Coverage         | `pnpm test:cov`               |
-| Typecheck        | `pnpm typecheck`              |
-| Lint             | `pnpm lint` / `pnpm lint:fix` |
-| Format           | `pnpm format`                 |
-| Production build | `pnpm build`                  |
+| Action               | Command                       |
+| -------------------- | ----------------------------- |
+| Dev server           | `pnpm dev`                    |
+| Tests (once)         | `pnpm test`                   |
+| Tests (watch)        | `pnpm test:watch`             |
+| Coverage             | `pnpm test:cov`               |
+| E2E + visual         | `pnpm test:e2e`               |
+| Update E2E baselines | `pnpm test:e2e:update`        |
+| Typecheck            | `pnpm typecheck`              |
+| Lint                 | `pnpm lint` / `pnpm lint:fix` |
+| Format               | `pnpm format`                 |
+| Production build     | `pnpm build`                  |
 
 ## 5. SDD + TDD flow (mandatory)
 

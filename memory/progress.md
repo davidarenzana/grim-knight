@@ -405,7 +405,20 @@ mirrored HUD values (score/lives/armor/weapon/time/level/loop), the boss-bar flo
 switches, and every `ui:*` command + payload — with `bus.all.clear()` between tests to isolate the shared
 mitt singleton. Added component tests (`@vue/test-utils` + jsdom) for `MainMenu` (START → playing/level 0,
 SELECT STAGE → levels) and `LevelSelect` (one button per stage, click → startAtLevel, BACK → menu). 237
-tests green; typecheck/lint green. Remaining: Phase D (Playwright E2E + visual regression).
+tests green; typecheck/lint green.
+
+### Testing layers — Phase D: Playwright E2E + visual regression (Phase 5)
+
+Per `docs/TESTING-PLAN.md` (Layer 4) — the only layer that runs the real build in a browser. Added
+`@playwright/test` + `playwright.config.ts` (webServer = `pnpm build && pnpm preview` on :4173, chromium).
+`e2e/smoke.spec.ts`: title→START→canvas boots, SELECT STAGE→pick→canvas boots, and keyboard (←/Z/X)
+drives the running game without a pageerror — which **also confirms the H4 adapter refactor works
+end-to-end in a browser**. `e2e/visual.spec.ts`: committed screenshot baselines of the title and
+stage-select screens (stable DOM/CSS; the live animated/RNG canvas is intentionally not snapshotted).
+Scripts: `pnpm test:e2e` / `pnpm test:e2e:update`. Baselines are platform-specific (`*-darwin.png`) — CI on
+another OS must regenerate. 5 E2E pass; 237 unit pass; typecheck/lint green.
+
+**All four testing layers (A–D) and the hexagonal review (H1–H5) are now complete.**
 
 ## In progress 🔧
 

@@ -18,3 +18,9 @@ logs
 
 # raw art source drops (only the used PNGs live under public/assets/sprites)
 test_art/
+
+# Playwright (committed: e2e/ specs + their screenshot baselines)
+test-results
+playwright-report
+blob-report
+playwright/.cache

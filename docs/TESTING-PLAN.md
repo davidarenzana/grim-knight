@@ -1,8 +1,8 @@
 # Testing strategy plan
 
-> Status: **proposed** (Phase A in progress). This plan is the reference for the testing
-> work and is intentionally paired with the upcoming **hexagonal-architecture review** —
-> the enabling refactor in §3 _is_ the architecture boundary.
+> Status: **done** — all four layers (A–D) landed alongside the hexagonal review (ADR 0006).
+> Unit + headless integration (`core/app/match.test.ts`) + Vue component/store + Playwright E2E/visual
+> are all in place. This doc is kept as the rationale/reference; see `memory/progress.md` for the log.
 
 ## 1. The gap (why bugs slip through)
 
