@@ -13,7 +13,8 @@ A 2D arcade action-platformer inspired by the 90s classics (Ghosts'n Goblins and
 - **Vue 3** (`<script setup>`, Composition API) — title/stage-select menus, HUD, overlays.
 - **Pinia** (UI state) + **mitt** event bus (`src/shared/events.ts`) — decoupled UI ↔ game bridge.
 - Pure-TS logic core (`src/core/`) — physics, collisions, FSM, rules, AI; no engine/UI deps, fully unit-tested.
-- **Vitest** (tests) · **ESLint + Prettier** (lint/format) · **Husky + lint-staged + commitlint** (git hooks).
+- **Vitest** (unit + headless integration + Vue component tests) · **Playwright** (E2E + visual regression, `e2e/`).
+- **ESLint + Prettier** (lint/format) · **Husky + lint-staged + commitlint** (git hooks).
 - **Vite** (dev server + build) · **pnpm** (package manager).
 
 ## Quick start
@@ -21,11 +22,19 @@ A 2D arcade action-platformer inspired by the 90s classics (Ghosts'n Goblins and
 ```bash
 pnpm install
 pnpm dev          # run the game (Vite dev server)
-pnpm test         # run the unit tests (Vitest)
+pnpm test         # run the unit + component tests (Vitest)
+pnpm test:cov     # same, with coverage (core thresholds enforced)
+pnpm test:e2e     # E2E + visual regression (Playwright — builds, then drives a real browser)
 pnpm typecheck    # vue-tsc
 pnpm lint         # ESLint
 pnpm build        # production build
 ```
+
+> **Playwright E2E (`pnpm test:e2e`):** the first run needs the browser binary —
+> `pnpm exec playwright install chromium`. The config (`playwright.config.ts`) boots the production
+> build itself (`pnpm build && pnpm preview`), so you don't need a dev server running. Visual baselines
+> live in `e2e/*-snapshots/` and are OS-specific; regenerate them with `pnpm test:e2e:update` after an
+> intentional visual change (run on a matching OS or in CI).
 
 ## Controls
 

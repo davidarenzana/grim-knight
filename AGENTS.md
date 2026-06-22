@@ -19,7 +19,8 @@ music or names.
 - **Phaser 3** → render, input, audio, presentation game loop.
 - **Pure-TS logic core** (`src/core/`) → physics, collisions, FSM, rules, AI. Testable.
 - **Pinia** + **mitt** (`src/shared/events.ts`) → decoupled UI ↔ game bridge.
-- **Vitest** (tests) · **ESLint + Prettier** · **Husky + lint-staged + commitlint** · **Vite** · **pnpm**.
+- **Vitest** (unit + headless integration + Vue component) · **Playwright** (E2E + visual regression, `e2e/`).
+- **ESLint + Prettier** · **Husky + lint-staged + commitlint** · **Vite** · **pnpm**.
 
 ## 3. Architectural golden rule
 
@@ -58,6 +59,10 @@ src/
 | Lint                 | `pnpm lint` / `pnpm lint:fix` |
 | Format               | `pnpm format`                 |
 | Production build     | `pnpm build`                  |
+
+> **First E2E run:** install the browser binary once with `pnpm exec playwright install chromium`.
+> `pnpm test:e2e` builds + serves the app itself (`playwright.config.ts` → `webServer`), so no dev server
+> is needed. Visual baselines (`e2e/*-snapshots/`) are OS-specific — `pnpm test:e2e:update` to regenerate.
 
 ## 5. SDD + TDD flow (mandatory)
 
@@ -98,7 +103,7 @@ was learned.
 
 ## 8. Current status
 
-Phases 0–4 done; Phase 5 started. Feature-complete greybox: 6 stages × 2 loops (double quest) with camera
+Phases 0–5 done; Phase 6 (build/deploy) next. Feature-complete greybox: 6 stages × 2 loops (double quest) with camera
 scroll. Player FSM (idle/run/jump/crouch/climb/throw/hurt/die + air control), 2-hit armor; enemies
 zombie/flyer/ogre/plant and a boss (HP bar); enemy projectiles, projectile-vs-wall collision,
 **proximity-triggered spawner** (enemies wake as you approach their zone, not on a timer — so the boss no
@@ -137,9 +142,11 @@ under `public/assets/effects/` + `public/assets/icons/`). **Enemy projectiles** 
 rectangles: each shot carries a presentation `sprite` tag in core (`spore`/`bullet`/`bolt`/`fire`) that
 `engine/assets/sprites.ts` (`ENEMY_PROJECTILES`/`enemyProjectileVisual`) renders animated/tinted (rect
 fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch art, so `GameScene` squashes the
-idle pose vertically (foot-aligned) while the FSM is in `crouch` (the state + shrunk hitbox are real). 211 tests
-green. Next within Phase 5: audio, fine-tune sprite scales; then Phase 6 (build/deploy). Live detail in
-`memory/progress.md`.
+idle pose vertically (foot-aligned) while the FSM is in `crouch` (the state + shrunk hitbox are real).
+**Procedural audio** (SFX + music, on/off toggle) and an **arcade high-score table** (3-letter initials) are in.
+**Testing pyramid complete** (see `docs/TESTING-PLAN.md`): unit + headless `stepMatch` integration + Vue
+component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 258 Vitest tests green.
+Next: Phase 6 (code-split + deploy). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 

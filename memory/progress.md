@@ -457,24 +457,26 @@ at boot. UI: `AudioToggle.vue` (🔊/🔇) pinned top-right in `App.vue`, on eve
 green. (The corner button's pixel diff is under the 2% visual-snapshot threshold, so menu baselines were
 unchanged.)
 
+### High-score table (Phase 5)
+
+Classic arcade top-ten with 3-letter initials. Pure core `core/rules/highscores.ts`
+(`qualifies`/`insertScore`/`sanitizeName`, stable ties, cap 10) + spec `specs/highscores.md`. Persistence
+in the store (`grim:highscores` in `localStorage`, mirrors the audio-pref pattern). Flow: any qualifying
+run-end → `EnterScore.vue` (type initials, Enter) → `submitScore` → `HighScores.vue` (table, fresh row
+pulses); non-qualifying → normal gameover/won. `HIGH SCORES` button on the title screen (+ 1 E2E case). See
+glossary "High score table". **258 Vitest tests + 6 Playwright E2E green; typecheck/lint green.**
+
+**Phase 5 is complete** — art/levels overhaul (themes, 3 new enemies, pits + hazards, 3 boss variants, level
+refactor, death/hit VFX + chest VFX/icons + random loot + sprite enemy projectiles), the full testing
+pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwright E2E/visual; see
+`docs/TESTING-PLAN.md`), procedural audio + toggle, and the high-score table.
+
 ## In progress 🔧
 
-- Phase 5 art/levels overhaul is **done** (themes, 3 new enemies, pits + hazards, 3 boss variants, level
-  refactor, **death/hit VFX + chest VFX/icons + random loot + sprite enemy projectiles**). Remaining
-  Phase 5 work: audio, then optional juice (more particles, transition fades).
+- Nothing active. Phase 6 (build optimization + deploy) is the next milestone.
 
-## Next ⏭️ (remaining Phase 5 polish, then Phase 6)
+## Next ⏭️ (Phase 6, plus optional polish)
 
-- More juice if wanted: particles on kill, transition fades.
-- Polish: time/no-damage score bonuses, extra lives at score thresholds (reuse `gainLife`),
-  torch ground-fire hazard.
-- **High-score table — DONE.** Classic top-ten with 3-letter initials. Pure core
-  `core/rules/highscores.ts` (`qualifies`/`insertScore`/`sanitizeName`, stable ties, cap 10) + spec
-  `specs/highscores.md`. Persistence in the store (`grim:highscores` in `localStorage`, mirrors the
-  audio-pref pattern). Flow: any qualifying run-end → `EnterScore.vue` (type initials, Enter) →
-  `submitScore` → `HighScores.vue` (table, fresh row pulses); non-qualifying → normal gameover/won.
-  `HIGH SCORES` button on the title screen. See glossary "High score table".
-- Richer boss/hazard designs from the GDD (unique boss patterns; water/crushers/wind/collapsing floors).
 - **Phase 6 — build optimization + deploy** (deferred together, per the user):
   - **Code-split the Phaser chunk.** Build is one ~1.6 MB (384 kB gzip) JS bundle, ~90% Phaser.
     1. **Lazy-load Phaser**: dynamic-`import()` `GameCanvas`/`@engine/game` (e.g. `defineAsyncComponent`) so
@@ -483,6 +485,10 @@ unchanged.)
     2. Optional `manualChunks` vendor split (Phaser → own chunk) for cross-deploy caching + to silence the
        > 500 kB warning (secondary; doesn't defer the download).
   - **Static deploy** (GitHub Pages); `vite.config.ts` `base` is already `./`. See `docs/PLAN.md` Phase 6.
+- **Optional polish (post-launch, if wanted):** more juice (particles on kill, transition fades);
+  time/no-damage score bonuses + extra lives at score thresholds (reuse `gainLife`); torch ground-fire
+  hazard; richer boss/hazard designs from the GDD (unique boss patterns; water/crushers/wind/collapsing
+  floors).
 
 ## Recent decisions
 

@@ -15,6 +15,15 @@
 - Test next to the code: `module.test.ts`.
 - Tests that need DOM/jsdom: add a docblock `// @vitest-environment jsdom` at the top of the test file (Vitest 3 deprecated `environmentMatchGlobs`; the default env is `node`).
 - Coverage measured only over `src/core/**` (threshold ≥80% lines). Render/UI is covered with smoke tests.
+- **Four test layers** (rationale: `docs/TESTING-PLAN.md`): (1) unit `core/` (Vitest, node), (2) headless
+  integration over `stepMatch` (`core/app/match.test.ts` — the real loop, no Phaser), (3) Vue component/store
+  (Vitest + jsdom), (4) **Playwright E2E + visual regression** in `e2e/` (`pnpm test:e2e`).
+- **Playwright** lives in `e2e/`, not next to code. First run needs the browser:
+  `pnpm exec playwright install chromium`. `playwright.config.ts` boots the prod build itself
+  (`pnpm build && pnpm preview`) — no dev server needed. Visual baselines (`e2e/*-snapshots/`) are
+  **OS-specific**; regenerate with `pnpm test:e2e:update` on a matching OS after an intentional visual change.
+  Snapshot tolerance is `maxDiffPixelRatio: 0.02` (sub-pixel AA noise won't fail a run). E2E is **not** in the
+  pre-commit hook (too slow); run it before pushing visual/integration changes.
 
 ## Git / commits
 
