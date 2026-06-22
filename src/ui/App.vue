@@ -28,7 +28,7 @@ const game = useGameStore()
         <LevelSelect v-if="game.screen === 'levels'" />
         <GameHud v-if="game.screen === 'playing'" />
         <PauseOverlay v-if="game.screen === 'paused'" />
-        <GameOver v-if="game.screen === 'gameover' || game.screen === 'won'" />
+        <GameOver v-if="game.screen === 'gameover'" />
         <EnterScore v-if="game.screen === 'enterscore'" />
         <HighScores v-if="game.screen === 'highscores'" />
 

@@ -5,6 +5,7 @@ import { GROUND_Y } from '@core/level/geometry'
 import { createPlayer, PLAYER_H, NO_INPUT, type PlayerInput } from '@core/fsm/player'
 import { createWeapon, DAGGER, TORCH } from '@core/weapons/weapon'
 import { createSession } from '@core/rules/session'
+import { difficultyForLoop } from '@core/rules/difficulty'
 import { createTimer } from '@core/level/timer'
 import { createSpawner } from '@core/level/spawner'
 import { createChest } from '@core/level/chest'
@@ -23,6 +24,7 @@ const START = { x: 80, y: GROUND_Y - PLAYER_H }
 const makeConfig = (over: Partial<MatchConfig> = {}): MatchConfig => ({
   levelIndex: 0,
   loop: 1,
+  difficulty: difficultyForLoop(over.loop ?? 1),
   solids: [aabb(0, GROUND_Y, 4000, 40)],
   ladders: [],
   hazards: [],
@@ -132,6 +134,21 @@ describe('stepMatch', () => {
     expect(notifies(r.effects, 'score')).toBe(true)
   })
 
+  it('scales enemy hp by the loop difficulty', () => {
+    const spawner = createSpawner([{ kind: 'zombie', x: 120, y: GROUND_Y - PLAYER_H }])
+    const r = stepMatch(makeConfig({ loop: 3 }), makeState({ spawner }), NO_INPUT, 1 / 60)
+    // base zombie hp 1 × enemyHpMul 2 (loop 3) = 2
+    expect(r.state.enemies[0]!.hp).toBe(2)
+  })
+
+  it('scales kill score by the loop difficulty', () => {
+    const z = createZombie(130, GROUND_Y - PLAYER_H)
+    const r = run(makeConfig({ loop: 3 }), makeState({ enemies: [z] }), press({ attack: true }), 60)
+    expect(r.state.enemies[0]!.state).toBe('dead')
+    // one kill × SCORE_PER_KILL (100) × scoreMul 2 (loop 3) = 200
+    expect(r.state.session.score).toBe(200)
+  })
+
   it('emits sound cues: throw on firing, kill when an enemy dies', () => {
     const z = createZombie(130, GROUND_Y - PLAYER_H)
     const r = run(makeConfig(), makeState({ enemies: [z] }), press({ attack: true }), 60)
@@ -174,14 +191,16 @@ describe('createMatch', () => {
     expect(config.stageSeconds).toBe(LEVELS[0]!.durationSeconds) // loop 1: no time scale
   })
 
-  it('shortens the clock on loop 2 (the harder second quest)', () => {
+  it('shortens the clock on deeper loops (more time pressure)', () => {
     const { config } = createMatch(LEVELS[0]!, {
       levelIndex: 0,
-      loop: 2,
+      loop: 3,
       rng: createRng(1),
       viewHeight: 450,
     })
-    expect(config.stageSeconds).toBe(Math.round(LEVELS[0]!.durationSeconds * 0.75))
+    const expected = Math.round(LEVELS[0]!.durationSeconds * difficultyForLoop(3).timeScale)
+    expect(config.stageSeconds).toBe(expected)
+    expect(config.difficulty.name).toBe('INFERNAL')
   })
 
   it('steps a real level without throwing and stays playing', () => {

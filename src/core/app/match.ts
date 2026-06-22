@@ -39,6 +39,7 @@ import {
 import { createSpawner, isFinished, stepSpawner } from '@core/level/spawner'
 import { createTimer, tickTimer } from '@core/level/timer'
 import { addScore, createSession, gainLife, loseLife, type Session } from '@core/rules/session'
+import { difficultyForLoop } from '@core/rules/difficulty'
 import { pickupArmor } from '@core/rules/armor'
 import { resolveCombat, resolveEnemyProjectiles, resolveMelee } from '@core/rules/combat'
 import { hasFallenOut, hasSunkUnderFloor } from '@core/rules/fall'
@@ -96,25 +97,42 @@ const notify = (notification: GameNotification): Effect => ({ type: 'notify', no
 const bossVariant = (levelIndex: number): BossVariant =>
   (Math.min(2, Math.floor(levelIndex / 2)) + 1) as BossVariant
 
-const spawnEnemy = (kind: EnemyKind, x: number, y: number, levelIndex: number): Enemy => {
-  switch (kind) {
-    case 'zombie':
-      return createZombie(x, y)
-    case 'ogre':
-      return createOgre(x, y)
-    case 'flyer':
-      return createFlyer(x, y)
-    case 'plant':
-      return createPlant(x, y)
-    case 'boss':
-      return createBoss(x, y, bossVariant(levelIndex))
-    case 'centipede':
-      return createCentipede(x, y)
-    case 'turtle':
-      return createTurtle(x, y)
-    case 'bloated':
-      return createBloated(x, y)
-  }
+/** Scale a freshly-spawned enemy's HP (and HP-bar max) by the loop difficulty. */
+const scaleEnemyHp = (e: Enemy, mul: number): Enemy => {
+  if (mul === 1) return e
+  const hp = Math.max(1, Math.round(e.hp * mul))
+  if (e.maxHp === undefined) return { ...e, hp }
+  return { ...e, hp, maxHp: Math.max(1, Math.round(e.maxHp * mul)) }
+}
+
+const spawnEnemy = (
+  kind: EnemyKind,
+  x: number,
+  y: number,
+  levelIndex: number,
+  hpMul: number,
+): Enemy => {
+  const base = ((): Enemy => {
+    switch (kind) {
+      case 'zombie':
+        return createZombie(x, y)
+      case 'ogre':
+        return createOgre(x, y)
+      case 'flyer':
+        return createFlyer(x, y)
+      case 'plant':
+        return createPlant(x, y)
+      case 'boss':
+        return createBoss(x, y, bossVariant(levelIndex))
+      case 'centipede':
+        return createCentipede(x, y)
+      case 'turtle':
+        return createTurtle(x, y)
+      case 'bloated':
+        return createBloated(x, y)
+    }
+  })()
+  return scaleEnemyHp(base, hpMul)
 }
 
 export interface CreateMatchOptions {
@@ -140,13 +158,15 @@ export const createMatch = (
 ): { config: MatchConfig; state: MatchState } => {
   const { levelIndex, loop, rng, viewHeight } = opts
   const worldHeight = level.worldHeight ?? viewHeight
-  // Loop 2 (the second quest) is harder: less time on the clock.
-  const timeScale = loop >= 2 ? 0.75 : 1
-  const stageSeconds = Math.round(level.durationSeconds * timeScale)
+  // Deeper loops are harder: less time on the clock (plus tougher enemies and a
+  // richer payout, applied during the step). See core/rules/difficulty.
+  const difficulty = difficultyForLoop(loop)
+  const stageSeconds = Math.round(level.durationSeconds * difficulty.timeScale)
   const start = { x: level.playerStart.x, y: level.playerStart.y }
   const config: MatchConfig = {
     levelIndex,
     loop,
+    difficulty,
     // Level geometry plus invisible world-boundary walls (left/right).
     solids: [
       ...level.solids,
@@ -284,9 +304,9 @@ const bossNotifications = (prev: readonly Enemy[], next: readonly Enemy[]): Effe
     return before && before.state !== 'dead' ? [notify({ kind: 'boss-cleared' })] : []
   }
   const before = prev.find((e) => e.kind === 'boss')
-  return !before || before.hp !== after.hp
-    ? [notify({ kind: 'boss-hp', hp: after.hp, maxHp: BOSS_VARIANTS[after.variant ?? 1].hp })]
-    : []
+  // Use the (possibly loop-scaled) spawn HP so the bar stays correct under scaling.
+  const maxHp = after.maxHp ?? BOSS_VARIANTS[after.variant ?? 1].hp
+  return !before || before.hp !== after.hp ? [notify({ kind: 'boss-hp', hp: after.hp, maxHp })] : []
 }
 
 /**
@@ -323,7 +343,9 @@ export const stepMatch = (
   const spawner = spawn.spawner
   let enemies: Enemy[] = [
     ...state.enemies,
-    ...spawn.due.map((ev) => spawnEnemy(ev.kind, ev.x, ev.y, config.levelIndex)),
+    ...spawn.due.map((ev) =>
+      spawnEnemy(ev.kind, ev.x, ev.y, config.levelIndex, config.difficulty.enemyHpMul),
+    ),
   ]
   const b0 = state.player.body
   const target = { x: b0.pos.x + b0.w / 2, y: b0.pos.y + b0.h / 2 }
@@ -437,7 +459,8 @@ export const stepMatch = (
 
   let session = state.session
   if (kills > 0) {
-    session = addScore(session, kills * SCORE_PER_KILL)
+    // Deeper loops pay more (arcade risk/reward).
+    session = addScore(session, Math.round(kills * SCORE_PER_KILL * config.difficulty.scoreMul))
     effects.push(notify({ kind: 'score', score: session.score }))
     effects.push({ type: 'shake', ms: 90, intensity: 0.006 }) // a small kick per kill
   }

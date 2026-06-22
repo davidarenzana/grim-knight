@@ -9,6 +9,7 @@ import type { Spawner } from '@core/level/spawner'
 import type { StageTimer } from '@core/level/timer'
 import type { Session } from '@core/rules/session'
 import type { ArmorState } from '@core/rules/armor'
+import type { Difficulty } from '@core/rules/difficulty'
 
 /**
  * Application layer (pure). This module defines the use-case contract for a
@@ -65,6 +66,8 @@ export type MatchPhase = 'playing' | 'gameover' | 'cleared'
 export interface MatchConfig {
   readonly levelIndex: number
   readonly loop: number
+  /** Resolved difficulty for this loop (tier name + scaling knobs). */
+  readonly difficulty: Difficulty
   readonly solids: readonly Solid[]
   readonly ladders: readonly AABB[]
   readonly hazards: readonly AABB[]
@@ -134,7 +137,6 @@ export type GameNotification =
   | { readonly kind: 'boss-hp'; readonly hp: number; readonly maxHp: number }
   | { readonly kind: 'boss-cleared' }
   | { readonly kind: 'over'; readonly score: number }
-  | { readonly kind: 'won'; readonly score: number }
 
 /** The use-case result: the next state plus the effects to present this tick. */
 export interface StepResult {

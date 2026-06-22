@@ -9,7 +9,6 @@ export type Screen =
   | 'playing'
   | 'paused'
   | 'gameover'
-  | 'won'
   | 'enterscore'
   | 'highscores'
 
@@ -94,20 +93,17 @@ export const useGameStore = defineStore('game', () => {
   const scores = ref<HighScore[]>(loadScores())
   /** Row index just inserted (for highlight on the table); -1 when none. */
   const lastRank = ref(-1)
-  /** Outcome of the run feeding the entry screen ('gameover' | 'won'). */
-  const lastOutcome = ref<'gameover' | 'won'>('gameover')
   /** The run's final score awaiting initials (set when a run ends qualifying). */
   const pendingScore = ref(0)
 
   /** End-of-run router: jump to initials entry if the score makes the table. */
-  function finishRun(finalScore: number, outcome: 'gameover' | 'won'): void {
+  function finishRun(finalScore: number): void {
     if (qualifies(scores.value, finalScore)) {
       pendingScore.value = finalScore
-      lastOutcome.value = outcome
       screen.value = 'enterscore'
     } else {
       lastRank.value = -1
-      screen.value = outcome
+      screen.value = 'gameover'
     }
   }
 
@@ -131,8 +127,7 @@ export const useGameStore = defineStore('game', () => {
       level.value = e.level
       loop.value = e.loop
     })
-    bus.on('game:over', (e) => finishRun(e.score, 'gameover'))
-    bus.on('game:won', (e) => finishRun(e.score, 'won'))
+    bus.on('game:over', (e) => finishRun(e.score))
     // Tell the audio adapter the persisted preference at boot.
     bus.emit('ui:audio', { on: audioOn.value })
   }
@@ -225,7 +220,6 @@ export const useGameStore = defineStore('game', () => {
     audioOn,
     scores,
     lastRank,
-    lastOutcome,
     pendingScore,
     bind,
     toggleAudio,

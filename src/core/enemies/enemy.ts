@@ -20,6 +20,8 @@ export interface Enemy {
   readonly kind: EnemyKind
   readonly body: Body
   readonly hp: number
+  /** Spawn HP, for HP-bar display (set on the boss; defaults to `hp` elsewhere). */
+  readonly maxHp?: number
   readonly state: EnemyState
   readonly facing: 1 | -1
   /** Remaining rise time in seconds (ground emergers). */

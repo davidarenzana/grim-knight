@@ -22,7 +22,6 @@ export type GameEvents = {
   'game:boss-hp': { hp: number; maxHp: number }
   'game:boss-cleared': void
   'game:over': { score: number }
-  'game:won': { score: number }
 
   'ui:start': { level?: number }
   'ui:pause': void

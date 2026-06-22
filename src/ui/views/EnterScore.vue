@@ -10,7 +10,6 @@ const initials = ref('')
 const slots = computed(() => Array.from({ length: MAX }, (_, i) => initials.value[i] ?? ''))
 /** Which slot the next letter fills (clamped so the last slot stays lit). */
 const cursor = computed(() => Math.min(initials.value.length, MAX - 1))
-const heading = computed(() => (game.lastOutcome === 'won' ? 'VICTORY!' : 'NEW HIGH SCORE'))
 
 function confirm(): void {
   // sanitizeName (in the store) pads short / empty initials, so any length is fine.
@@ -42,7 +41,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 <template>
   <div class="overlay">
     <div class="panel-wood card">
-      <h2 class="heading">{{ heading }}</h2>
+      <h2 class="heading">NEW HIGH SCORE</h2>
       <p class="score">
         <img src="/assets/icons/coin.png" alt="score" />
         {{ String(game.pendingScore).padStart(6, '0') }}
