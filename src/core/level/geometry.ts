@@ -41,6 +41,14 @@ export const LEDGE_H = 20
 /** A one-way ledge of standard thickness at (x, y) — the vertical-tower building block. */
 export const ledge = (x: number, y: number, w: number): Solid => oneWay(x, y, w, LEDGE_H)
 
+/**
+ * A tower ladder AABB spanning from an upper surface down to a lower one, with a
+ * slight overhang past the top so the climb connects cleanly. The shared building
+ * block for vertical (tower) stages.
+ */
+export const rungs = (x: number, upperY: number, lowerY: number): AABB =>
+  aabb(x, upperY - 12, 16, lowerY - upperY + 12)
+
 /** A pit (gap in the ground): the player falls through and dies. */
 export interface Pit {
   readonly x: number

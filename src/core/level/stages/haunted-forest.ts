@@ -1,46 +1,87 @@
 import { aabb } from '@core/math/aabb'
 import { createChest } from '../chest'
-import { CHEST_Y, floor, GROUND_Y, oneWay, PLAYER_START_Y, spikes } from '../geometry'
+import { ledge, rungs, spikesOn } from '../geometry'
 import type { LevelDef } from '../types'
 
-/** Stage 2 — Haunted Forest (forest theme). */
+/**
+ * Stage 2 — Haunted Forest (forest theme), a VERTICAL tower.
+ *
+ * Like Iron Fortress (stage 4) this one climbs upward instead of side-scrolling:
+ * the camera scrolls vertically through a `worldHeight` much taller than the
+ * screen. The knight starts at the foot of a haunted canopy and ascends a
+ * zig-zag of one-way shelves to the boss arena at the top. It's an earlier,
+ * gentler tower than Iron Fortress — shorter (5 climbs vs. 7), with stationary
+ * foes and fewer hazards.
+ *
+ * Enemies are gated by `triggerY` (height climbed) instead of `triggerX`, so
+ * `triggerX: 0` keeps the horizontal gate open and the vertical one decides when
+ * each foe wakes. Ladders alternate between a LEFT and a RIGHT column so the
+ * up-ladder and down-ladder of a tier never share a column (which would trap the
+ * knight where they overlap): you arrive at one column, traverse the shelf —
+ * dodging a plant or spikes — and climb the next ladder at the far column.
+ * Walkers and the boss take the wide bottom floor and top arena; stationary
+ * plants sit on the shelves (walkers would stroll off); flyers harass the shafts.
+ */
+const WORLD_W = 900
+const WORLD_H = 1700
+const FLOOR_Y = 1660 // top of the bottom ground band
+
+// Tier surface heights (top y), bottom → top.
+const T1 = 1420
+const T2 = 1180
+const T3 = 940
+const T4 = 700
+const ARENA = 460
+
+// Each shelf spans this range, covering both ladder columns plus a traverse.
+const SHELF_X = 120
+const SHELF_W = 660 // [120, 780]
+// The two ladder columns. Consecutive ladders alternate between them.
+const LCOL = 200
+const RCOL = 660
+
+/** A standard tower shelf (one-way ledge) at height `y`. */
+const shelf = (y: number) => ledge(SHELF_X, y, SHELF_W)
+
 export const hauntedForest: LevelDef = {
   name: 'Haunted Forest',
   theme: 'forest',
-  worldWidth: 3000,
-  playerStart: { x: 80, y: PLAYER_START_Y },
+  worldWidth: WORLD_W,
+  worldHeight: WORLD_H,
+  playerStart: { x: 120, y: FLOOR_Y - 48 },
   solids: [
-    ...floor(3000, [
-      { x: 690, w: 70 },
-      { x: 960, w: 70 },
-      { x: 2300, w: 60 },
-    ]),
-    oneWay(260, 300, 180, 20),
-    oneWay(560, 250, 160, 20),
-    aabb(820, 360, 40, 50),
-    oneWay(1100, 300, 200, 20),
-    oneWay(1700, 260, 180, 20),
-    // Crate moved off the zombie spawn at x=2100 (the zombie used to land on top
-    // of the crate, where ground throws can't reach it → unkillable, blocking clear).
-    aabb(1980, 360, 40, 50),
-    oneWay(2500, 300, 200, 20),
+    aabb(0, FLOOR_Y, WORLD_W, 40), // bottom floor (full width)
+    shelf(T1),
+    shelf(T2),
+    shelf(T3),
+    shelf(T4),
+    ledge(120, ARENA, 680), // boss arena [120, 800]
   ],
-  ladders: [aabb(320, 300, 16, 110), aabb(1160, 300, 16, 110), aabb(2560, 300, 16, 110)],
-  hazards: [spikes(1420, 40)],
+  ladders: [
+    rungs(RCOL, T1, FLOOR_Y), // floor → T1 (right)
+    rungs(LCOL, T2, T1), //      T1 → T2 (left)
+    rungs(RCOL, T3, T2), //      T2 → T3 (right)
+    rungs(LCOL, T4, T3), //      T3 → T4 (left)
+    rungs(RCOL, ARENA, T4), //   T4 → arena (right)
+  ],
+  // Spikes sit mid-shelf, clear of both ladder columns (200 / 660). Kept narrow
+  // (40px) so they're comfortably jumpable on the cramped tower shelves.
+  hazards: [spikesOn(440, T2, 40), spikesOn(440, T3, 40)],
   spawns: [
-    { kind: 'flyer', x: 500, y: 140 },
-    { kind: 'plant', x: 600, y: GROUND_Y },
-    { kind: 'zombie', x: 900, y: GROUND_Y },
-    { kind: 'flyer', x: 1300, y: 110 },
-    { kind: 'ogre', x: 1550, y: GROUND_Y },
-    { kind: 'plant', x: 1800, y: GROUND_Y },
-    { kind: 'centipede', x: 1300, y: GROUND_Y },
-    { kind: 'zombie', x: 2100, y: GROUND_Y },
-    { kind: 'bloated', x: 2250, y: GROUND_Y },
-    { kind: 'flyer', x: 2400, y: 120 },
-    { kind: 'ogre', x: 2650, y: GROUND_Y },
-    { kind: 'boss', x: 2800, y: GROUND_Y },
+    // Bottom floor — walkers, between the start and the first ladder.
+    { kind: 'zombie', x: 330, y: FLOOR_Y, triggerX: 0, triggerY: FLOOR_Y },
+    { kind: 'centipede', x: 520, y: FLOOR_Y, triggerX: 0, triggerY: FLOOR_Y },
+    // Shelves — stationary plants mid-shelf (not on a ladder column).
+    { kind: 'plant', x: 420, y: T1, triggerX: 0, triggerY: T1 },
+    { kind: 'flyer', x: 430, y: 1300, triggerX: 0, triggerY: 1300 },
+    { kind: 'plant', x: 420, y: T2, triggerX: 0, triggerY: T2 },
+    { kind: 'flyer', x: 430, y: 1060, triggerX: 0, triggerY: 1060 },
+    { kind: 'plant', x: 420, y: T3, triggerX: 0, triggerY: T3 },
+    // Near the top — a heavier walker guards the last climb.
+    { kind: 'ogre', x: 500, y: T4, triggerX: 0, triggerY: T4 },
+    // Boss arena at the top.
+    { kind: 'boss', x: 300, y: ARENA, triggerX: 0, triggerY: ARENA },
   ],
-  durationSeconds: 145,
-  chests: [createChest(520, CHEST_Y), createChest(1180, CHEST_Y), createChest(2080, CHEST_Y)],
+  durationSeconds: 150,
+  chests: [createChest(560, T1 - 20), createChest(560, T3 - 20)],
 }

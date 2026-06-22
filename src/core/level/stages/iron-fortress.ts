@@ -1,6 +1,6 @@
 import { aabb } from '@core/math/aabb'
 import { createChest } from '../chest'
-import { ledge, spikesOn } from '../geometry'
+import { ledge, rungs, spikesOn } from '../geometry'
 import type { LevelDef } from '../types'
 
 /**
@@ -40,9 +40,6 @@ const SHELF_W = 660 // [120, 780]
 const LCOL = 200
 const RCOL = 660
 
-/** A ladder spanning from an upper surface down to a lower one (slight overhang). */
-const rungs = (x: number, upperY: number, lowerY: number) =>
-  aabb(x, upperY - 12, 16, lowerY - upperY + 12)
 /** A standard tower shelf (one-way ledge) at height `y`. */
 const shelf = (y: number) => ledge(SHELF_X, y, SHELF_W)
 

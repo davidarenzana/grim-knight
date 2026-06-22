@@ -123,8 +123,10 @@ stage its own ground tile + backdrop (`engine/assets/tiles.ts`; theme art under 
 stages). **GnG-style level geometry**: jumpable pits (`floor(width, pits)`) with **fall-out** death (`core/rules/fall.ts`)
 and **contact hazards** (spikes/lava, `core/rules/hazard.ts`; `lava(x,w)` is a recessed-into-the-ground pool, sized
 so a jump clears it). A **jumpable-hazard guardrail** (`level/jumpable.test.ts`) asserts every authored hazard stays
-within `SAFE_HAZARD_W` (< `MAX_JUMP_GAP`) so no stage soft-locks. **Iron Fortress is a vertical tower stage** (tall
-`worldHeight`, vertical camera scroll). Ground enemies are **ledge/wall-aware**
+within `SAFE_HAZARD_W` (< `MAX_JUMP_GAP`) so no stage soft-locks. **Haunted Forest (stage 2) and Iron Fortress
+(stage 4) are vertical tower stages** (tall `worldHeight`, vertical camera scroll; knight climbs a zig-zag of
+one-way shelves + alternating ladders, enemies gated by `triggerY`; shared `rungs` helper in `level/geometry.ts`).
+Ground enemies are **ledge/wall-aware**
 (`core/enemies/walk.ts`): melee walkers `patrolDir` (chase within `AGGRO_RANGE`, else patrol — turn at
 ledges/walls and keep going), ranged turtle/boss `advanceDir` (advance where there's floor, else hold and
 fire across the gap). Levels are split per stage under `core/level/stages/` (types in

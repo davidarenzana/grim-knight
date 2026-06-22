@@ -466,6 +466,18 @@ run-end → `EnterScore.vue` (type initials, Enter) → `submitScore` → `HighS
 pulses); non-qualifying → normal gameover/won. `HIGH SCORES` button on the title screen (+ 1 E2E case). See
 glossary "High score table". **258 Vitest tests + 6 Playwright E2E green; typecheck/lint green.**
 
+### Haunted Forest → second vertical tower (Phase 5)
+
+Stage 2 (Haunted Forest) is now a **vertical tower**, like stage 4 (Iron Fortress) — the user wanted a
+second climbing stage. Pure data change to `core/level/stages/haunted-forest.ts`: tall `worldHeight`
+(1700, vs. the screen ~450), narrow `worldWidth` (900), knight starts at the base, ascends a zig-zag of
+one-way `shelf()` ledges linked by **alternating left/right ladders**, plants/spikes guard the shelves,
+flyers harass the shafts, ogre near the top, boss in the top arena. Enemies gated by `triggerY` (height)
+with `triggerX: 0`. Shorter/gentler than Iron Fortress (5 climbs vs. 7, stationary foes). The shared
+`rungs(x, upperY, lowerY)` ladder helper was **extracted into `level/geometry.ts`** (was a local copy in
+Iron Fortress; now both towers import it). No engine change — vertical scroll is inferred from
+`worldHeight`. Guardrails (`stages.test.ts`, `jumpable.test.ts`) pass unchanged. 258 tests green.
+
 **Phase 5 is complete** — art/levels overhaul (themes, 3 new enemies, pits + hazards, 3 boss variants, level
 refactor, death/hit VFX + chest VFX/icons + random loot + sprite enemy projectiles), the full testing
 pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwright E2E/visual; see

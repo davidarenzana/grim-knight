@@ -24,14 +24,14 @@
 
 ## Theme assignment (6 stages, each visually distinct)
 
-| #   | Stage          | Theme  | Tiles / Background                                            | Hazard       |
-| --- | -------------- | ------ | ------------------------------------------------------------- | ------------ |
-| 0   | Graveyard      | ruins  | current CraftPix ruins (grass + dusk) — unchanged             | pits         |
-| 1   | Haunted Forest | forest | swap-tileset green tiles + forest background                  | pits         |
-| 2   | Swamp Caverns  | cave   | dungeons rock tiles + pale cave background                    | pits         |
-| 3   | Iron Fortress  | castle | medieval red-brick + dark sky                                 | spikes, pits |
-| 4   | Frozen Spires  | ice    | medieval/dungeon stone **blue-tinted** + cold tinted backdrop | pits         |
-| 5   | Demon Keep     | hell   | dungeons lava tiles + bright/red background + lava drips      | lava, pits   |
+| #   | Stage          | Theme  | Tiles / Background                                            | Hazard                  |
+| --- | -------------- | ------ | ------------------------------------------------------------- | ----------------------- |
+| 0   | Graveyard      | ruins  | current CraftPix ruins (grass + dusk) — unchanged             | pits                    |
+| 1   | Haunted Forest | forest | swap-tileset green tiles + forest background                  | spikes (vertical tower) |
+| 2   | Swamp Caverns  | cave   | dungeons rock tiles + pale cave background                    | pits                    |
+| 3   | Iron Fortress  | castle | medieval red-brick + dark sky                                 | spikes, pits            |
+| 4   | Frozen Spires  | ice    | medieval/dungeon stone **blue-tinted** + cold tinted backdrop | pits                    |
+| 5   | Demon Keep     | hell   | dungeons lava tiles + bright/red background + lava drips      | lava, pits              |
 
 > Ice has no dedicated pack: reuse the stone tiles with a cyan/white Phaser tint + a blue-tinted
 > backdrop. Castle/hell backgrounds: the medieval set ships no full-screen bg, so use a dark

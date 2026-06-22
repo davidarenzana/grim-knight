@@ -58,7 +58,7 @@ twist: beating the last boss the first time only sends you around again, harder 
 | #   | Stage          | Theme                      | Hazards                 | Boss             |
 | --- | -------------- | -------------------------- | ----------------------- | ---------------- |
 | 1   | Graveyard      | rising zombies, ladders    | gravestones cover       | Cyclops Sentinel |
-| 2   | Haunted Forest | flyers, plants             | moving platforms        | Twin Gargoyles   |
+| 2   | Haunted Forest | flyers, plants             | vertical climb, spikes  | Twin Gargoyles   |
 | 3   | Swamp Caverns  | water, drowning            | rising water            | Bog Hydra        |
 | 4   | Iron Fortress  | ogres, traps               | crushers, spikes        | Iron Golem       |
 | 5   | Frozen Spires  | ice physics (low friction) | wind gusts              | Wraith Queen     |
