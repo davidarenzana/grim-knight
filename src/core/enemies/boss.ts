@@ -75,6 +75,7 @@ export const createBoss = (x: number, groundY: number, variant: BossVariant = 1)
     kind: 'boss',
     body: createBody(x, groundY - s.h, s.w, s.h),
     hp: s.hp,
+    maxHp: s.hp,
     state: 'walking',
     facing: -1,
     riseTimer: 0,

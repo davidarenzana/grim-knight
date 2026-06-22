@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addScore, createSession, gainLife, loseLife, STARTING_LIVES, win } from './session'
+import { addScore, createSession, gainLife, loseLife, STARTING_LIVES } from './session'
 
 describe('session', () => {
   it('starts fresh', () => {
@@ -28,10 +28,6 @@ describe('session', () => {
     let s = createSession()
     for (let i = 0; i < STARTING_LIVES; i++) s = loseLife(s)
     expect(addScore(s, 500).score).toBe(0)
-  })
-
-  it('win sets state to won', () => {
-    expect(win(createSession()).state).toBe('won')
   })
 
   it('cannot lose a life after game over', () => {

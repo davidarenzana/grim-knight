@@ -7,7 +7,8 @@ import { type Player, type PlayerInput, PLAYER_W, PLAYER_H } from '@core/fsm/pla
 import { nextOwnedWeapon, LANCE } from '@core/weapons/weapon'
 import { LEVELS } from '@core/level/level'
 import { type ChestReward } from '@core/level/chest'
-import { win, type Session } from '@core/rules/session'
+import { type Session } from '@core/rules/session'
+import { difficultyForLoop } from '@core/rules/difficulty'
 import {
   createMatch,
   stepMatch,
@@ -409,9 +410,6 @@ export class GameScene extends Phaser.Scene {
       case 'over':
         bus.emit('game:over', { score: n.score })
         break
-      case 'won':
-        bus.emit('game:won', { score: n.score })
-        break
     }
   }
 
@@ -495,27 +493,33 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Stage cleared (driven by the `cleared` phase from stepMatch): advance to the
-   * next level, start the harder second loop after the last stage of loop 1, or
-   * win the game after clearing loop 2. Session carried across the transition.
+   * Stage cleared (driven by the `cleared` phase from stepMatch): the campaign is
+   * an endless loop, so clearing the final stage restarts at stage 1 on the next,
+   * harder loop (no terminal win — a run ends only on game over). Clearing the
+   * whole quest the first time still gets a celebratory VICTORY banner; later
+   * loops announce the difficulty tier they ramp into. Session carried across.
    */
   private onWin(): void {
     const lastLevel = this.levelIndex >= LEVELS.length - 1
     const session = this.state.session
 
-    // Beating the final stage of loop 2 is the true victory (no next stage).
-    if (lastLevel && this.loop >= 2) {
-      this.showBanner('TRUE VICTORY!')
-      const won = win(session)
-      this.time.delayedCall(STAGE_CLEAR_MS, () => bus.emit('game:won', { score: won.score }))
+    if (!lastLevel) {
+      this.showBanner('STAGE CLEAR!')
+      const next = { levelIndex: this.levelIndex + 1, loop: this.loop, session }
+      this.time.delayedCall(STAGE_CLEAR_MS, () => this.scene.restart(next))
       return
     }
 
-    // Otherwise announce the clear, then advance after a short hold.
-    const next = lastLevel
-      ? { levelIndex: 0, loop: this.loop + 1, session } // into loop 2
-      : { levelIndex: this.levelIndex + 1, loop: this.loop, session }
-    this.showBanner(lastLevel ? 'LOOP 1 CLEAR!\nTHE QUEST BEGINS AGAIN' : 'STAGE CLEAR!')
+    // Final stage cleared → loop again, harder. Celebrate the first full clear,
+    // otherwise announce the tier the next loop steps up to.
+    const nextLoop = this.loop + 1
+    const nextTier = difficultyForLoop(nextLoop).name
+    const banner =
+      this.loop === 1
+        ? `VICTORY!\nTHE CURSE DEEPENS — ${nextTier}`
+        : `${nextTier}!\nTHE LOOP TIGHTENS`
+    this.showBanner(banner)
+    const next = { levelIndex: 0, loop: nextLoop, session }
     this.time.delayedCall(STAGE_CLEAR_MS, () => this.scene.restart(next))
   }
 

@@ -103,16 +103,18 @@ was learned.
 
 ## 8. Current status
 
-Phases 0–5 done; Phase 6 (build/deploy) next. Feature-complete greybox: 6 stages × 2 loops (double quest) with camera
+Phases 0–5 done; Phase 6 (build/deploy) next. Feature-complete greybox: 6 stages on an endless escalating loop with camera
 scroll. Player FSM (idle/run/jump/crouch/climb/throw/hurt/die + air control), 2-hit armor; enemies
 zombie/flyer/ogre/plant and a boss (HP bar); enemy projectiles, projectile-vs-wall collision,
 **proximity-triggered spawner** (enemies wake as you approach their zone, not on a timer — so the boss no
 longer marches at you from across the stage if you stand still), long horizontally-scrolling stages,
-stage timer, lives/score/game-over, level transitions and the double loop → "True Victory". **Weapon variety**
+stage timer, lives/score/game-over, level transitions and an **endless escalating loop** (3 named difficulty
+tiers MORTAL/DAMNED/INFERNAL — `src/core/rules/difficulty.ts`; clearing stage 6 loops back harder, forever;
+a run ends only on game over). **Weapon variety**
 (lance/dagger/torch/axe with arc + limited-reach). **Controls are NES-style**: arrows (or WASD) move, **Z (or Space)
 throws**, **X swaps weapon**. **Front-end menus** (Vue, `src/ui/views/`): a title screen (START / SELECT STAGE,
 backdrop + boss art) and a stage-select screen gate the game; the store's `Screen` (menu/levels/playing/paused/
-gameover/won) drives which view shows. **Chests/pickups** (weapon/armor/points/life/curse)
+gameover/enterscore/highscores) drives which view shows. **Chests/pickups** (weapon/armor/points/life/curse)
 across all 6 levels (chests show floating reward text; stage-clear banner). **Juice**: screen shake, enemy
 hit-flash, i-frame blink. **Art**: characters/enemies/boss are **CraftPix animated spritesheets** (`engine/assets/sprites.ts`, loaded
 in `preload()`); scenery (background, ground/platform/ladder, crate, chest) is the CraftPix "Cartoon Medieval

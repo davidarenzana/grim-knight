@@ -2,7 +2,7 @@
  * Arcade session: lives, score and high-level state.
  * Pure core: immutable transitions, no side effects.
  */
-export type SessionState = 'playing' | 'gameover' | 'won'
+export type SessionState = 'playing' | 'gameover'
 
 export interface Session {
   readonly lives: number
@@ -31,5 +31,3 @@ export const loseLife = (s: Session): Session => {
 /** Gain one extra life (chest reward or score threshold). */
 export const gainLife = (s: Session): Session =>
   s.state === 'playing' ? { ...s, lives: s.lives + 1 } : s
-
-export const win = (s: Session): Session => (s.state === 'playing' ? { ...s, state: 'won' } : s)

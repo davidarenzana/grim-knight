@@ -67,15 +67,6 @@ describe('game store', () => {
       bus.emit('game:over', { score: 999 })
       expect(over.screen).toBe('enterscore')
       expect(over.pendingScore).toBe(999)
-      expect(over.lastOutcome).toBe('gameover')
-
-      bus.all.clear()
-      setActivePinia(createPinia())
-      const won = useGameStore()
-      won.bind()
-      bus.emit('game:won', { score: 5000 })
-      expect(won.screen).toBe('enterscore')
-      expect(won.lastOutcome).toBe('won')
     })
 
     it('a non-qualifying terminal event shows the outcome screen directly', () => {

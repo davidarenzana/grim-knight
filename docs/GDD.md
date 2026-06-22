@@ -7,14 +7,14 @@
 
 A lone knight crosses a cursed land to rescue the princess from the Demon Lord. One hit strips his
 armor; a second hit kills him. Tight controls, fixed jump arcs, relentless enemies, and the classic
-twist: beating the last boss the first time only sends you around again, harder — the **double loop**.
+twist: beating the last boss never ends the game — it sends you around again, harder, forever — the **endless loop**.
 
 ## 2. Core pillars
 
 1. **Fair but brutal** — deaths are readable; patterns are learnable.
 2. **Committed movement** — the jump arc is mostly fixed; positioning matters.
 3. **Weapon variety** — each weapon changes range/arc/rate, no strict upgrade ladder.
-4. **Arcade loop** — score, lives, continues, double loop for the "true" ending.
+4. **Arcade loop** — score, lives, endless escalating loop; the high-score table is the reward.
 
 ## 3. Player model
 
@@ -66,11 +66,19 @@ twist: beating the last boss the first time only sends you around again, harder 
 
 Each stage has a **timer**; running out costs a life.
 
-## 7. Double loop
+## 7. Endless loop
 
-Defeating the Demon Lord on loop 1 reveals it was an illusion; the game restarts at stage 1 on **loop 2**
-(faster enemies, denser spawns, stricter timer). Beating the Demon Lord on loop 2 with the required
-weapon yields the **true ending**.
+Clearing the final stage never ends the game: it restarts at stage 1 on the next, harder loop. A run
+ends only on game over (out of lives), so the high-score table is the reward. Difficulty is bucketed into
+three named tiers that keep escalating each cycle:
+
+- **MORTAL** (loop 1) — the baseline quest.
+- **DAMNED** (loop 2) — tougher enemies, a stricter clock, richer payout.
+- **INFERNAL** (loop 3+) — the hardest tier, ramping a little more every loop, forever.
+
+Clearing all six stages the first time still earns a celebratory **VICTORY!** banner, but play continues
+into the next tier. The model is pure (`src/core/rules/difficulty.ts`): tougher enemies (`enemyHpMul`),
+less time (`timeScale`, floored at 0.55), and a score multiplier (`scoreMul`). See `specs/endless-loop.md`.
 
 ## 8. Scoring
 
