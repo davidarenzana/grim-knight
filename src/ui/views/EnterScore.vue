@@ -64,7 +64,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   inset: 0;
   display: grid;
   place-items: center;
-  background: #000c;
+  background: var(--scrim-strong);
   z-index: 4;
 }
 .card {
@@ -79,8 +79,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .heading {
   margin: 0;
   font-size: 4cqw;
-  color: #7a4a12;
-  text-shadow: 1px 1px 0 #f4ead2;
+  color: var(--wood-brown);
+  text-shadow: 1px 1px 0 var(--fg);
   letter-spacing: 2px;
 }
 .score {
@@ -89,7 +89,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   align-items: center;
   gap: 1.4cqw;
   font-size: 3.4cqw;
-  color: #7a4a12;
+  color: var(--wood-brown);
 }
 .score img {
   width: 4cqw;
@@ -98,7 +98,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .prompt {
   margin: 0;
   font-size: 1.8cqw;
-  color: #5a4632;
+  color: var(--wood-mid);
 }
 .slots {
   display: flex;
@@ -108,8 +108,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   width: 7cqw;
   font-size: 7cqw;
   line-height: 1;
-  color: #3a2417;
-  border-bottom: 0.6cqw solid #7a4a1255;
+  color: var(--ink);
+  border-bottom: 0.6cqw solid var(--wood-brown-a55);
 }
 .slot.active {
   color: var(--blood);
@@ -124,7 +124,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .hint {
   margin: 0;
   font-size: 1.5cqw;
-  color: #5a4632;
+  color: var(--wood-mid);
   opacity: 0.85;
 }
 </style>

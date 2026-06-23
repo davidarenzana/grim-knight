@@ -3,12 +3,49 @@
      with a near-black backdrop and gold/bone text. */
   --bg: #0a0813;
   --fg: #f4ead2; /* bone / parchment text */
+  --fg-dim: #e8dcc0; /* dimmer parchment (subtitles) */
   --ink: #3a2417; /* dark brown ink, for text ON parchment */
   --muted: #b6a888;
   --accent: #ffcc00; /* gold */
   --accent-bright: #ffe680;
   --blood: #e23b3b;
   --steel: #8fd3ff; /* armor cyan, matches in-game pickups */
+
+  /* Wood / parchment chrome (CraftPix kit). */
+  --wood-brown: #7a4a12; /* headings / labels on parchment */
+  --wood-brown-a55: #7a4a1255; /* hairline divider */
+  --wood-brown-a22: #7a4a1222; /* zebra row stripe */
+  --wood-mid: #5a4632; /* secondary brown text */
+  --wood-light: #8a6a48; /* faint brown label */
+
+  /* Outlines & scrims (pixel text outline + modal backdrops). */
+  --outline: #000;
+  --scrim: #000a;
+  --scrim-strong: #000c;
+  --overlay-faint: #00000022;
+
+  /* Blood reds. */
+  --blood-deep: #7a1f12; /* dark-red headings (game over / pause) */
+
+  /* HUD accents & glows. */
+  --hud-accent: #2d7fb8; /* link/level text */
+  --glow-gold: #ffcc0077; /* title gold glow */
+  --glow-amber: #ff8a00aa; /* menu title amber glow */
+
+  /* In-game HP bar (self-contained bevel + gradient). */
+  --hp-fill-top: #ff6b6b;
+  --hp-fill-bot: #c01010;
+  --hp-highlight: #ffb3b3;
+  --hp-bevel-light: #5a0d0d;
+  --hp-bevel-dark: #2a0404;
+  --hp-track: #1a0606;
+  --hp-glow: #ff3b3b;
+
+  /* Main-menu backdrop vignette. */
+  --backdrop-vignette: #07050cdd;
+  --backdrop-top: #0a0813aa;
+  --backdrop-mid: #0a081366;
+  --backdrop-bot: #0a0813cc;
 
   font-family: 'Press Start 2P', ui-monospace, monospace;
   /* Press Start 2P is a chunky bitmap face — relax tracking and lines. */

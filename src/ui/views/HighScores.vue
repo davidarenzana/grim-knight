@@ -38,7 +38,7 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
   inset: 0;
   display: grid;
   place-items: center;
-  background: #000c;
+  background: var(--scrim-strong);
   z-index: 4;
 }
 .card {
@@ -53,8 +53,8 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
 .heading {
   margin: 0;
   font-size: 3.2cqw;
-  color: #7a4a12;
-  text-shadow: 1px 1px 0 #f4ead2;
+  color: var(--wood-brown);
+  text-shadow: 1px 1px 0 var(--fg);
   letter-spacing: 2px;
 }
 .board {
@@ -73,11 +73,11 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
   align-items: center;
   gap: 2cqw;
   font-size: 1.7cqw;
-  color: #3a2417;
+  color: var(--ink);
   padding: 0.25cqw 1.2cqw;
 }
 .rank {
-  color: #7a4a12;
+  color: var(--wood-brown);
   text-align: right;
 }
 .name {
@@ -91,7 +91,7 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
 /* The run just entered: glows and pulses so the player spots it. */
 .row.fresh {
   color: var(--blood);
-  background: #7a4a1222;
+  background: var(--wood-brown-a22);
   border-radius: 0.6cqw;
   animation: pulse 0.8s ease-in-out infinite;
 }
@@ -106,7 +106,7 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
 .empty {
   margin: 2cqw 0;
   font-size: 1.9cqw;
-  color: #5a4632;
+  color: var(--wood-mid);
 }
 .actions {
   display: flex;

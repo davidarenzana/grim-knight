@@ -55,8 +55,8 @@ const game = useGameStore()
   letter-spacing: 6px;
   color: var(--accent);
   text-shadow:
-    3px 3px 0 #000,
-    0 0 18px #ffcc0077;
+    3px 3px 0 var(--outline),
+    0 0 18px var(--glow-gold);
 }
 .title.is-hidden {
   visibility: hidden;
@@ -73,16 +73,16 @@ const game = useGameStore()
   border-image-width: 22px;
   border-image-repeat: stretch;
   image-rendering: pixelated;
-  background: #000;
+  background: var(--outline);
   box-shadow:
-    0 0 0 2px #000,
-    0 10px 30px #000a;
+    0 0 0 2px var(--outline),
+    0 10px 30px var(--scrim);
 }
 .stage {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: #000;
+  background: var(--outline);
   display: grid;
   place-items: center;
   overflow: hidden;

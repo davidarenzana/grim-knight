@@ -31,7 +31,7 @@ const stages = LEVELS.map((l, i) => ({ index: i, name: l.name }))
   inset: 0;
   display: grid;
   place-items: center;
-  background: #000a;
+  background: var(--scrim);
   z-index: 4;
 }
 .card {
@@ -45,8 +45,8 @@ const stages = LEVELS.map((l, i) => ({ index: i, name: l.name }))
 .heading {
   margin: 0;
   font-size: 3.4cqw;
-  color: #7a1f12;
-  text-shadow: 1px 1px 0 #f4ead2;
+  color: var(--blood-deep);
+  text-shadow: 1px 1px 0 var(--fg);
   letter-spacing: 2px;
 }
 .grid {

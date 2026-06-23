@@ -46,15 +46,15 @@ const game = useGameStore()
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(120% 90% at 50% 35%, transparent 30%, #07050cdd 100%),
-    linear-gradient(#0a0813aa, #0a081366 40%, #0a0813cc);
+    radial-gradient(120% 90% at 50% 35%, transparent 30%, var(--backdrop-vignette) 100%),
+    linear-gradient(var(--backdrop-top), var(--backdrop-mid) 40%, var(--backdrop-bot));
 }
 
 .boss {
   position: absolute;
   bottom: 0;
   image-rendering: pixelated;
-  filter: drop-shadow(0 0 6px #000a);
+  filter: drop-shadow(0 0 6px var(--scrim));
   pointer-events: none;
 }
 .boss.left {
@@ -85,18 +85,18 @@ const game = useGameStore()
   letter-spacing: 3px;
   color: var(--accent);
   text-shadow:
-    3px 3px 0 #000,
-    -2px -2px 0 #000,
-    2px -2px 0 #000,
-    -2px 2px 0 #000,
-    0 0 18px #ff8a00aa;
+    3px 3px 0 var(--outline),
+    -2px -2px 0 var(--outline),
+    2px -2px 0 var(--outline),
+    -2px 2px 0 var(--outline),
+    0 0 18px var(--glow-amber);
 }
 .tagline {
   margin: 0;
   font-size: 1.7cqw;
   line-height: 1.6;
-  color: #e8dcc0;
-  text-shadow: 2px 2px 0 #000;
+  color: var(--fg-dim);
+  text-shadow: 2px 2px 0 var(--outline);
 }
 .actions {
   display: flex;
