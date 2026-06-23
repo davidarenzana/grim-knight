@@ -597,7 +597,7 @@ export const stepMatch = (
     next = { ...next, [which]: newList }
   }
 
-  // 7. Armor change feedback.
+  // 8. Armor change feedback.
   if (player.armor.state !== state.player.armor.state) {
     effects.push(notify({ kind: 'armor', armor: player.armor.state }))
     effects.push({ type: 'shake', ms: 150, intensity: 0.01 })
@@ -605,13 +605,13 @@ export const stepMatch = (
 
   next = { ...next, player, session }
 
-  // 8. Death by the last hit → lose a life / game-over.
+  // 9. Death by the last hit → lose a life / game-over.
   if (player.armor.state === 'dead') {
     const dead = handleDeath(config, next)
     return { state: dead.state, effects: [...effects, ...dead.effects] }
   }
 
-  // 9. Stage cleared: spawner done and every spawned enemy dead.
+  // 10. Stage cleared: spawner done and every spawned enemy dead.
   if (isFinished(spawner) && enemies.length > 0 && enemies.every((e) => e.state === 'dead')) {
     return {
       state: { ...next, phase: 'cleared' },
