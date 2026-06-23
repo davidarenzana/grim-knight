@@ -530,6 +530,18 @@ pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwri
 
 - Nothing active. Phase 6 deploy is **live on Vercel**; the remaining Phase 6 item is build/code-split.
 
+## Security: OWASP Top 10 2025 review + headers (2026-06-23) 🔒
+
+- **Review outcome: no vulnerabilities.** Static client-side game (no backend/auth/PII/network); `pnpm
+audit` clean; no `eval`/`v-html`/injection sinks; `sanitizeName` whitelists `[^A-Z]`; Vue `{{ }}`
+  escapes. Findings were hardening only.
+- **Security headers added** (`vercel.json`): strict CSP (`script-src 'self'`, `style-src 'self'
+'unsafe-inline'` for runtime canvas/`:style`, `img-src 'self' data: blob:`, `frame-ancestors 'none'`),
+  plus X-Frame-Options DENY, nosniff, Referrer-Policy no-referrer, Permissions-Policy. Verified the CSP
+  doesn't break the game (Playwright against dist served with the header: canvas boots, 0 violations).
+- Remaining hardening (separate PR): pin GitHub Actions to SHA + Dependabot; re-sanitize highscore `name`
+  on load (defense-in-depth; not exploitable — Vue escapes).
+
 ## Gameplay: respawn resets the arsenal (2026-06-23) 🗡️
 
 - **Dying now strips earned weapons.** On respawn (death with lives left), `handleDeath`
