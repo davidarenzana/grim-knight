@@ -492,6 +492,14 @@ pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwri
   ladder column as a wall + `LADDER_CLEARANCE`, threaded via `stepEnemy(…, ladders)`); the arsenal now
   carries across stage transitions (`CreateMatchOptions.ownedWeapons/activeWeaponId`, carried by
   `GameScene.onWin`). (commit `e2e364e`.)
+- **High road (two-lane horizontal stages)** — stages 3/5/6 (Swamp Caverns, Frozen Spires,
+  Demon Keep) gained an optional elevated lane at `HIGH_Y≈150` parallel to the ground: an
+  ascent ladder (the choice point), a chain of one-way shelves split by gaps bridged with
+  moving platforms, extra ranged/stationary foes, and the better chests relocated up top
+  (risk/reward). Drops back to the ground before the boss; both lanes share one screen
+  (horizontal scroll only — `worldHeight` stays default). Pure level data — reuses moving
+  platforms + generic render. Spec `high-road.md`; new ascent guardrail in `stages.test.ts`
+  (a ladder must reach the high road). Stage 1 + towers (2, 4) untouched.
 - **Moving platforms** — kinematic one-way platforms that oscillate along a segment and **carry the rider**
   (`core/physics/platform.ts`: `Platform`/`createPlatform`/`stepPlatform`/`platformSolid`). Stepped + carried
   in `stepMatch` (player only; enemies/projectiles keep static geometry); `MatchState.platforms` +

@@ -7,7 +7,7 @@ import { frozenSpires } from './frozen-spires'
 import { demonKeep } from './demon-keep'
 import { STAGES } from './index'
 import { LEVELS } from '../level'
-import { MAX_JUMP_GAP, MAX_JUMP_RISE } from '../geometry'
+import { GROUND_Y, MAX_JUMP_GAP, MAX_JUMP_RISE } from '../geometry'
 import {
   createZombie,
   createOgre,
@@ -106,6 +106,21 @@ describe('stage modules', () => {
           expect(reachable, `${stage.name}: platform endpoint x=${end.x} is unreachable`).toBe(true)
         }
       }
+    }
+  })
+
+  it('a horizontal high road is reachable by ladder from the ground', () => {
+    // Anti-soft-lock: when a flat (non-tower) stage grows an elevated "high road"
+    // lane (it has moving platforms up top), a ladder must climb from the ground
+    // band up to that lane — otherwise the upper route is unreachable. Towers
+    // (worldHeight set) climb via their own tier ladders, so they're exempt.
+    for (const { stage } of expected) {
+      if (!stage.platforms?.length || stage.worldHeight) continue
+      const topLedgeY = Math.min(...stage.solids.filter((s) => s.oneWay).map((s) => s.y))
+      const hasAscent = stage.ladders.some(
+        (l) => l.y <= topLedgeY + MAX_JUMP_RISE && l.y + l.h >= GROUND_Y,
+      )
+      expect(hasAscent, `${stage.name}: no ladder connects the ground to the high road`).toBe(true)
     }
   })
 
