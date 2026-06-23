@@ -70,6 +70,15 @@ src/shared/   shared types + event bus (mitt)
 - `specs/` — feature specs (Given/When/Then), the SDD source of truth.
 - `memory/` — living context for AI sessions (architecture, conventions, glossary, progress, ADRs).
 
+## CI/CD & deploy
+
+- **GitHub Actions** (`.github/workflows/ci.yml`) runs on every PR and push to `main`: a `quality` job
+  (typecheck + lint + test + build) and an `e2e` job (Playwright **smoke** flows; the macOS-only visual
+  snapshots stay local).
+- **`main` is branch-protected** — no direct pushes. Open a PR; `quality` + `e2e` must pass before merge.
+- **Deploy: [Vercel](https://vercel.com/)** (Vite preset) ships production from `main`, so a red CI gate
+  keeps broken code out of production. Branches/PRs get preview deploys. See AGENTS.md §11 for the flow.
+
 ## Credits / assets
 
 Art is from free **[CraftPix.net](https://craftpix.net/)** packs, used under the CraftPix free-files

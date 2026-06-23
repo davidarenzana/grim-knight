@@ -415,8 +415,9 @@ Per `docs/TESTING-PLAN.md` (Layer 4) — the only layer that runs the real build
 drives the running game without a pageerror — which **also confirms the H4 adapter refactor works
 end-to-end in a browser**. `e2e/visual.spec.ts`: committed screenshot baselines of the title and
 stage-select screens (stable DOM/CSS; the live animated/RNG canvas is intentionally not snapshotted).
-Scripts: `pnpm test:e2e` / `pnpm test:e2e:update`. Baselines are platform-specific (`*-darwin.png`) — CI on
-another OS must regenerate. 5 E2E pass; 237 unit pass; typecheck/lint green.
+Scripts: `pnpm test:e2e` / `pnpm test:e2e:update`. Baselines are platform-specific (`*-darwin.png`) — so
+**CI (ubuntu) runs only the smoke flows** (`e2e/smoke.spec.ts`); the visual specs stay a local/macOS check.
+5 E2E pass; 237 unit pass; typecheck/lint green.
 
 **All four testing layers (A–D) and the hexagonal review (H1–H5) are now complete.**
 
@@ -527,18 +528,29 @@ pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwri
 
 ## In progress 🔧
 
-- Nothing active. Phase 6 (build optimization + deploy) is the next milestone.
+- Nothing active. Phase 6 deploy is **live on Vercel**; the remaining Phase 6 item is build/code-split.
 
-## Next ⏭️ (Phase 6, plus optional polish)
+## CI/CD & deploy (Phase 6 — shipping) 🚀
 
-- **Phase 6 — build optimization + deploy** (deferred together, per the user):
+- **Deployed on Vercel** (`vercel.json`: Vite preset, `npm run build` → `dist`). Vercel's Git integration
+  deploys **production from `main`**, plus preview deploys per branch/PR.
+- **CI hardened** (`.github/workflows/ci.yml`): two parallel jobs — `quality` (typecheck/lint/test:cov/build)
+  and **`e2e`** (installs Chromium, runs `e2e/smoke.spec.ts`; visual snapshots excluded — macOS-only baselines).
+- **`main` branch protection** (set via `gh api`): PR required (no direct pushes), `quality` + `e2e` must pass,
+  branch must be up to date (`strict`), `enforce_admins` on, 0 required reviews. So production only ever
+  deploys CI-green code. Flow now: branch → PR → green → squash-merge. See AGENTS.md §11.
+- **Favicon** added (`public/favicon.svg`, a red shield + gold cross; referenced from `index.html`).
+
+## Next ⏭️ (Phase 6 build polish, plus optional polish)
+
+- **Phase 6 — build optimization** (deploy itself is done; this is the leftover):
   - **Code-split the Phaser chunk.** Build is one ~1.6 MB (384 kB gzip) JS bundle, ~90% Phaser.
     1. **Lazy-load Phaser**: dynamic-`import()` `GameCanvas`/`@engine/game` (e.g. `defineAsyncComponent`) so
        the Vue menu boots without Phaser; the engine chunk loads on START (biggest perceived-load win — the
        player sits on the title screen first). Mask the first-START delay with a "Loading…"/background prefetch.
     2. Optional `manualChunks` vendor split (Phaser → own chunk) for cross-deploy caching + to silence the
        > 500 kB warning (secondary; doesn't defer the download).
-  - **Static deploy** (GitHub Pages); `vite.config.ts` `base` is already `./`. See `docs/PLAN.md` Phase 6.
+  - ~~Static deploy~~ **Done** — deployed on **Vercel** (not GitHub Pages). See the CI/CD section above.
 - **Optional polish (post-launch, if wanted):** more juice (particles on kill, transition fades);
   time/no-damage score bonuses + extra lives at score thresholds (reuse `gainLife`); torch ground-fire
   hazard; richer boss/hazard designs from the GDD (unique boss patterns; water/crushers/wind/collapsing
