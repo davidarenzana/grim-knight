@@ -38,10 +38,15 @@ acyclic). The application returns presentation **effects as data**; the adapter 
 src/
   core/     pure TS · domain + application · TDD mandatory
     math/ sim/ physics/ fsm/ rules/ weapons/ enemies/ level/
-    app/    application layer (use cases + ports): MatchState, Effect (output port as data), stepMatch
+    app/    application layer (use cases + ports): types (MatchState, Effect output port), the
+            stepMatch/createMatch orchestrator (match.ts), its helpers (spawn/rewards/lifecycle/
+            effects) and all gameplay+emitted-presentation constants (tuning.ts)
   engine/   Phaser DRIVEN adapter (renders core state + interprets effects + keyboard input + audio)
-    scenes/ assets/
-  ui/       Vue 3 DRIVING adapter (views/, components/, stores/)
+    scenes/  GameScene (thin orchestrator) · audio.ts
+    input/   keymap (keys → core PlayerInput port)
+    render/  WorldRenderer (sprite pools) + sprites/theme (presentation constants)
+    assets/  sprite/tile/effect loaders
+  ui/       Vue 3 DRIVING adapter (views/, components/, stores/); color tokens in style.css :root
   shared/   port contract: the `mitt` event bus that bridges engine ↔ ui
 ```
 
@@ -145,11 +150,12 @@ knight), and a magic-ring burst + the **reward icon** when a chest opens (`playE
 under `public/assets/effects/` + `public/assets/icons/`). **Enemy projectiles** are real sprites, not
 rectangles: each shot carries a presentation `sprite` tag in core (`spore`/`bullet`/`bolt`/`fire`) that
 `engine/assets/sprites.ts` (`ENEMY_PROJECTILES`/`enemyProjectileVisual`) renders animated/tinted (rect
-fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch art, so `GameScene` squashes the
-idle pose vertically (foot-aligned) while the FSM is in `crouch` (the state + shrunk hitbox are real).
+fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch art, so the renderer
+(`engine/render/WorldRenderer`) squashes the idle pose vertically (foot-aligned) while the FSM is in
+`crouch` (the state + shrunk hitbox are real).
 **Procedural audio** (SFX + music, on/off toggle) and an **arcade high-score table** (3-letter initials) are in.
 **Testing pyramid complete** (see `docs/TESTING-PLAN.md`): unit + headless `stepMatch` integration + Vue
-component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 258 Vitest tests green.
+component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 289 Vitest tests green.
 Next: Phase 6 (code-split + deploy). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
