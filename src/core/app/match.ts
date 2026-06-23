@@ -1,6 +1,6 @@
 import { aabb, type AABB } from '@core/math/aabb'
 import type { Rng } from '@core/math/rng'
-import { createPlayer, stepPlayer, PLAYER_H, type Player } from '@core/fsm/player'
+import { createPlayer, stepPlayer, type Player } from '@core/fsm/player'
 import {
   createZombie,
   createFlyer,
@@ -56,6 +56,25 @@ import type {
   PlayerInput,
   StepResult,
 } from './types'
+import {
+  SCORE_PER_KILL,
+  CROUCH_H,
+  MELEE_REACH,
+  PLATFORM_RIDE_EPS,
+  DROP_CHANCE,
+  WORLD_WALL_THICKNESS,
+  WORLD_WALL_PAD_TOP,
+  WORLD_WALL_PAD_BOTTOM,
+  DEATH_Y_PAD,
+  MAX_BOSS_VARIANT_INDEX,
+  SHAKE,
+  VFX_SCALE,
+  FLOAT_LABEL_OFFSET_Y,
+  FLOAT_LABEL_STACK_Y,
+  DEFAULT_WEAPON_COLOR,
+  WEAPON_COLOR,
+  REWARD_COLOR,
+} from './tuning'
 
 /**
  * The application use case: advance one fixed simulation step for a single stage
@@ -74,32 +93,13 @@ import type {
  * logic-coupled effects are emitted here.
  */
 
-// --- Gameplay tunables (pixels / seconds) ---------------------------------
-export const FIXED_DT = 1 / 60
-export const SCORE_PER_KILL = 100
-/** Shorter profile while crouching (dodge high shots). */
-export const CROUCH_H = Math.round(PLAYER_H * 0.6)
-/** Px in front of the knight that a throw also jabs (point-blank). */
-export const MELEE_REACH = 26
-/** Chance a slain regular enemy drops an item (a boss always does). */
-export const DROP_CHANCE = 0.18
-/** Vertical slack (px) for treating the knight as resting on a platform's top. */
-export const PLATFORM_RIDE_EPS = 2
-
-/** Reward-label color per weapon id (presentation data for the float effect). */
-const WEAPON_COLOR: Record<string, number> = {
-  lance: 0xffcc00,
-  dagger: 0xc0c0c0,
-  torch: 0xff7a1a,
-  axe: 0x66ccff,
-}
 const hexColor = (n: number): string => `#${n.toString(16).padStart(6, '0')}`
 
 const notify = (notification: GameNotification): Effect => ({ type: 'notify', notification })
 
 /** Boss skin/stats escalate one variant per pair of stages (1,1,2,2,3,3). */
 const bossVariant = (levelIndex: number): BossVariant =>
-  (Math.min(2, Math.floor(levelIndex / 2)) + 1) as BossVariant
+  (Math.min(MAX_BOSS_VARIANT_INDEX, Math.floor(levelIndex / 2)) + 1) as BossVariant
 
 /** Scale a freshly-spawned enemy by the loop difficulty: tougher (HP + HP-bar
  *  max) and faster (a `speedScale` the per-kind steps read for their movement). */
@@ -183,13 +183,23 @@ export const createMatch = (
     // Level geometry plus invisible world-boundary walls (left/right).
     solids: [
       ...level.solids,
-      aabb(-40, -200, 40, worldHeight + 600),
-      aabb(level.worldWidth, -200, 40, worldHeight + 600),
+      aabb(
+        -WORLD_WALL_THICKNESS,
+        -WORLD_WALL_PAD_TOP,
+        WORLD_WALL_THICKNESS,
+        worldHeight + WORLD_WALL_PAD_BOTTOM,
+      ),
+      aabb(
+        level.worldWidth,
+        -WORLD_WALL_PAD_TOP,
+        WORLD_WALL_THICKNESS,
+        worldHeight + WORLD_WALL_PAD_BOTTOM,
+      ),
     ],
     ladders: level.ladders.map((l) => l),
     hazards: (level.hazards ?? []).map((h) => h),
     bounds: { minX: 0, maxX: level.worldWidth },
-    deathY: worldHeight + 40,
+    deathY: worldHeight + DEATH_Y_PAD,
     // The "wedged below the floor" net is the ground line for flat stages, but
     // the world bottom for tall (tower) stages whose enemies stand high up.
     sinkY: level.worldHeight ? worldHeight : GROUND_Y,
@@ -254,7 +264,7 @@ const applyReward = (
     case 'weapon': {
       const def = weaponById(reward.weaponId)
       if (def) equip(def)
-      color = hexColor(WEAPON_COLOR[reward.weaponId] ?? 0xffffff)
+      color = hexColor(WEAPON_COLOR[reward.weaponId] ?? DEFAULT_WEAPON_COLOR)
       label = `${reward.weaponId.toUpperCase()}!`
       break
     }
@@ -262,24 +272,24 @@ const applyReward = (
       // The magician's curse downgrades you to the lance (and adds it to the cycle).
       equip(LANCE)
       label = 'CURSED!'
-      color = '#ff5555'
+      color = REWARD_COLOR.curse
       break
     case 'armor':
       player = { ...player, armor: pickupArmor(player.armor) }
       label = 'ARMOR!'
-      color = '#7fdfff'
+      color = REWARD_COLOR.armor
       break
     case 'points':
       session = addScore(session, reward.points)
       effects.push(notify({ kind: 'score', score: session.score }))
       label = `+${reward.points}`
-      color = '#ffd23a'
+      color = REWARD_COLOR.points
       break
     case 'life':
       session = gainLife(session)
       effects.push(notify({ kind: 'lives', lives: session.lives }))
       label = '1UP!'
-      color = '#7cfc00'
+      color = REWARD_COLOR.life
       break
   }
   return { player, session, activeWeapon, ownedWeapons, effects, label, color }
@@ -289,8 +299,14 @@ const applyReward = (
 const handleDeath = (config: MatchConfig, state: MatchState): StepResult => {
   const pb = state.player.body
   const effects: Effect[] = [
-    { type: 'vfx', name: 'explosion', x: pb.pos.x + pb.w / 2, y: pb.pos.y + pb.h / 2, scale: 0.42 },
-    { type: 'shake', ms: 320, intensity: 0.02 },
+    {
+      type: 'vfx',
+      name: 'explosion',
+      x: pb.pos.x + pb.w / 2,
+      y: pb.pos.y + pb.h / 2,
+      scale: VFX_SCALE.deathExplosion,
+    },
+    { type: 'shake', ...SHAKE.death },
     { type: 'sound', name: 'die' },
   ]
   const session = loseLife(state.session)
@@ -387,7 +403,7 @@ export const stepMatch = (
         name: 'spark',
         x: c.projectile.pos.x + c.projectile.w / 2,
         y: c.projectile.pos.y + c.projectile.h / 2,
-        scale: 0.1,
+        scale: VFX_SCALE.sparkWall,
       })
   }
 
@@ -418,7 +434,7 @@ export const stepMatch = (
         name: 'spark',
         x: c.projectile.pos.x + c.projectile.w / 2,
         y: c.projectile.pos.y + c.projectile.h / 2,
-        scale: 0.1,
+        scale: VFX_SCALE.sparkWall,
       })
   }
 
@@ -451,7 +467,7 @@ export const stepMatch = (
           name: 'spark',
           x: e.body.pos.x + e.body.w / 2,
           y: e.body.pos.y + e.body.h / 2,
-          scale: 0.14,
+          scale: VFX_SCALE.sparkHit,
         })
         effects.push({ type: 'sound', name: 'hit' })
       } else {
@@ -478,7 +494,7 @@ export const stepMatch = (
     // Deeper loops pay more (arcade risk/reward).
     session = addScore(session, Math.round(kills * SCORE_PER_KILL * config.difficulty.scoreMul))
     effects.push(notify({ kind: 'score', score: session.score }))
-    effects.push({ type: 'shake', ms: 90, intensity: 0.006 }) // a small kick per kill
+    effects.push({ type: 'shake', ...SHAKE.kill }) // a small kick per kill
   }
 
   // Jump cue: the FSM jumps when grounded + jump pressed and not crouching.
@@ -538,7 +554,7 @@ export const stepMatch = (
       name: 'spark',
       x: hb.pos.x + hb.w / 2,
       y: hb.pos.y + hb.h / 2,
-      scale: 0.18,
+      scale: VFX_SCALE.sparkPlayerHit,
     })
     effects.push({ type: 'sound', name: 'hurt' })
   }
@@ -583,7 +599,7 @@ export const stepMatch = (
       const cx = src ? src.x + src.w / 2 : player.body.pos.x + player.body.w / 2
       const top = src ? src.y : player.body.pos.y
       const mid = src ? src.y + src.h / 2 : player.body.pos.y + player.body.h / 2
-      effects.push({ type: 'vfx', name: 'magic_ring', x: cx, y: mid, scale: 1.1 })
+      effects.push({ type: 'vfx', name: 'magic_ring', x: cx, y: mid, scale: VFX_SCALE.magicRing })
       effects.push({ type: 'sound', name: 'pickup' })
       effects.push({
         type: 'float',
@@ -591,7 +607,7 @@ export const stepMatch = (
         color: r.color,
         reward,
         x: cx,
-        y: top - 30 - n * 18,
+        y: top - FLOAT_LABEL_OFFSET_Y - n * FLOAT_LABEL_STACK_Y,
       })
     })
     next = { ...next, [which]: newList }
@@ -600,7 +616,7 @@ export const stepMatch = (
   // 8. Armor change feedback.
   if (player.armor.state !== state.player.armor.state) {
     effects.push(notify({ kind: 'armor', armor: player.armor.state }))
-    effects.push({ type: 'shake', ms: 150, intensity: 0.01 })
+    effects.push({ type: 'shake', ...SHAKE.armor })
   }
 
   next = { ...next, player, session }
