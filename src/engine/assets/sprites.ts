@@ -23,6 +23,9 @@ interface SpriteDef {
   readonly scale: number
   readonly foot: number
   readonly center?: boolean
+  /** The source art faces LEFT by default (e.g. the boss packs), so the flip is
+   *  inverted relative to the right-facing hero/enemy sheets. */
+  readonly faceLeft?: boolean
   readonly states: Readonly<Record<string, StateDef>>
 }
 
@@ -101,6 +104,7 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
     frame: 96,
     scale: 1.6,
     foot: 0,
+    faceLeft: true,
     states: {
       idle: { file: 'Idle', fps: 8, loop: true },
       walk: { file: 'Walk', fps: 9, loop: true },
@@ -112,6 +116,7 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
     frame: 96,
     scale: 1.9,
     foot: 0,
+    faceLeft: true,
     states: {
       idle: { file: 'Idle', fps: 8, loop: true },
       walk: { file: 'Walk', fps: 9, loop: true },
@@ -123,6 +128,7 @@ export const SPRITES: Readonly<Record<string, SpriteDef>> = {
     frame: 96,
     scale: 2.4,
     foot: 0,
+    faceLeft: true,
     states: {
       idle: { file: 'Idle', fps: 8, loop: true },
       walk: { file: 'Walk', fps: 9, loop: true },

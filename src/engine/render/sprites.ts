@@ -49,7 +49,10 @@ export const applySprite = (
       ? 'idle'
       : Object.keys(def.states)[0]!
   sprite.play(animKey(entity, animState), true)
-  sprite.setScale(def.scale).setFlipX(facing < 0)
+  // The hero/enemy sheets face right by default (flip when facing left); the boss
+  // packs face left, so their flip is inverted (`faceLeft`).
+  const mirrored = def.faceLeft ? facing > 0 : facing < 0
+  sprite.setScale(def.scale).setFlipX(mirrored)
   const cx = body.pos.x + body.w / 2
   if (def.center) {
     sprite.setOrigin(0.5, 0.5).setPosition(cx, body.pos.y + body.h / 2)

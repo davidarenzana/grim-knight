@@ -95,4 +95,7 @@
 - **Phaser `Scene` already has a `renderer` property** (the WebGL/Canvas renderer). A scene field
   holding our own renderer must use a different name — `GameScene` calls it `world` (a `WorldRenderer`);
   shadowing `renderer` breaks `this`-as-`Scene` assignability across the file.
+- **Boss art faces LEFT by default** (CraftPix boss packs), unlike the right-facing hero/enemy sheets.
+  `SpriteDef.faceLeft` inverts the flip in `engine/render/sprites.ts` `applySprite` so the boss faces the
+  player. Core facing/aim was already correct — this was a presentation-only orientation bug.
 - (Add every new gotcha discovered here — living project.)
