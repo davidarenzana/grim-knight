@@ -24,3 +24,6 @@ test-results
 playwright-report
 blob-report
 playwright/.cache
+
+# Vercel (local project link created by the CLI)
+.vercel
