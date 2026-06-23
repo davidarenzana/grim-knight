@@ -1,7 +1,7 @@
 import { aabb } from '@core/math/aabb'
 import { createPlatform } from '@core/physics/platform'
 import { createChest } from '../chest'
-import { CHEST_Y, floor, GROUND_Y, ledge, lava, oneWay, PLAYER_START_Y, rungs } from '../geometry'
+import { CHEST_Y, floor, GROUND_Y, ledge, oneWay, PLAYER_START_Y, rungs, spikes } from '../geometry'
 import type { LevelDef } from '../types'
 
 /**
@@ -52,7 +52,9 @@ export const swampCaverns: LevelDef = {
     createPlatform(786, HIGH_Y, 72, 16, { x: 862, y: HIGH_Y }, 70), // gap [780, 940]
     createPlatform(1306, HIGH_Y, 72, 16, { x: 1402, y: HIGH_Y }, 70), // gap [1300, 1480]
   ],
-  hazards: [lava(1150, 44), lava(1890, 44)],
+  // Spikes (not lava): only the hell theme paints hazards as lava — every other
+  // theme renders them as spikes (see engine `hazardKey`), so author them as spikes.
+  hazards: [spikes(1150, 44), spikes(1890, 44)],
   spawns: [
     { kind: 'zombie', x: 300, y: GROUND_Y },
     { kind: 'plant', x: 520, y: GROUND_Y },

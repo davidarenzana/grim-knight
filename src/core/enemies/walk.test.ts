@@ -67,28 +67,29 @@ describe('advanceDir (ranged)', () => {
 })
 
 describe('ladder avoidance (tower stages)', () => {
-  // A wide floor with a ladder column rising out of it (as on a tower shelf).
+  // A wide floor at y=200 with a ladder whose TOP exit lands on it (top ~ feet).
   const WIDE = aabb(0, 200, 400, 40)
-  const LADDER = aabb(300, 60, 16, 180)
+  const LADDER = aabb(300, 188, 16, 200) // top 188 ≈ the floor surface (feet 200)
   const onWide = (x: number): Body => ({ ...createBody(x, 160, 24, 40), grounded: true })
 
-  it('advanceDir holds clear of a ladder column instead of camping its exit', () => {
+  it('advanceDir holds clear of a ladder exit instead of camping the rung', () => {
     const b = onWide(240) // right edge ~264: inside the ladder's clearance zone
     expect(advanceDir(b, 999, [WIDE])).toBe(1) // no ladders → walks onto the rung
-    expect(advanceDir(b, 999, [WIDE], [LADDER])).toBe(0) // ladder there → stays back
+    expect(advanceDir(b, 999, [WIDE], [LADDER])).toBe(0) // exit there → stays back
   })
 
-  it('patrolDir turns away from a ladder column rather than crossing it', () => {
+  it('patrolDir turns away from a ladder exit rather than crossing it', () => {
     const b = onWide(240)
     expect(patrolDir(b, 1, 999, [WIDE], [LADDER])).toBe(-1) // blocked right, patrols left
   })
 
-  it('ignores a ladder column that is not at the walker height', () => {
-    // A ladder high up the tower (same x column, far above the floor) must not
-    // block a ground-floor walker — there is no rung at its feet to camp.
+  it('ignores a ladder whose top exit is not at the walker height', () => {
+    // A walker at the BASE of a tall ladder (its top exit is far above, e.g. a
+    // ground→high-road ascent ladder) must not be snagged — there is no exit to
+    // camp at its feet. Otherwise lower-lane enemies get stuck against the shaft.
     const b = onWide(240)
-    const farAbove = aabb(300, -400, 16, 180) // column x=300 but y well above the body
-    expect(advanceDir(b, 999, [WIDE], [farAbove])).toBe(1) // not blocked → still advances
-    expect(patrolDir(b, 1, 999, [WIDE], [farAbove])).toBe(1)
+    const tallAscent = aabb(300, -200, 16, 412) // column x=300, top far above the feet
+    expect(advanceDir(b, 999, [WIDE], [tallAscent])).toBe(1) // not blocked → advances
+    expect(patrolDir(b, 1, 999, [WIDE], [tallAscent])).toBe(1)
   })
 })

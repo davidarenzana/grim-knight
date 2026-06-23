@@ -20,6 +20,12 @@ export const AGGRO_RANGE = 200
  *  out onto — which would otherwise knock the climber off and trap them below. */
 export const LADDER_CLEARANCE = 48
 
+/** How close (px) a walker's feet must be to a ladder's TOP for the avoidance to
+ *  apply. Only the exit a climber emerges onto matters; blocking the whole shaft
+ *  would snag walkers at the base of a tall ladder (e.g. a ground→high-road
+ *  ascent ladder), which would leave them stuck against an invisible wall. */
+export const LADDER_EXIT_BAND = 28
+
 /** Is there floor to stand on just ahead of the body in direction `dir`? */
 export const groundAhead = (body: Body, dir: 1 | -1, solids: readonly Solid[]): boolean => {
   const footY = body.pos.y + body.h
@@ -41,10 +47,10 @@ export const wallAhead = (body: Body, dir: 1 | -1, solids: readonly Solid[]): bo
 }
 
 /** Is a ladder column just ahead in `dir` (within {@link LADDER_CLEARANCE})? A
- *  ground walker treats it like a wall so it never camps a ladder's exit. The
- *  ladder must also overlap the body VERTICALLY — otherwise an enemy on the
- *  ground floor would be blocked by the columns of ladders high up the tower
- *  (same x, far above), where there is no ladder at its feet to camp. */
+ *  ground walker treats it like a wall so it never camps a ladder's exit — but
+ *  ONLY near the ladder's TOP (where a climber emerges onto this surface). It
+ *  ignores the rest of the shaft, so a walker isn't snagged at the base of a
+ *  tall ladder (e.g. a ground→high-road ascent ladder reaching the floor). */
 export const ladderAhead = (
   body: Body,
   dir: 1 | -1,
@@ -52,14 +58,12 @@ export const ladderAhead = (
   clearance = LADDER_CLEARANCE,
 ): boolean => {
   const aheadX = dir > 0 ? body.pos.x + body.w + 2 : body.pos.x - 2
-  const top = body.pos.y
-  const bottom = body.pos.y + body.h
+  const feet = body.pos.y + body.h
   return ladders.some(
     (l) =>
       aheadX >= l.x - clearance &&
       aheadX <= l.x + l.w + clearance &&
-      bottom > l.y &&
-      top < l.y + l.h,
+      Math.abs(feet - l.y) <= LADDER_EXIT_BAND,
   )
 }
 

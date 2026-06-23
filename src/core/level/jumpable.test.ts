@@ -22,4 +22,20 @@ describe('hazard jumpability', () => {
       }
     })
   }
+
+  // Only the hell theme paints hazards as lava; every other theme renders them as
+  // spikes (engine `hazardKey`). Spikes are a thin 16px surface strip while lava
+  // is a tall recessed pool — so authoring a `lava()` hazard outside hell makes a
+  // lava box get painted with the spikes texture (a visual mismatch). Guard it.
+  for (const level of LEVELS) {
+    if (level.theme === 'hell') continue
+    it(`"${level.name}" authors spikes-shaped hazards (no lava outside hell)`, () => {
+      for (const h of level.hazards ?? []) {
+        expect(
+          h.h,
+          `hazard at x=${h.x} in ${level.name} is lava-shaped (renders wrong)`,
+        ).toBeLessThanOrEqual(16)
+      }
+    })
+  }
 })
