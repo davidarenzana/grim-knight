@@ -511,6 +511,20 @@ pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwri
   split shelf bridged by a moving platform** (the GDD mechanic). Spec `moving-platforms.md`; reachability
   guardrail in `stages.test.ts`.
 
+### Code-quality pass: layer decomposition + named constants (2026-06-23)
+
+- **No behavior change; 289 tests + typecheck + lint + build green.** Branch `refactor/hexagonal-cleanup`.
+- Confirmed the **hexagonal layout is sound** (ESLint-enforced core purity + effects-as-data); this was a
+  hygiene/altitude pass, not an architecture change.
+- **Split `core/app/match.ts`** (623→449): helpers moved to `spawn.ts`, `rewards.ts`, `lifecycle.ts`,
+  `effects.ts`; `stepMatch`/`createMatch` stay the orchestrator.
+- **Split `engine/scenes/GameScene.ts`** (795→~360): filled the empty scaffold folders with
+  `engine/input/keymap.ts` + `engine/render/{WorldRenderer,sprites,theme}.ts`.
+- **Named constants, one place per layer:** `core/app/tuning.ts`, `engine/render/theme.ts`,
+  `ui/style.css` `:root` tokens (views use `var(--token)`; ~35 hex literals removed). No inline magic
+  numbers left in the orchestrators.
+- **Removed empty dirs** `core/entities/` + `engine/audio/`. See ADR 0007.
+
 ## In progress 🔧
 
 - Nothing active. Phase 6 (build optimization + deploy) is the next milestone.

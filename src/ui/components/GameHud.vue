@@ -105,16 +105,16 @@ const lowTime = computed(() => Math.ceil(game.secondsLeft) <= 10)
 }
 .lbl {
   font-size: 1.4cqw;
-  color: #8a6a48;
+  color: var(--wood-light);
 }
 .weapon {
   text-transform: uppercase;
-  color: #7a4a12;
+  color: var(--wood-brown);
 }
 .sep {
   width: 2px;
   height: 2.4cqw;
-  background: #00000022;
+  background: var(--overlay-faint);
 }
 
 /* Armor state pip */
@@ -123,7 +123,7 @@ const lowTime = computed(() => Math.ceil(game.secondsLeft) <= 10)
   line-height: 1;
 }
 .is-armored {
-  color: #2d7fb8;
+  color: var(--hud-accent);
 }
 .is-exposed {
   color: var(--blood);
@@ -165,23 +165,23 @@ const lowTime = computed(() => Math.ceil(game.secondsLeft) <= 10)
   font-size: 2cqw;
   color: var(--accent-bright);
   text-shadow:
-    0 0 6px #ff3b3b,
-    1px 1px 0 #000;
+    0 0 6px var(--hp-glow),
+    1px 1px 0 var(--outline);
 }
 .boss-bar {
   width: 46cqw;
   height: 2.4cqw;
-  background: #1a0606;
-  border: 2px solid #000;
+  background: var(--hp-track);
+  border: 2px solid var(--outline);
   box-shadow:
-    inset 2px 2px 0 #5a0d0d,
-    inset -2px -2px 0 #2a0404;
+    inset 2px 2px 0 var(--hp-bevel-light),
+    inset -2px -2px 0 var(--hp-bevel-dark);
   padding: 1px;
 }
 .boss-fill {
   height: 100%;
-  background: linear-gradient(#ff6b6b, #c01010);
-  box-shadow: inset 0 2px 0 #ffb3b3;
+  background: linear-gradient(var(--hp-fill-top), var(--hp-fill-bot));
+  box-shadow: inset 0 2px 0 var(--hp-highlight);
   transition: width 120ms linear;
 }
 </style>

@@ -20,7 +20,7 @@ const game = useGameStore()
   inset: 0;
   display: grid;
   place-items: center;
-  background: #000a;
+  background: var(--scrim);
   z-index: 4;
 }
 .card {
@@ -34,8 +34,8 @@ const game = useGameStore()
 .heading {
   margin: 0 0 1cqw;
   font-size: 4.5cqw;
-  color: #7a1f12;
-  text-shadow: 1px 1px 0 #f4ead2;
+  color: var(--blood-deep);
+  text-shadow: 1px 1px 0 var(--fg);
   letter-spacing: 2px;
 }
 .card .btn-pixel {

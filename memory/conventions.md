@@ -8,6 +8,10 @@
 - Pure functions and immutable data in `core/` whenever reasonable (eases testing).
 - No `Math.random()` or `Date.now()` in `core/`: use `createRng(seed)` and an injected clock/`dt`.
 - Project language is English: code, comments, docs, specs, UI strings.
+- **No inline magic numbers / hardcoded colors.** Named constants live one place per layer:
+  `core/app/tuning.ts` (gameplay + emitted-presentation values), `engine/render/theme.ts`
+  (adapter pixel/depth/duration/font/color tokens), `ui/style.css` `:root` (CSS custom
+  properties; views use `var(--token)`). See [[0007-module-decomposition-and-named-constants]].
 
 ## Tests
 
@@ -88,4 +92,7 @@
 - **Guard `localStorage` in the store:** `src/ui/stores/game.ts` is unit-tested in the **node** env where
   `localStorage` is undefined — wrap any access in `typeof localStorage !== 'undefined'` + try/catch (see
   the audio preference helpers), or the store tests throw at import/setup.
+- **Phaser `Scene` already has a `renderer` property** (the WebGL/Canvas renderer). A scene field
+  holding our own renderer must use a different name — `GameScene` calls it `world` (a `WorldRenderer`);
+  shadowing `renderer` breaks `this`-as-`Scene` assignability across the file.
 - (Add every new gotcha discovered here — living project.)

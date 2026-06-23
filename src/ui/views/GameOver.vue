@@ -27,7 +27,7 @@ const game = useGameStore()
   inset: 0;
   display: grid;
   place-items: center;
-  background: #000c;
+  background: var(--scrim-strong);
   z-index: 4;
 }
 .card {
@@ -42,11 +42,11 @@ const game = useGameStore()
 .heading {
   margin: 0;
   font-size: 5cqw;
-  text-shadow: 1px 1px 0 #f4ead2;
+  text-shadow: 1px 1px 0 var(--fg);
   letter-spacing: 2px;
 }
 .heading.defeat {
-  color: #7a1f12;
+  color: var(--blood-deep);
 }
 .score {
   margin: 0.8cqw 0;
@@ -54,7 +54,7 @@ const game = useGameStore()
   align-items: center;
   gap: 1.4cqw;
   font-size: 3.6cqw;
-  color: #7a4a12;
+  color: var(--wood-brown);
 }
 .score img {
   width: 4.2cqw;
