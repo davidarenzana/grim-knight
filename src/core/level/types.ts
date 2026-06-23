@@ -1,5 +1,6 @@
 import type { AABB } from '@core/math/aabb'
 import type { Solid } from '@core/physics/body'
+import type { Platform } from '@core/physics/platform'
 import type { SpawnEvent } from './spawner'
 import type { Chest } from './chest'
 
@@ -27,6 +28,8 @@ export interface LevelDef {
   readonly playerStart: { readonly x: number; readonly y: number }
   readonly solids: readonly Solid[]
   readonly ladders: readonly AABB[]
+  /** Optional kinematic platforms the knight can ride between zones. */
+  readonly platforms?: readonly Platform[]
   readonly spawns: readonly SpawnEvent[]
   readonly durationSeconds: number
   /** Optional chests/pickups placed in the stage. */

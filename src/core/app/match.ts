@@ -44,6 +44,8 @@ import { pickupArmor } from '@core/rules/armor'
 import { resolveCombat, resolveEnemyProjectiles, resolveMelee } from '@core/rules/combat'
 import { hasFallenOut, hasSunkUnderFloor } from '@core/rules/fall'
 import { touchesHazard } from '@core/rules/hazard'
+import { platformSolid, stepPlatform } from '@core/physics/platform'
+import { vec2 } from '@core/math/vector'
 import { GROUND_Y } from '@core/level/geometry'
 import type { LevelDef } from '@core/level/types'
 import type {
@@ -81,6 +83,8 @@ export const CROUCH_H = Math.round(PLAYER_H * 0.6)
 export const MELEE_REACH = 26
 /** Chance a slain regular enemy drops an item (a boss always does). */
 export const DROP_CHANCE = 0.18
+/** Vertical slack (px) for treating the knight as resting on a platform's top. */
+export const PLATFORM_RIDE_EPS = 2
 
 /** Reward-label color per weapon id (presentation data for the float effect). */
 const WEAPON_COLOR: Record<string, number> = {
@@ -215,6 +219,7 @@ export const createMatch = (
     timer: createTimer(stageSeconds),
     session: opts.session ?? createSession(),
     rng,
+    platforms: (level.platforms ?? []).map((p) => p),
     phase: 'playing',
   }
   return { config, state }
@@ -481,15 +486,48 @@ export const stepMatch = (
     effects.push({ type: 'sound', name: 'jump' })
   }
 
-  // 5. Enemy projectiles + hazards vs the player → step the FSM.
+  // 5. Moving platforms: advance them, then carry the knight if he's riding one.
+  // Riding is decided from the platform's PREVIOUS position (where he rests now);
+  // the knight is shifted by that platform's per-step delta before his own
+  // physics step, against the moved platforms as one-way solids (player only —
+  // enemies/projectiles keep to static geometry).
+  const platforms = state.platforms.map((p) => stepPlatform(p, dt))
+  let riderPlayer = state.player
+  if (state.platforms.length) {
+    const pb = state.player.body
+    const feet = pb.pos.y + pb.h
+    for (let i = 0; i < state.platforms.length; i++) {
+      const was = state.platforms[i]!
+      const onTop =
+        pb.grounded &&
+        Math.abs(feet - was.pos.y) <= PLATFORM_RIDE_EPS &&
+        pb.pos.x + pb.w > was.pos.x &&
+        pb.pos.x < was.pos.x + was.w
+      if (!onTop) continue
+      const now = platforms[i]!
+      riderPlayer = {
+        ...state.player,
+        body: {
+          ...pb,
+          pos: vec2(pb.pos.x + (now.pos.x - was.pos.x), pb.pos.y + (now.pos.y - was.pos.y)),
+        },
+      }
+      break
+    }
+  }
+  const playerSolids = platforms.length
+    ? [...config.solids, ...platforms.map(platformSolid)]
+    : config.solids
+
+  // 6. Enemy projectiles + hazards vs the player → step the FSM.
   const ep = resolveEnemyProjectiles(playerBox, enemyProjectiles)
   enemyProjectiles = [...ep.projectiles]
   const damaged = combat.playerHit || ep.playerHit || touchesHazard(playerBox, config.hazards)
   const prevIFrames = state.player.armor.iFramesLeft
   let player = stepPlayer(
-    state.player,
+    riderPlayer,
     input,
-    { solids: config.solids, ladders: config.ladders, damaged },
+    { solids: playerSolids, ladders: config.ladders, damaged },
     dt,
   )
   // Fresh non-fatal hit: i-frames just opened and the knight survived → spark.
@@ -516,6 +554,7 @@ export const stepMatch = (
     rng,
     session,
     player,
+    platforms,
     activeWeapon: state.activeWeapon,
   }
 
@@ -525,7 +564,7 @@ export const stepMatch = (
     return { state: dead.state, effects: [...effects, ...dead.effects] }
   }
 
-  // 6. Collect chests / drops the knight is touching.
+  // 7. Collect chests / drops the knight is touching.
   const pickBox = aabb(player.body.pos.x, player.body.pos.y, player.body.w, player.body.h)
   for (const which of ['chests', 'drops'] as const) {
     const list = next[which]

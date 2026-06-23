@@ -88,6 +88,21 @@ describe('stage modules', () => {
     }
   })
 
+  it('every moving platform can be boarded and left at both path ends', () => {
+    // Reachability guardrail: at each endpoint a platform must overlap a ledge at
+    // (about) the same top height, so the knight can step on/off — otherwise the
+    // tower soft-locks. Protects the Haunted Forest bridge against regressions.
+    for (const { stage } of expected) {
+      for (const p of stage.platforms ?? []) {
+        for (const end of [p.from, p.to]) {
+          const box = { x: end.x, y: end.y, w: p.w, h: p.h }
+          const landing = stage.solids.some((s) => Math.abs(s.y - end.y) <= 4 && overlaps(box, s))
+          expect(landing, `${stage.name}: platform endpoint x=${end.x} has no landing`).toBe(true)
+        }
+      }
+    }
+  })
+
   it('STAGES and LEVELS expose the six stages in the same order', () => {
     const order = expected.map((e) => e.stage)
     expect(STAGES).toEqual(order)

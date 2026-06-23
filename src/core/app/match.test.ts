@@ -9,6 +9,7 @@ import { difficultyForLoop } from '@core/rules/difficulty'
 import { createTimer } from '@core/level/timer'
 import { createSpawner } from '@core/level/spawner'
 import { createChest } from '@core/level/chest'
+import { createPlatform } from '@core/physics/platform'
 import { createZombie } from '@core/enemies'
 import { LEVELS } from '@core/level/level'
 import { stepMatch, createMatch } from './match'
@@ -49,6 +50,7 @@ const makeState = (over: Partial<MatchState> = {}): MatchState => ({
   timer: createTimer(99),
   session: createSession(),
   rng: createRng(1),
+  platforms: [],
   phase: 'playing',
   ...over,
 })
@@ -162,6 +164,22 @@ describe('stepMatch', () => {
     // Faster chaser covers more ground from the same spawn over the same window.
     const moved = (e: typeof base) => Math.abs(e.body.pos.x - at.x)
     expect(moved(fast)).toBeGreaterThan(moved(base))
+  })
+
+  it('carries the knight on a horizontal platform', () => {
+    // A platform whose top is at the knight's feet, sliding right under him.
+    const plat = createPlatform(40, GROUND_Y, 200, 16, { x: 400, y: GROUND_Y }, 60)
+    const r = run(makeConfig(), makeState({ platforms: [plat] }), NO_INPUT, 30)
+    // 60 px/s over 30 steps (0.5s) ≈ 30px; the idle knight is carried that far.
+    expect(r.state.player.body.pos.x).toBeGreaterThan(START.x + 25)
+    expect(r.state.platforms[0]!.pos.x).toBeCloseTo(70, 0)
+  })
+
+  it('leaves a knight off the platform alone', () => {
+    // Same platform, but far to the right — the idle knight stands still.
+    const plat = createPlatform(1000, GROUND_Y, 200, 16, { x: 1400, y: GROUND_Y }, 60)
+    const r = run(makeConfig(), makeState({ platforms: [plat] }), NO_INPUT, 30)
+    expect(r.state.player.body.pos.x).toBe(START.x)
   })
 
   it('scales kill score by the loop difficulty', () => {

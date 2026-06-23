@@ -1,6 +1,7 @@
 import type { AABB } from '@core/math/aabb'
 import type { Rng } from '@core/math/rng'
 import type { Solid } from '@core/physics/body'
+import type { Platform } from '@core/physics/platform'
 import type { Player, PlayerInput } from '@core/fsm/player'
 import type { Enemy } from '@core/enemies'
 import type { WeaponDef, WeaponState, Projectile } from '@core/weapons/weapon'
@@ -51,6 +52,8 @@ export interface MatchState {
   readonly timer: StageTimer
   readonly session: Session
   readonly rng: Rng
+  /** Live kinematic platforms (tower traversal); empty on stages without them. */
+  readonly platforms: readonly Platform[]
   /**
    * Lifecycle of the stage run. `playing` keeps stepping; the terminal phases
    * tell the adapter what transition to drive: `gameover` → show the game-over

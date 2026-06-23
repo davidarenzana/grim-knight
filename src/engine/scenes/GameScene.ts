@@ -92,6 +92,7 @@ export class GameScene extends Phaser.Scene {
   private enemySprites: Phaser.GameObjects.Sprite[] = []
   private chestSprites: Phaser.GameObjects.Image[] = []
   private dropSprites: Phaser.GameObjects.Image[] = []
+  private platformSprites: Phaser.GameObjects.TileSprite[] = []
   private keys!: {
     left: Phaser.Input.Keyboard.Key[]
     right: Phaser.Input.Keyboard.Key[]
@@ -212,9 +213,18 @@ export class GameScene extends Phaser.Scene {
     this.enemySprites = []
     this.chestSprites = []
     this.dropSprites = []
+    this.platformSprites = []
     this.enemyFlash = []
     this.enemyHp = []
     this.enemyExploded = []
+
+    // Moving platforms: one tiled sprite each, repositioned every frame in
+    // renderPlatforms(). Drawn with the theme's ground tile (like the shelves).
+    for (const p of this.state.platforms) {
+      this.platformSprites.push(
+        this.add.tileSprite(p.pos.x, p.pos.y, p.w, p.h, groundKey(level.theme)).setOrigin(0, 0),
+      )
+    }
 
     this.knight = this.add.sprite(
       this.state.player.body.pos.x,
@@ -343,11 +353,19 @@ export class GameScene extends Phaser.Scene {
     // Blink while invulnerable (i-frames) after a hit.
     const blinking = player.armor.iFramesLeft > 0
     this.knight.setAlpha(blinking && Math.floor(time / 80) % 2 === 0 ? 0.35 : 1)
+    this.renderPlatforms()
     this.renderProjectiles()
     this.renderEnemyProjectiles()
     this.renderEnemies()
     this.renderChests()
     this.renderDrops()
+  }
+
+  /** Reposition each moving-platform sprite to its current simulation position. */
+  private renderPlatforms(): void {
+    this.state.platforms.forEach((p, i) => {
+      this.platformSprites[i]?.setPosition(p.pos.x, p.pos.y)
+    })
   }
 
   /** One fixed step: advance the pure use case, then present its effects. */

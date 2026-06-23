@@ -483,6 +483,22 @@ refactor, death/hit VFX + chest VFX/icons + random loot + sprite enemy projectil
 pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwright E2E/visual; see
 `docs/TESTING-PLAN.md`), procedural audio + toggle, and the high-score table.
 
+### Post-Phase-5 gameplay additions
+
+- **Endless escalating loop** — `difficultyForLoop` tiers + `enemyHpMul`/`timeScale`/`scoreMul`, plus
+  **`enemySpeedMul`** (faster foes on deeper loops, capped by `SPEED_MUL_CAP`; enemies carry a `speedScale`).
+  Specs `endless-loop.md`. (commits `f4283e2`, then the speed knob.)
+- **Tower/transition fixes** — ground enemies (boss included) no longer camp a ladder's exit (they treat a
+  ladder column as a wall + `LADDER_CLEARANCE`, threaded via `stepEnemy(…, ladders)`); the arsenal now
+  carries across stage transitions (`CreateMatchOptions.ownedWeapons/activeWeaponId`, carried by
+  `GameScene.onWin`). (commit `e2e364e`.)
+- **Moving platforms** — kinematic one-way platforms that oscillate along a segment and **carry the rider**
+  (`core/physics/platform.ts`: `Platform`/`createPlatform`/`stepPlatform`/`platformSolid`). Stepped + carried
+  in `stepMatch` (player only; enemies/projectiles keep static geometry); `MatchState.platforms` +
+  `LevelDef.platforms`; rendered/repositioned in `GameScene.renderPlatforms`. Haunted Forest's **T1 is now a
+  split shelf bridged by a moving platform** (the GDD mechanic). Spec `moving-platforms.md`; reachability
+  guardrail in `stages.test.ts`.
+
 ## In progress 🔧
 
 - Nothing active. Phase 6 (build optimization + deploy) is the next milestone.
