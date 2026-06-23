@@ -13,3 +13,4 @@ One line per file. Read this first; open only what you need. Keeping it in sync 
   - [0004-level-themes.md](./decisions/0004-level-themes.md) — per-level visual themes (ground tile + backdrop).
   - [0005-hazards-and-pits.md](./decisions/0005-hazards-and-pits.md) — fall-out (pits) and contact hazards.
   - [0006-hexagonal-application-layer.md](./decisions/0006-hexagonal-application-layer.md) — pure `core/app` use case (`stepMatch`) + effects as data; thin Phaser adapter.
+  - [0007-module-decomposition-and-named-constants.md](./decisions/0007-module-decomposition-and-named-constants.md) — split GameScene/match.ts into layers; constants in tuning.ts / theme.ts / style.css tokens.
