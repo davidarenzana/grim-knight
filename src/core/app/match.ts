@@ -149,6 +149,10 @@ export interface CreateMatchOptions {
   readonly viewHeight: number
   /** Carried session across stage transitions (lives/score); fresh if omitted. */
   readonly session?: Session
+  /** Weapons owned coming into the stage; defaults to the knight's starting kit. */
+  readonly ownedWeapons?: readonly string[]
+  /** Equipped weapon id coming into the stage; defaults to the dagger. */
+  readonly activeWeaponId?: string
 }
 
 /**
@@ -192,13 +196,17 @@ export const createMatch = (
   const chests: Chest[] = (level.chests ?? []).map((c) =>
     c.random ? { ...c, reward: rollReward(rng) } : { ...c },
   )
+  // The knight starts with the dagger + torch (plus armor); the axe (and the
+  // curse's lance) are earned from chests/drops, so picking weapons up matters.
+  // Across stage transitions the arsenal carries over (you keep what you found);
+  // a fresh run falls back to the starting kit.
+  const ownedWeapons = opts.ownedWeapons ?? [DAGGER.id, TORCH.id]
+  const activeWeapon = (opts.activeWeaponId && weaponById(opts.activeWeaponId)) || DAGGER
   const state: MatchState = {
     player: createPlayer(start.x, start.y),
     weapon: createWeapon(),
-    // The knight starts with the dagger + torch (plus armor); the axe (and the
-    // curse's lance) are earned from chests/drops, so picking weapons up matters.
-    activeWeapon: DAGGER,
-    ownedWeapons: [DAGGER.id, TORCH.id],
+    activeWeapon,
+    ownedWeapons,
     enemies: [],
     enemyProjectiles: [],
     chests,
@@ -352,7 +360,7 @@ export const stepMatch = (
   ]
   const b0 = state.player.body
   const target = { x: b0.pos.x + b0.w / 2, y: b0.pos.y + b0.h / 2 }
-  const stepped = enemies.map((e) => stepEnemy(e, target, config.solids, dt))
+  const stepped = enemies.map((e) => stepEnemy(e, target, config.solids, dt, config.ladders))
   // Cull (mark dead) any enemy fallen out of the world, or — soft-lock safety
   // net — a ground enemy wedged below the floor (flyers hover low legitimately).
   enemies = stepped.map((r) => {

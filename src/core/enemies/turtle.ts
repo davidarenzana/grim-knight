@@ -41,13 +41,14 @@ export const stepTurtle = (
   target: EnemyTarget,
   solids: readonly Solid[],
   dt: number,
+  ladders: readonly Solid[] = [],
 ): TurtleStep => {
   if (e.state === 'dead') return { enemy: e, fired: [] }
 
   // Aim at the player always (fires across pits); only move where there's floor.
   const center = e.body.pos.x + e.body.w / 2
   const facing: 1 | -1 = target.x < center ? -1 : 1
-  const moveDir = advanceDir(e.body, target.x, solids)
+  const moveDir = advanceDir(e.body, target.x, solids, ladders)
   const body = stepBody(
     { ...e.body, vel: vec2(TURTLE.speed * moveDir * (e.speedScale ?? 1), e.body.vel.y) },
     solids,

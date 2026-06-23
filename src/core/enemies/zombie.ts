@@ -32,6 +32,7 @@ export const stepZombie = (
   target: EnemyTarget,
   solids: readonly Solid[],
   dt: number,
+  ladders: readonly Solid[] = [],
 ): Enemy => {
   if (e.state === 'dead') return e
 
@@ -45,7 +46,7 @@ export const stepZombie = (
   let facing = e.facing
   let vx = 0
   if (state === 'walking') {
-    const dir = patrolDir(e.body, e.facing, target.x, solids) // chase near, else patrol
+    const dir = patrolDir(e.body, e.facing, target.x, solids, ladders) // chase near, else patrol
     if (dir !== 0) facing = dir
     vx = ZOMBIE.speed * dir * (e.speedScale ?? 1)
   }

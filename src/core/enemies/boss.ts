@@ -94,14 +94,16 @@ export const stepBoss = (
   target: EnemyTarget,
   solids: readonly Solid[],
   dt: number,
+  ladders: readonly Solid[] = [],
 ): BossStep => {
   if (e.state === 'dead') return { enemy: e, fired: [] }
 
   const s = BOSS_VARIANTS[e.variant ?? 1]
-  // Aim at the player always; only advance where there's floor (no pit dives).
+  // Aim at the player always; only advance where there's floor (no pit dives) and
+  // never onto a ladder column, so it can't camp the rung the player climbs out on.
   const center = e.body.pos.x + e.body.w / 2
   const facing: 1 | -1 = target.x < center ? -1 : 1
-  const moveDir = advanceDir(e.body, target.x, solids)
+  const moveDir = advanceDir(e.body, target.x, solids, ladders)
   const body = stepBody(
     { ...e.body, vel: vec2(s.speed * moveDir * (e.speedScale ?? 1), e.body.vel.y) },
     solids,

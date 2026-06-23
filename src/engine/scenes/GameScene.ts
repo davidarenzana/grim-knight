@@ -81,6 +81,8 @@ export class GameScene extends Phaser.Scene {
   private levelIndex = 0
   private loop = 1
   private carriedSession: Session | null = null
+  private carriedOwnedWeapons: readonly string[] | null = null
+  private carriedActiveWeapon: string | null = null
 
   private knight!: Phaser.GameObjects.Sprite
   private projSprites: Phaser.GameObjects.Sprite[] = []
@@ -107,14 +109,23 @@ export class GameScene extends Phaser.Scene {
     super('GameScene')
   }
 
-  /** Receives the level index, loop number and carried session across transitions. */
-  init(data: { levelIndex?: number; loop?: number; session?: Session }): void {
+  /** Receives the level index, loop number, carried session and carried arsenal
+   *  (owned + equipped weapons) across transitions. */
+  init(data: {
+    levelIndex?: number
+    loop?: number
+    session?: Session
+    ownedWeapons?: readonly string[]
+    activeWeapon?: string
+  }): void {
     // On the first boot there's no transition data: start at the level the menu
     // picked (read from the game registry), defaulting to the first stage.
     this.levelIndex =
       data.levelIndex ?? (this.registry.get(START_LEVEL_KEY) as number | undefined) ?? 0
     this.loop = data.loop ?? 1
     this.carriedSession = data.session ?? null
+    this.carriedOwnedWeapons = data.ownedWeapons ?? null
+    this.carriedActiveWeapon = data.activeWeapon ?? null
   }
 
   preload(): void {
@@ -149,6 +160,8 @@ export class GameScene extends Phaser.Scene {
       rng,
       viewHeight: view,
       ...(this.carriedSession ? { session: this.carriedSession } : {}),
+      ...(this.carriedOwnedWeapons ? { ownedWeapons: this.carriedOwnedWeapons } : {}),
+      ...(this.carriedActiveWeapon ? { activeWeaponId: this.carriedActiveWeapon } : {}),
     })
     this.config = match.config
     this.state = match.state
@@ -502,10 +515,20 @@ export class GameScene extends Phaser.Scene {
   private onWin(): void {
     const lastLevel = this.levelIndex >= LEVELS.length - 1
     const session = this.state.session
+    // Carry the arsenal forward too — clearing a stage shouldn't strip the
+    // weapons earned on it (only a fresh run resets to the starting kit).
+    const ownedWeapons = this.state.ownedWeapons
+    const activeWeapon = this.state.activeWeapon.id
 
     if (!lastLevel) {
       this.showBanner('STAGE CLEAR!')
-      const next = { levelIndex: this.levelIndex + 1, loop: this.loop, session }
+      const next = {
+        levelIndex: this.levelIndex + 1,
+        loop: this.loop,
+        session,
+        ownedWeapons,
+        activeWeapon,
+      }
       this.time.delayedCall(STAGE_CLEAR_MS, () => this.scene.restart(next))
       return
     }
@@ -519,7 +542,7 @@ export class GameScene extends Phaser.Scene {
         ? `VICTORY!\nTHE CURSE DEEPENS — ${nextTier}`
         : `${nextTier}!\nTHE LOOP TIGHTENS`
     this.showBanner(banner)
-    const next = { levelIndex: 0, loop: nextLoop, session }
+    const next = { levelIndex: 0, loop: nextLoop, session, ownedWeapons, activeWeapon }
     this.time.delayedCall(STAGE_CLEAR_MS, () => this.scene.restart(next))
   }
 

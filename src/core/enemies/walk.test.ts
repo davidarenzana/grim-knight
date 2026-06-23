@@ -65,3 +65,21 @@ describe('advanceDir (ranged)', () => {
     expect(advanceDir(air, 999, [FLOOR])).toBe(1)
   })
 })
+
+describe('ladder avoidance (tower stages)', () => {
+  // A wide floor with a ladder column rising out of it (as on a tower shelf).
+  const WIDE = aabb(0, 200, 400, 40)
+  const LADDER = aabb(300, 60, 16, 180)
+  const onWide = (x: number): Body => ({ ...createBody(x, 160, 24, 40), grounded: true })
+
+  it('advanceDir holds clear of a ladder column instead of camping its exit', () => {
+    const b = onWide(240) // right edge ~264: inside the ladder's clearance zone
+    expect(advanceDir(b, 999, [WIDE])).toBe(1) // no ladders → walks onto the rung
+    expect(advanceDir(b, 999, [WIDE], [LADDER])).toBe(0) // ladder there → stays back
+  })
+
+  it('patrolDir turns away from a ladder column rather than crossing it', () => {
+    const b = onWide(240)
+    expect(patrolDir(b, 1, 999, [WIDE], [LADDER])).toBe(-1) // blocked right, patrols left
+  })
+})

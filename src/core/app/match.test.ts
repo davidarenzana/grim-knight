@@ -236,4 +236,28 @@ describe('createMatch', () => {
     const r = run(config, state, press({ right: true }), 30)
     expect(r.state.phase).toBe('playing')
   })
+
+  it('carries the arsenal across a stage transition', () => {
+    const { state } = createMatch(LEVELS[0]!, {
+      levelIndex: 1,
+      loop: 1,
+      rng: createRng(9),
+      viewHeight: 450,
+      ownedWeapons: ['dagger', 'torch', 'axe'],
+      activeWeaponId: 'axe',
+    })
+    expect(state.ownedWeapons).toEqual(['dagger', 'torch', 'axe']) // kept what was earned
+    expect(state.activeWeapon.id).toBe('axe') // and the weapon equipped on clear
+  })
+
+  it('falls back to the starting kit for a fresh run', () => {
+    const { state } = createMatch(LEVELS[0]!, {
+      levelIndex: 0,
+      loop: 1,
+      rng: createRng(9),
+      viewHeight: 450,
+    })
+    expect(state.ownedWeapons).toEqual(['dagger', 'torch'])
+    expect(state.activeWeapon.id).toBe('dagger')
+  })
 })

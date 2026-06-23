@@ -31,10 +31,11 @@ export const stepCentipede = (
   target: EnemyTarget,
   solids: readonly Solid[],
   dt: number,
+  ladders: readonly Solid[] = [],
 ): Enemy => {
   if (e.state === 'dead') return e
 
-  const dir = patrolDir(e.body, e.facing, target.x, solids) // chase near, else patrol
+  const dir = patrolDir(e.body, e.facing, target.x, solids, ladders) // chase near, else patrol
   const facing = dir !== 0 ? dir : e.facing
   const vx = CENTIPEDE.speed * dir * (e.speedScale ?? 1)
 
