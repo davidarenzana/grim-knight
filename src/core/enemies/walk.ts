@@ -15,6 +15,17 @@ import type { Body, Solid } from '@core/physics/body'
 /** Horizontal distance within which a melee walker locks onto and chases the player. */
 export const AGGRO_RANGE = 200
 
+/** Vertical reach within which a walker treats the player as on its own "lane" and
+ *  will engage. Beyond it (e.g. the player took the ground route while the walker
+ *  patrols the high road, or vice-versa) the walker ignores the player and just
+ *  wanders, instead of tracking an unreachable target on the other lane. Sized
+ *  between the gap between lanes (~260px) and the spread of ledges within a lane. */
+export const SAME_LANE_BAND = 150
+
+/** Is the player close enough vertically to be on this walker's lane? */
+export const onSameLane = (body: Body, target: { readonly y: number }): boolean =>
+  Math.abs(body.pos.y + body.h / 2 - target.y) <= SAME_LANE_BAND
+
 /** Clearance a ground walker keeps from a ladder column. Walkers treat a ladder
  *  like a wall (plus this buffer) so they never camp the rung a player climbs
  *  out onto — which would otherwise knock the climber off and trap them below. */
@@ -82,8 +93,9 @@ export const canStep = (
 /**
  * Melee movement. Chases the player when within {@link AGGRO_RANGE} and there's
  * a clear step that way; otherwise patrols in `facing`, flipping at a ledge or
- * wall and continuing. Returns 0 only when truly boxed in (pits/walls both
- * sides). While airborne it keeps `facing` so it lands normally.
+ * wall and continuing. Pass `chase = false` (e.g. the player is on another lane)
+ * to skip the chase entirely and just patrol. Returns 0 only when truly boxed in
+ * (pits/walls both sides). While airborne it keeps `facing` so it lands normally.
  */
 export const patrolDir = (
   body: Body,
@@ -91,12 +103,14 @@ export const patrolDir = (
   targetX: number,
   solids: readonly Solid[],
   ladders: readonly Solid[] = [],
+  chase = true,
   aggroRange = AGGRO_RANGE,
 ): -1 | 0 | 1 => {
   if (!body.grounded) return facing
   const cx = body.pos.x + body.w / 2
   const toward: 1 | -1 = targetX < cx ? -1 : 1
-  if (Math.abs(targetX - cx) <= aggroRange && canStep(body, toward, solids, ladders)) return toward
+  if (chase && Math.abs(targetX - cx) <= aggroRange && canStep(body, toward, solids, ladders))
+    return toward
   if (canStep(body, facing, solids, ladders)) return facing
   const back = -facing as 1 | -1
   if (canStep(body, back, solids, ladders)) return back

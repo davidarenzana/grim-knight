@@ -77,6 +77,11 @@ one-way ledges, ladders and the generic engine rendering. No new core/engine log
 - High-road foes are ranged/stationary (`plant`, `turtle`) so they don't camp a bridge
   landing (the ladder-camp failure class) and threaten along the lane, not the ground
   player below. A flyer harasses the shafts between shelves.
+- **Lane-aware AI:** walkers and the turtle only engage the player when he shares their
+  lane (vertical proximity, `onSameLane` / `SAME_LANE_BAND` in `enemies/walk.ts`).
+  Off-lane (player on the other route) they ignore him and just patrol — no tracking an
+  unreachable target on the far lane, and the turtle holds fire. Flyers still harass
+  across lanes by design; plants fire harmlessly along their own lane.
 - Descent is a free fall to the ground — no special exit geometry needed (one-screen
   layout; the drop lands on safe floor before the boss).
 - Geometry changed, so Playwright visual baselines for these stages must be regenerated

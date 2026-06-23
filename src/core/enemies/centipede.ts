@@ -1,7 +1,7 @@
 import { vec2 } from '@core/math/vector'
 import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
-import { patrolDir } from './walk'
+import { onSameLane, patrolDir } from './walk'
 
 /**
  * Centipede: a fast, low-HP ground crawler that rushes the player. Like the
@@ -35,7 +35,8 @@ export const stepCentipede = (
 ): Enemy => {
   if (e.state === 'dead') return e
 
-  const dir = patrolDir(e.body, e.facing, target.x, solids, ladders) // chase near, else patrol
+  // Chase only when the player shares this walker's lane; else just patrol.
+  const dir = patrolDir(e.body, e.facing, target.x, solids, ladders, onSameLane(e.body, target))
   const facing = dir !== 0 ? dir : e.facing
   const vx = CENTIPEDE.speed * dir * (e.speedScale ?? 1)
 

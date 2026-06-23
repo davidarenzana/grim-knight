@@ -50,6 +50,18 @@ describe('turtle', () => {
     expect(hitEnemy(t).state).toBe('dead')
   })
 
+  it('ignores a player on another lane: holds fire and just patrols', () => {
+    // Player far below (a different lane) for well past a fire interval.
+    let t = createTurtle(200, GROUND_Y)
+    const fired = []
+    for (let i = 0; i < Math.ceil(TURTLE.fireInterval / DT) + 2; i++) {
+      const r = stepTurtle(t, { x: 0, y: GROUND_Y + 400 }, [GROUND], DT)
+      t = r.enemy
+      fired.push(...r.fired)
+    }
+    expect(fired).toHaveLength(0) // off-lane → never locks on, never fires
+  })
+
   it('dead turtles neither move nor fire', () => {
     const dead = { ...createTurtle(100, GROUND_Y), state: 'dead' as const }
     const r = stepTurtle(dead, { x: 0, y: GROUND_Y }, [GROUND], DT)

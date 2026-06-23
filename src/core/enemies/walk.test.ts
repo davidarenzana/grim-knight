@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { aabb } from '@core/math/aabb'
 import { createBody, type Body } from '@core/physics/body'
-import { advanceDir, AGGRO_RANGE, groundAhead, patrolDir, wallAhead } from './walk'
+import { advanceDir, AGGRO_RANGE, groundAhead, onSameLane, patrolDir, wallAhead } from './walk'
 
 // Floor segment x:[0,100] at y=200; a pit to its right.
 const FLOOR = aabb(0, 200, 100, 40)
@@ -63,6 +63,21 @@ describe('advanceDir (ranged)', () => {
   it('heads toward the player while airborne', () => {
     const air: Body = { ...createBody(80, 160, 24, 40), grounded: false }
     expect(advanceDir(air, 999, [FLOOR])).toBe(1)
+  })
+})
+
+describe('lane awareness', () => {
+  it('is on-lane near its own height, off-lane far above or below', () => {
+    const b = grounded(20) // body [160,200], center 180
+    expect(onSameLane(b, { y: 185 })).toBe(true) // ~same height → same lane
+    expect(onSameLane(b, { y: 450 })).toBe(false) // far below → other lane
+    expect(onSameLane(b, { y: -120 })).toBe(false) // far above → other lane
+  })
+
+  it('patrolDir ignores an in-range player when chase is off (other lane)', () => {
+    const b = grounded(20) // player just left at x=0, well within aggro
+    expect(patrolDir(b, 1, 0, [FLOOR])).toBe(-1) // chase on → toward the player
+    expect(patrolDir(b, 1, 0, [FLOOR], [], false)).toBe(1) // chase off → just patrol
   })
 })
 

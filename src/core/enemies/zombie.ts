@@ -1,7 +1,7 @@
 import { vec2 } from '@core/math/vector'
 import { createBody, stepBody, type Solid } from '@core/physics/body'
 import type { Enemy, EnemyTarget } from './enemy'
-import { patrolDir } from './walk'
+import { onSameLane, patrolDir } from './walk'
 
 /**
  * Zombie: rises from the ground, then walks toward the player.
@@ -46,7 +46,8 @@ export const stepZombie = (
   let facing = e.facing
   let vx = 0
   if (state === 'walking') {
-    const dir = patrolDir(e.body, e.facing, target.x, solids, ladders) // chase near, else patrol
+    // Chase only when the player shares this walker's lane; else just patrol.
+    const dir = patrolDir(e.body, e.facing, target.x, solids, ladders, onSameLane(e.body, target))
     if (dir !== 0) facing = dir
     vx = ZOMBIE.speed * dir * (e.speedScale ?? 1)
   }

@@ -499,7 +499,11 @@ pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwri
   (risk/reward). Drops back to the ground before the boss; both lanes share one screen
   (horizontal scroll only — `worldHeight` stays default). Pure level data — reuses moving
   platforms + generic render. Spec `high-road.md`; new ascent guardrail in `stages.test.ts`
-  (a ladder must reach the high road). Stage 1 + towers (2, 4) untouched.
+  (a ladder must reach the high road). Stage 1 + towers (2, 4) untouched. Enemies are
+  **lane-aware** (`onSameLane`/`SAME_LANE_BAND` in `enemies/walk.ts`): walkers + turtle
+  only chase/fire when the player shares their lane; off-lane they patrol "a su bola".
+  Ladder avoidance is limited to the top exit (`LADDER_EXIT_BAND`) so the full-height
+  ascent ladder no longer snags ground walkers at its base.
 - **Moving platforms** — kinematic one-way platforms that oscillate along a segment and **carry the rider**
   (`core/physics/platform.ts`: `Platform`/`createPlatform`/`stepPlatform`/`platformSolid`). Stepped + carried
   in `stepMatch` (player only; enemies/projectiles keep static geometry); `MatchState.platforms` +
