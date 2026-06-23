@@ -1,0 +1,18 @@
+# Automated dependency + GitHub Actions updates (OWASP A03/A08 hardening).
+# PRs land like any other change: CI (quality + e2e) must pass before merge.
+version: 2
+updates:
+  - package-ecosystem: npm # covers the pnpm lockfile
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Batch low-risk dev/build tooling into one PR to cut review noise.
+      dev-dependencies:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

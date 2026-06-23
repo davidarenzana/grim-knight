@@ -50,10 +50,14 @@ const loadScores = (): HighScore[] => {
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed
-      .filter(isHighScore)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
+    return (
+      parsed
+        .filter(isHighScore)
+        // Re-sanitize the persisted name (defense-in-depth: storage is user-writable).
+        .map((e) => ({ ...e, name: sanitizeName(e.name) }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+    )
   } catch {
     return []
   }
