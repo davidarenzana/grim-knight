@@ -1,21 +1,7 @@
 import { aabb, type AABB } from '@core/math/aabb'
 import type { Rng } from '@core/math/rng'
-import { createPlayer, stepPlayer, type Player } from '@core/fsm/player'
-import {
-  createZombie,
-  createFlyer,
-  createOgre,
-  createPlant,
-  createBoss,
-  createCentipede,
-  createTurtle,
-  createBloated,
-  BOSS_VARIANTS,
-  stepEnemy,
-  type Enemy,
-  type EnemyKind,
-  type BossVariant,
-} from '@core/enemies'
+import { createPlayer, stepPlayer } from '@core/fsm/player'
+import { stepEnemy, type Enemy } from '@core/enemies'
 import {
   createWeapon,
   fire,
@@ -23,24 +9,13 @@ import {
   weaponById,
   DAGGER,
   TORCH,
-  LANCE,
   type Projectile,
-  type WeaponDef,
 } from '@core/weapons/weapon'
-import {
-  openChests,
-  rollReward,
-  createDrop,
-  DROP_W,
-  DROP_H,
-  type Chest,
-  type ChestReward,
-} from '@core/level/chest'
+import { openChests, rollReward, createDrop, DROP_W, DROP_H, type Chest } from '@core/level/chest'
 import { createSpawner, isFinished, stepSpawner } from '@core/level/spawner'
 import { createTimer, tickTimer } from '@core/level/timer'
-import { addScore, createSession, gainLife, loseLife, type Session } from '@core/rules/session'
-import { difficultyForLoop, type Difficulty } from '@core/rules/difficulty'
-import { pickupArmor } from '@core/rules/armor'
+import { addScore, createSession, type Session } from '@core/rules/session'
+import { difficultyForLoop } from '@core/rules/difficulty'
 import { resolveCombat, resolveEnemyProjectiles, resolveMelee } from '@core/rules/combat'
 import { hasFallenOut, hasSunkUnderFloor } from '@core/rules/fall'
 import { touchesHazard } from '@core/rules/hazard'
@@ -48,14 +23,7 @@ import { platformSolid, stepPlatform } from '@core/physics/platform'
 import { vec2 } from '@core/math/vector'
 import { GROUND_Y } from '@core/level/geometry'
 import type { LevelDef } from '@core/level/types'
-import type {
-  Effect,
-  GameNotification,
-  MatchConfig,
-  MatchState,
-  PlayerInput,
-  StepResult,
-} from './types'
+import type { Effect, MatchConfig, MatchState, PlayerInput, StepResult } from './types'
 import {
   SCORE_PER_KILL,
   CROUCH_H,
@@ -66,23 +34,24 @@ import {
   WORLD_WALL_PAD_TOP,
   WORLD_WALL_PAD_BOTTOM,
   DEATH_Y_PAD,
-  MAX_BOSS_VARIANT_INDEX,
   SHAKE,
   VFX_SCALE,
   FLOAT_LABEL_OFFSET_Y,
   FLOAT_LABEL_STACK_Y,
-  DEFAULT_WEAPON_COLOR,
-  WEAPON_COLOR,
-  REWARD_COLOR,
 } from './tuning'
+import { notify } from './effects'
+import { spawnEnemy } from './spawn'
+import { applyReward } from './rewards'
+import { handleDeath, bossNotifications } from './lifecycle'
 
 /**
  * The application use case: advance one fixed simulation step for a single stage
  * run. Pure — it orchestrates the domain (`stepPlayer`, `stepEnemy`,
- * `resolveCombat`, …) and returns the next {@link MatchState} plus the
- * presentation {@link Effect}s to play, WITHOUT touching Phaser, the bus or the
- * DOM. The Phaser scene is a thin adapter that renders the state and interprets
- * the effects (camera shake, VFX, floating labels, HUD notifications).
+ * `resolveCombat`, …) and the app-layer helpers (`spawnEnemy`, `applyReward`,
+ * `handleDeath`, `bossNotifications`), returning the next {@link MatchState} plus
+ * the presentation {@link Effect}s to play, WITHOUT touching Phaser, the bus or
+ * the DOM. The Phaser scene is a thin adapter that renders the state and
+ * interprets the effects (camera shake, VFX, floating labels, HUD notifications).
  *
  * Scope: one stage. Terminal `phase`s (`gameover`/`cleared`) hand control back
  * to the adapter, which owns scene flow (respawn screen, banners, advancing the
@@ -92,57 +61,6 @@ import {
  * (enemy death bursts, hit-flash) intentionally stay in the render layer; only
  * logic-coupled effects are emitted here.
  */
-
-const hexColor = (n: number): string => `#${n.toString(16).padStart(6, '0')}`
-
-const notify = (notification: GameNotification): Effect => ({ type: 'notify', notification })
-
-/** Boss skin/stats escalate one variant per pair of stages (1,1,2,2,3,3). */
-const bossVariant = (levelIndex: number): BossVariant =>
-  (Math.min(MAX_BOSS_VARIANT_INDEX, Math.floor(levelIndex / 2)) + 1) as BossVariant
-
-/** Scale a freshly-spawned enemy by the loop difficulty: tougher (HP + HP-bar
- *  max) and faster (a `speedScale` the per-kind steps read for their movement). */
-const scaleEnemy = (e: Enemy, hpMul: number, speedMul: number): Enemy => {
-  let out = e
-  if (hpMul !== 1) {
-    const hp = Math.max(1, Math.round(e.hp * hpMul))
-    out =
-      e.maxHp === undefined ? { ...out, hp } : { ...out, hp, maxHp: Math.round(e.maxHp * hpMul) }
-  }
-  if (speedMul !== 1) out = { ...out, speedScale: speedMul }
-  return out
-}
-
-const spawnEnemy = (
-  kind: EnemyKind,
-  x: number,
-  y: number,
-  levelIndex: number,
-  difficulty: Difficulty,
-): Enemy => {
-  const base = ((): Enemy => {
-    switch (kind) {
-      case 'zombie':
-        return createZombie(x, y)
-      case 'ogre':
-        return createOgre(x, y)
-      case 'flyer':
-        return createFlyer(x, y)
-      case 'plant':
-        return createPlant(x, y)
-      case 'boss':
-        return createBoss(x, y, bossVariant(levelIndex))
-      case 'centipede':
-        return createCentipede(x, y)
-      case 'turtle':
-        return createTurtle(x, y)
-      case 'bloated':
-        return createBloated(x, y)
-    }
-  })()
-  return scaleEnemy(base, difficulty.enemyHpMul, difficulty.enemySpeedMul)
-}
 
 export interface CreateMatchOptions {
   readonly levelIndex: number
@@ -233,114 +151,6 @@ export const createMatch = (
     phase: 'playing',
   }
   return { config, state }
-}
-
-/** Apply a collected chest/drop reward, returning the new state pieces, the bus
- *  notifications it triggers, and the float label/color for the pickup text. */
-const applyReward = (
-  state: MatchState,
-  reward: ChestReward,
-): {
-  player: Player
-  session: Session
-  activeWeapon: MatchState['activeWeapon']
-  ownedWeapons: readonly string[]
-  effects: Effect[]
-  label: string
-  color: string
-} => {
-  let { player, session, activeWeapon } = state
-  let ownedWeapons = state.ownedWeapons
-  const effects: Effect[] = []
-  let label: string
-  let color: string
-  /** Equip a weapon, adding it to the owned set (keeps active ∈ owned). */
-  const equip = (def: WeaponDef) => {
-    activeWeapon = def
-    if (!ownedWeapons.includes(def.id)) ownedWeapons = [...ownedWeapons, def.id]
-    effects.push(notify({ kind: 'weapon', weapon: def.id }))
-  }
-  switch (reward.kind) {
-    case 'weapon': {
-      const def = weaponById(reward.weaponId)
-      if (def) equip(def)
-      color = hexColor(WEAPON_COLOR[reward.weaponId] ?? DEFAULT_WEAPON_COLOR)
-      label = `${reward.weaponId.toUpperCase()}!`
-      break
-    }
-    case 'curse':
-      // The magician's curse downgrades you to the lance (and adds it to the cycle).
-      equip(LANCE)
-      label = 'CURSED!'
-      color = REWARD_COLOR.curse
-      break
-    case 'armor':
-      player = { ...player, armor: pickupArmor(player.armor) }
-      label = 'ARMOR!'
-      color = REWARD_COLOR.armor
-      break
-    case 'points':
-      session = addScore(session, reward.points)
-      effects.push(notify({ kind: 'score', score: session.score }))
-      label = `+${reward.points}`
-      color = REWARD_COLOR.points
-      break
-    case 'life':
-      session = gainLife(session)
-      effects.push(notify({ kind: 'lives', lives: session.lives }))
-      label = '1UP!'
-      color = REWARD_COLOR.life
-      break
-  }
-  return { player, session, activeWeapon, ownedWeapons, effects, label, color }
-}
-
-/** Death of the knight: lose a life, then game-over or respawn (state + effects). */
-const handleDeath = (config: MatchConfig, state: MatchState): StepResult => {
-  const pb = state.player.body
-  const effects: Effect[] = [
-    {
-      type: 'vfx',
-      name: 'explosion',
-      x: pb.pos.x + pb.w / 2,
-      y: pb.pos.y + pb.h / 2,
-      scale: VFX_SCALE.deathExplosion,
-    },
-    { type: 'shake', ...SHAKE.death },
-    { type: 'sound', name: 'die' },
-  ]
-  const session = loseLife(state.session)
-  effects.push(notify({ kind: 'lives', lives: session.lives }))
-  if (session.state === 'gameover') {
-    effects.push(notify({ kind: 'over', score: session.score }))
-    return { state: { ...state, session, phase: 'gameover' }, effects }
-  }
-  // Respawn in place: fresh player + timer, armor restored.
-  effects.push(notify({ kind: 'armor', armor: 'armored' }))
-  return {
-    state: {
-      ...state,
-      session,
-      player: createPlayer(config.start.x, config.start.y),
-      timer: createTimer(config.stageSeconds),
-      phase: 'playing',
-    },
-    effects,
-  }
-}
-
-/** Boss HP bar notifications, derived from the boss before/after this step. */
-const bossNotifications = (prev: readonly Enemy[], next: readonly Enemy[]): Effect[] => {
-  const after = next.find((e) => e.kind === 'boss')
-  if (!after) return []
-  if (after.state === 'dead') {
-    const before = prev.find((e) => e.kind === 'boss')
-    return before && before.state !== 'dead' ? [notify({ kind: 'boss-cleared' })] : []
-  }
-  const before = prev.find((e) => e.kind === 'boss')
-  // Use the (possibly loop-scaled) spawn HP so the bar stays correct under scaling.
-  const maxHp = after.maxHp ?? BOSS_VARIANTS[after.variant ?? 1].hp
-  return !before || before.hp !== after.hp ? [notify({ kind: 'boss-hp', hp: after.hp, maxHp })] : []
 }
 
 /**
