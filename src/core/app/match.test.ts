@@ -3,7 +3,7 @@ import { aabb } from '@core/math/aabb'
 import { createRng } from '@core/math/rng'
 import { GROUND_Y } from '@core/level/geometry'
 import { createPlayer, PLAYER_H, NO_INPUT, type PlayerInput } from '@core/fsm/player'
-import { createWeapon, DAGGER, TORCH } from '@core/weapons/weapon'
+import { createWeapon, DAGGER, TORCH, AXE } from '@core/weapons/weapon'
 import { createSession } from '@core/rules/session'
 import { difficultyForLoop } from '@core/rules/difficulty'
 import { createTimer } from '@core/level/timer'
@@ -101,6 +101,20 @@ describe('stepMatch', () => {
     expect(r.state.timer.secondsLeft).toBe(50) // timer reset on respawn
     expect(r.state.phase).toBe('playing')
     expect(notifies(r.effects, 'lives')).toBe(true)
+  })
+
+  it('respawn resets the arsenal to the starting kit (dagger + torch)', () => {
+    // Knight had earned the axe; a lost life should strip it back to the start.
+    const before = makeState({
+      timer: createTimer(0.01),
+      ownedWeapons: [DAGGER.id, TORCH.id, 'axe'],
+      activeWeapon: AXE,
+    })
+    const r = stepMatch(makeConfig({ stageSeconds: 50 }), before, NO_INPUT, 1 / 60)
+    expect(r.state.phase).toBe('playing') // respawned, not game over
+    expect(r.state.ownedWeapons).toEqual([DAGGER.id, TORCH.id])
+    expect(r.state.activeWeapon.id).toBe(DAGGER.id)
+    expect(notifies(r.effects, 'weapon')).toBe(true) // HUD resets to the starting weapon
   })
 
   it('falling past the world bottom drains lives and finally ends in gameover', () => {

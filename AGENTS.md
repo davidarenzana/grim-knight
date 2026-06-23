@@ -144,7 +144,8 @@ chest's reward per run (engine seeds an `Rng` in `create()`). **Enemy drops**: s
 (`createDrop`, collected like a chest; `rollReward(rng,false)` so drops never curse; bosses always drop).
 The knight **starts owning only the dagger + torch** (active = dagger, +armor); **swap (X) cycles only owned
 weapons** (`nextOwnedWeapon` over `MatchState.ownedWeapons`) and weapon chests/drops **add** new ones (axe;
-the curse's lance) — so picking weapons up actually matters. Every throw also lands a **point-blank jab** (`resolveMelee`)
+the curse's lance) — so picking weapons up actually matters. **Dying resets the arsenal** to the starting
+kit (`STARTING_WEAPONS` = dagger + torch, dagger active) — earned weapons are lost on respawn (`handleDeath`). Every throw also lands a **point-blank jab** (`resolveMelee`)
 so arcing weapons hit adjacent foes. **Effects/VFX**: `engine/assets/effects.ts` plays
 one-shot CraftPix art — an explosion on enemy/boss/player death, a `spark` on a non-fatal hit (enemy or
 knight), and a magic-ring burst + the **reward icon** when a chest opens (`playEffect`/`rewardIcon`; art
@@ -156,7 +157,7 @@ fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch ar
 `crouch` (the state + shrunk hitbox are real).
 **Procedural audio** (SFX + music, on/off toggle) and an **arcade high-score table** (3-letter initials) are in.
 **Testing pyramid complete** (see `docs/TESTING-PLAN.md`): unit + headless `stepMatch` integration + Vue
-component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 289 Vitest tests green.
+component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 290 Vitest tests green.
 Next: Phase 6 (code-split + deploy). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
