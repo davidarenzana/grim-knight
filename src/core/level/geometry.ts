@@ -15,6 +15,12 @@ import { GRAVITY, JUMP_IMPULSE, WALK_SPEED } from '@core/fsm/player'
  */
 export const MAX_JUMP_GAP = Math.floor((WALK_SPEED * (2 * JUMP_IMPULSE)) / GRAVITY)
 /**
+ * Maximum height a standing jump gains, `v² / 2g` (~104px). A surface the knight
+ * must jump UP onto (e.g. stepping off a moving platform onto a higher ledge)
+ * cannot sit higher than this above his takeoff or he can't reach it.
+ */
+export const MAX_JUMP_RISE = Math.floor((JUMP_IMPULSE * JUMP_IMPULSE) / (2 * GRAVITY))
+/**
  * Comfortable width budget for a ground hazard (spikes/lava). Kept well under
  * {@link MAX_JUMP_GAP} so clearing one never depends on a frame-perfect, edge-of-
  * platform takeoff. Hazards must not exceed this (enforced by a test).

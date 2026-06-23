@@ -41,7 +41,10 @@ export const wallAhead = (body: Body, dir: 1 | -1, solids: readonly Solid[]): bo
 }
 
 /** Is a ladder column just ahead in `dir` (within {@link LADDER_CLEARANCE})? A
- *  ground walker treats it like a wall so it never camps a ladder's exit. */
+ *  ground walker treats it like a wall so it never camps a ladder's exit. The
+ *  ladder must also overlap the body VERTICALLY — otherwise an enemy on the
+ *  ground floor would be blocked by the columns of ladders high up the tower
+ *  (same x, far above), where there is no ladder at its feet to camp. */
 export const ladderAhead = (
   body: Body,
   dir: 1 | -1,
@@ -49,7 +52,15 @@ export const ladderAhead = (
   clearance = LADDER_CLEARANCE,
 ): boolean => {
   const aheadX = dir > 0 ? body.pos.x + body.w + 2 : body.pos.x - 2
-  return ladders.some((l) => aheadX >= l.x - clearance && aheadX <= l.x + l.w + clearance)
+  const top = body.pos.y
+  const bottom = body.pos.y + body.h
+  return ladders.some(
+    (l) =>
+      aheadX >= l.x - clearance &&
+      aheadX <= l.x + l.w + clearance &&
+      bottom > l.y &&
+      top < l.y + l.h,
+  )
 }
 
 /** Can the body keep walking one step in `dir` (floor ahead, no wall, and not

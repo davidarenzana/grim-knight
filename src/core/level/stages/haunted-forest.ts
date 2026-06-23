@@ -71,9 +71,11 @@ export const hauntedForest: LevelDef = {
     shelf(T4),
     ledge(120, ARENA, 680), // boss arena [120, 800]
   ],
-  // The T1 bridge: a 150px platform ferrying across the gap between the two T1
-  // ledges. Its extremes overlap each ledge so the knight can always board/alight.
-  platforms: [createPlatform(300, T1, 150, 16, { x: 440, y: T1 }, 70)],
+  // The T1 bridge: a small platform ferrying across the gap at the SAME height as
+  // the two ledges, never overlapping them. The knight jumps from a ledge edge
+  // onto it and from its edge onto the far ledge; at each extreme it stops a short
+  // (jumpable, < MAX_JUMP_GAP ≈ 89px) hop from the near ledge edge.
+  platforms: [createPlatform(344, T1, 64, 16, { x: 472, y: T1 }, 70)],
   ladders: [
     rungs(RCOL, T1, FLOOR_Y), // floor → T1 (right)
     rungs(LCOL, T2, T1), //      T1 → T2 (left)

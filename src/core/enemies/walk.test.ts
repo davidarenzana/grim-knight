@@ -82,4 +82,13 @@ describe('ladder avoidance (tower stages)', () => {
     const b = onWide(240)
     expect(patrolDir(b, 1, 999, [WIDE], [LADDER])).toBe(-1) // blocked right, patrols left
   })
+
+  it('ignores a ladder column that is not at the walker height', () => {
+    // A ladder high up the tower (same x column, far above the floor) must not
+    // block a ground-floor walker — there is no rung at its feet to camp.
+    const b = onWide(240)
+    const farAbove = aabb(300, -400, 16, 180) // column x=300 but y well above the body
+    expect(advanceDir(b, 999, [WIDE], [farAbove])).toBe(1) // not blocked → still advances
+    expect(patrolDir(b, 1, 999, [WIDE], [farAbove])).toBe(1)
+  })
 })

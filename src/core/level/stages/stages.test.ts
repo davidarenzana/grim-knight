@@ -7,6 +7,7 @@ import { frozenSpires } from './frozen-spires'
 import { demonKeep } from './demon-keep'
 import { STAGES } from './index'
 import { LEVELS } from '../level'
+import { MAX_JUMP_GAP, MAX_JUMP_RISE } from '../geometry'
 import {
   createZombie,
   createOgre,
@@ -89,15 +90,20 @@ describe('stage modules', () => {
   })
 
   it('every moving platform can be boarded and left at both path ends', () => {
-    // Reachability guardrail: at each endpoint a platform must overlap a ledge at
-    // (about) the same top height, so the knight can step on/off — otherwise the
-    // tower soft-locks. Protects the Haunted Forest bridge against regressions.
+    // Reachability guardrail: at each endpoint the platform must sit within a
+    // single jump of a ledge — the horizontal gap to the ledge edge no wider than
+    // a running jump, and the ledge no higher than a jump's rise above it. So the
+    // knight can hop from a ledge edge onto it and off onto the far ledge.
+    // Otherwise the tower soft-locks. Protects the Haunted Forest bridge.
     for (const { stage } of expected) {
       for (const p of stage.platforms ?? []) {
         for (const end of [p.from, p.to]) {
-          const box = { x: end.x, y: end.y, w: p.w, h: p.h }
-          const landing = stage.solids.some((s) => Math.abs(s.y - end.y) <= 4 && overlaps(box, s))
-          expect(landing, `${stage.name}: platform endpoint x=${end.x} has no landing`).toBe(true)
+          const reachable = stage.solids.some((s) => {
+            const hGap = Math.max(0, s.x - (end.x + p.w), end.x - (s.x + s.w)) // 0 if x-overlapping
+            const rise = end.y - s.y // how far UP from the platform top to the ledge top
+            return hGap <= MAX_JUMP_GAP && rise >= 0 && rise <= MAX_JUMP_RISE
+          })
+          expect(reachable, `${stage.name}: platform endpoint x=${end.x} is unreachable`).toBe(true)
         }
       }
     }
