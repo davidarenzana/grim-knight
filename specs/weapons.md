@@ -12,6 +12,11 @@ reuse the same model with extra data: **arc** (gravity + an upward launch veloci
 **limited reach** (a max travel distance before the projectile is culled, e.g. the short-range dagger).
 Weapons are swapped via the `WEAPONS` registry (`nextWeapon`/`weaponById`); chests will pick from it.
 
+**Ownership.** The knight owns a subset of the registry: a run starts with `STARTING_WEAPONS`
+(dagger + torch) and swap (`nextOwnedWeapon`) cycles only the owned ids. Weapon chests/drops add new
+ids; the arsenal carries across stage transitions. **Losing a life resets the arsenal** back to
+`STARTING_WEAPONS` with the dagger active — earned weapons are lost on death (arcade-style).
+
 ## Scenarios (Given / When / Then)
 
 ### Scenario: firing spawns a projectile
@@ -68,12 +73,21 @@ Weapons are swapped via the `WEAPONS` registry (`nextWeapon`/`weaponById`); ches
 - **When** `nextWeapon` is called repeatedly from the lance
 - **Then** it cycles through all weapons and wraps around; `weaponById` resolves by id
 
+### Scenario: respawn resets the arsenal to the starting kit
+
+- **Given** a playing match where the knight has earned extra weapons (e.g. the axe is active and owned)
+- **When** the knight dies with lives remaining and respawns
+- **Then** `ownedWeapons` is back to `STARTING_WEAPONS` (dagger + torch), the dagger is active, and a
+  `weapon` notification fires so the HUD updates
+
 ## Acceptance criteria
 
 - [x] `fire` honors cooldown and `maxOnScreen`; sets velocity by `facing`; sets arc (vy/gravity) and reach.
 - [x] `stepWeapon` integrates projectiles under per-projectile gravity, decays cooldown (never below 0),
       culls out-of-bounds, wall hits and projectiles past their max range.
 - [x] `WEAPONS` registry + `nextWeapon`/`weaponById` for swapping; lance/dagger/torch/axe defined.
+- [x] `STARTING_WEAPONS` (dagger + torch) is the initial **and** respawn arsenal; `handleDeath` resets
+      `ownedWeapons`/`activeWeapon` to it on respawn and emits a `weapon` notification.
 - [x] Pure and deterministic (no wall-clock time, no globals).
 - [x] `Projectile.sprite?` carries an optional presentation tag (e.g. enemy shots `spore`/`bullet`/`bolt`/
       `fire`); pure data only — the engine maps it to art (`enemyProjectileVisual`), rect fallback otherwise.
@@ -82,14 +96,15 @@ Weapons are swapped via the `WEAPONS` registry (`nextWeapon`/`weaponById`); ches
 
 ## Test mapping
 
-| Scenario   | Test file                         | Test name                          |
-| ---------- | --------------------------------- | ---------------------------------- |
-| fire spawn | `src/core/weapons/weapon.test.ts` | `weapon > fire spawns projectile`  |
-| cooldown   | `src/core/weapons/weapon.test.ts` | `weapon > cannot fire on cooldown` |
-| max screen | `src/core/weapons/weapon.test.ts` | `weapon > respects maxOnScreen`    |
-| step       | `src/core/weapons/weapon.test.ts` | `weapon > step moves and decays`   |
-| cull       | `src/core/weapons/weapon.test.ts` | `weapon > culls out of bounds`     |
-| arc        | `src/core/weapons/weapon.test.ts` | `weapon > arcing weapons fall`     |
-| flat       | `src/core/weapons/weapon.test.ts` | `weapon > straight stays flat`     |
-| reach      | `src/core/weapons/weapon.test.ts` | `weapon > culls past max range`    |
-| registry   | `src/core/weapons/weapon.test.ts` | `weapon > registry cycles`         |
+| Scenario   | Test file                         | Test name                                                                     |
+| ---------- | --------------------------------- | ----------------------------------------------------------------------------- |
+| fire spawn | `src/core/weapons/weapon.test.ts` | `weapon > fire spawns projectile`                                             |
+| cooldown   | `src/core/weapons/weapon.test.ts` | `weapon > cannot fire on cooldown`                                            |
+| max screen | `src/core/weapons/weapon.test.ts` | `weapon > respects maxOnScreen`                                               |
+| step       | `src/core/weapons/weapon.test.ts` | `weapon > step moves and decays`                                              |
+| cull       | `src/core/weapons/weapon.test.ts` | `weapon > culls out of bounds`                                                |
+| arc        | `src/core/weapons/weapon.test.ts` | `weapon > arcing weapons fall`                                                |
+| flat       | `src/core/weapons/weapon.test.ts` | `weapon > straight stays flat`                                                |
+| reach      | `src/core/weapons/weapon.test.ts` | `weapon > culls past max range`                                               |
+| registry   | `src/core/weapons/weapon.test.ts` | `weapon > registry cycles`                                                    |
+| respawn    | `src/core/app/match.test.ts`      | `stepMatch > respawn resets the arsenal to the starting kit (dagger + torch)` |

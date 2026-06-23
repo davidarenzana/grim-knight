@@ -101,6 +101,10 @@ export const AXE: WeaponDef = {
 /** Registry of selectable weapons, in cycle order (chests pick from here). */
 export const WEAPONS: readonly WeaponDef[] = [LANCE, DAGGER, TORCH, AXE]
 
+/** The kit the knight starts — and respawns — with. Swap cycles only these
+ *  until chests/drops add more; losing a life resets the arsenal back to it. */
+export const STARTING_WEAPONS: readonly string[] = [DAGGER.id, TORCH.id]
+
 /** Resolve a weapon by its id, or undefined if unknown. */
 export const weaponById = (id: string): WeaponDef | undefined =>
   WEAPONS.find((wpn) => wpn.id === id)

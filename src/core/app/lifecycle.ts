@@ -1,6 +1,7 @@
 import { createPlayer } from '@core/fsm/player'
 import { BOSS_VARIANTS, type Enemy } from '@core/enemies'
 import { createTimer } from '@core/level/timer'
+import { DAGGER, STARTING_WEAPONS } from '@core/weapons/weapon'
 import { loseLife } from '@core/rules/session'
 import type { Effect, MatchConfig, MatchState, StepResult } from './types'
 import { notify } from './effects'
@@ -26,14 +27,18 @@ export const handleDeath = (config: MatchConfig, state: MatchState): StepResult 
     effects.push(notify({ kind: 'over', score: session.score }))
     return { state: { ...state, session, phase: 'gameover' }, effects }
   }
-  // Respawn in place: fresh player + timer, armor restored.
+  // Respawn in place: fresh player + timer, armor restored, and the arsenal
+  // reset to the starting kit (dagger + torch) — earned weapons are lost on death.
   effects.push(notify({ kind: 'armor', armor: 'armored' }))
+  effects.push(notify({ kind: 'weapon', weapon: DAGGER.id })) // HUD back to the starting weapon
   return {
     state: {
       ...state,
       session,
       player: createPlayer(config.start.x, config.start.y),
       timer: createTimer(config.stageSeconds),
+      activeWeapon: DAGGER,
+      ownedWeapons: STARTING_WEAPONS,
       phase: 'playing',
     },
     effects,

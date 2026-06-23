@@ -8,7 +8,7 @@ import {
   advanceProjectilesDetailed,
   weaponById,
   DAGGER,
-  TORCH,
+  STARTING_WEAPONS,
   type Projectile,
 } from '@core/weapons/weapon'
 import { openChests, rollReward, createDrop, DROP_W, DROP_H, type Chest } from '@core/level/chest'
@@ -132,7 +132,7 @@ export const createMatch = (
   // curse's lance) are earned from chests/drops, so picking weapons up matters.
   // Across stage transitions the arsenal carries over (you keep what you found);
   // a fresh run falls back to the starting kit.
-  const ownedWeapons = opts.ownedWeapons ?? [DAGGER.id, TORCH.id]
+  const ownedWeapons = opts.ownedWeapons ?? STARTING_WEAPONS
   const activeWeapon = (opts.activeWeaponId && weaponById(opts.activeWeaponId)) || DAGGER
   const state: MatchState = {
     player: createPlayer(start.x, start.y),

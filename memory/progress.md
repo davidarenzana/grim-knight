@@ -530,6 +530,15 @@ pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwri
 
 - Nothing active. Phase 6 deploy is **live on Vercel**; the remaining Phase 6 item is build/code-split.
 
+## Gameplay: respawn resets the arsenal (2026-06-23) 🗡️
+
+- **Dying now strips earned weapons.** On respawn (death with lives left), `handleDeath`
+  (`core/app/lifecycle.ts`) resets `ownedWeapons` → `STARTING_WEAPONS` and `activeWeapon` → `DAGGER`, and
+  emits a `weapon` notification so the HUD updates. Game over is unchanged (a fresh run already starts from
+  the kit). Extracted `STARTING_WEAPONS = [DAGGER.id, TORCH.id]` in `core/weapons/weapon.ts` (was inlined
+  in `createMatch`). Per the user: arcade-style, reset every life (not just on game over). Spec:
+  `specs/weapons.md` (ownership + respawn scenario). 290 Vitest tests green.
+
 ## CI/CD & deploy (Phase 6 — shipping) 🚀
 
 - **Deployed on Vercel** (`vercel.json`: Vite preset, `npm run build` → `dist`). Vercel's Git integration
