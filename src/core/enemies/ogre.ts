@@ -35,7 +35,7 @@ export const stepOgre = (
 
   const dir = patrolDir(e.body, e.facing, target.x, solids) // chase near, else patrol
   const facing = dir !== 0 ? dir : e.facing
-  const vx = OGRE.speed * dir
+  const vx = OGRE.speed * dir * (e.speedScale ?? 1)
 
   const body = stepBody({ ...e.body, vel: vec2(vx, e.body.vel.y) }, solids, OGRE.gravity, dt)
   return { ...e, body, state: 'walking', facing, age: e.age + dt }

@@ -14,8 +14,9 @@ escalating every loop. Clearing all stages the first time shows a celebratory
 `VICTORY!` banner, but play continues into the next, harder loop.
 
 `difficultyForLoop(loop)` is a pure function returning the tier, its display name,
-and the scaling knobs applied to a run: tougher enemies (`enemyHpMul`), a shorter
-stage clock (`timeScale`), and a richer payout (`scoreMul`).
+and the scaling knobs applied to a run: tougher enemies (`enemyHpMul`), faster/more
+aggressive enemies (`enemySpeedMul`, capped at `SPEED_MUL_CAP` so the fixed step
+stays sane), a shorter stage clock (`timeScale`), and a richer payout (`scoreMul`).
 
 ## Scenarios (Given / When / Then)
 
@@ -29,19 +30,32 @@ stage clock (`timeScale`), and a richer payout (`scoreMul`).
 
 - **Given** loop 1
 - **When** `difficultyForLoop(1)` is read
-- **Then** `enemyHpMul = 1`, `timeScale = 1`, `scoreMul = 1`
+- **Then** `enemyHpMul = 1`, `timeScale = 1`, `enemySpeedMul = 1`, `scoreMul = 1`
 
 ### Scenario: every loop ramps
 
 - **Given** any loop `n` and the next loop `n+1`
 - **When** their difficulties are compared
-- **Then** `enemyHpMul` and `scoreMul` strictly increase and `timeScale` is non-increasing
+- **Then** `enemyHpMul` and `scoreMul` strictly increase, `enemySpeedMul` is non-decreasing,
+  and `timeScale` is non-increasing
 
 ### Scenario: time pressure has a floor
 
 - **Given** a very deep loop (e.g. 50)
 - **When** `difficultyForLoop` is read
 - **Then** `timeScale` never drops below `0.55`
+
+### Scenario: enemy speed has a cap
+
+- **Given** a very deep loop (e.g. 50)
+- **When** `difficultyForLoop` is read
+- **Then** `enemySpeedMul` never exceeds `SPEED_MUL_CAP` (2)
+
+### Scenario: faster enemies on deeper loops
+
+- **Given** a stage run in a higher loop
+- **When** a moving enemy spawns
+- **Then** it carries `speedScale = enemySpeedMul` and covers more ground per second than its baseline
 
 ### Scenario: tougher enemies on deeper loops
 

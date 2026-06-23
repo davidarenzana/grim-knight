@@ -14,6 +14,10 @@ export type Tier = 1 | 2 | 3
 /** Stage time never shrinks below this fraction, however deep the loop. */
 export const TIME_SCALE_FLOOR = 0.55
 
+/** Enemies never move faster than this multiple of their base speed (keeps the
+ *  physics step sane — no tunnelling through thin platforms). */
+export const SPEED_MUL_CAP = 2
+
 export interface Difficulty {
   /** Bucketed tier (1–3); loop 1 = 1, loop 2 = 2, loop 3+ = 3. */
   readonly tier: Tier
@@ -23,6 +27,8 @@ export interface Difficulty {
   readonly enemyHpMul: number
   /** Stage-clock multiplier — more time pressure on deeper loops. */
   readonly timeScale: number
+  /** Enemy movement-speed multiplier — faster, more aggressive foes (capped). */
+  readonly enemySpeedMul: number
   /** Score multiplier — deeper loops pay more (arcade risk/reward). */
   readonly scoreMul: number
 }
@@ -41,6 +47,7 @@ export const difficultyForLoop = (loop: number): Difficulty => {
     name: TIER_NAMES[tier - 1]!,
     enemyHpMul: 1 + 0.5 * step,
     timeScale: Math.max(TIME_SCALE_FLOOR, 1 - 0.12 * step),
+    enemySpeedMul: Math.min(SPEED_MUL_CAP, 1 + 0.15 * step),
     scoreMul: 1 + 0.5 * step,
   }
 }

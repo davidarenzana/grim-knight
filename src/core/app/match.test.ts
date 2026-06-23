@@ -141,6 +141,29 @@ describe('stepMatch', () => {
     expect(r.state.enemies[0]!.hp).toBe(2)
   })
 
+  it('makes spawned enemies move faster on deeper loops', () => {
+    const at = { kind: 'zombie' as const, x: 200, y: GROUND_Y - PLAYER_H }
+    // Walk the knight to the right so the zombie wakes, then chases at its speed.
+    const baseline = run(
+      makeConfig({ loop: 1 }),
+      makeState({ spawner: createSpawner([at]) }),
+      press({ right: true }),
+      120,
+    )
+    const harder = run(
+      makeConfig({ loop: 3 }),
+      makeState({ spawner: createSpawner([at]) }),
+      press({ right: true }),
+      120,
+    )
+    const base = baseline.state.enemies[0]!
+    const fast = harder.state.enemies[0]!
+    expect(fast.speedScale).toBe(difficultyForLoop(3).enemySpeedMul)
+    // Faster chaser covers more ground from the same spawn over the same window.
+    const moved = (e: typeof base) => Math.abs(e.body.pos.x - at.x)
+    expect(moved(fast)).toBeGreaterThan(moved(base))
+  })
+
   it('scales kill score by the loop difficulty', () => {
     const z = createZombie(130, GROUND_Y - PLAYER_H)
     const r = run(makeConfig({ loop: 3 }), makeState({ enemies: [z] }), press({ attack: true }), 60)

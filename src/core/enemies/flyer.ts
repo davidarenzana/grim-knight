@@ -39,8 +39,9 @@ export const stepFlyer = (
   const dy = target.y - cy
   const len = Math.hypot(dx, dy) || 1
 
-  const vx = (dx / len) * FLYER.speed
-  const vy = (dy / len) * FLYER.speed + Math.cos(e.age * FLYER.bobFrequency) * FLYER.bobAmplitude
+  const speed = FLYER.speed * (e.speedScale ?? 1)
+  const vx = (dx / len) * speed
+  const vy = (dy / len) * speed + Math.cos(e.age * FLYER.bobFrequency) * FLYER.bobAmplitude
   const facing: 1 | -1 = dx < 0 ? -1 : 1
 
   const pos = vec2(e.body.pos.x + vx * dt, e.body.pos.y + vy * dt)

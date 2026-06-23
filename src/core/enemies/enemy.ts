@@ -28,6 +28,8 @@ export interface Enemy {
   readonly riseTimer: number
   /** Seconds since spawn, for periodic motion (e.g. flyer sine). */
   readonly age: number
+  /** Movement-speed multiplier from the loop difficulty (defaults to 1). */
+  readonly speedScale?: number
   /** Boss skin/stat variant (1–3); undefined for non-boss enemies. */
   readonly variant?: BossVariant
 }

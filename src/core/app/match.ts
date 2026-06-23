@@ -39,7 +39,7 @@ import {
 import { createSpawner, isFinished, stepSpawner } from '@core/level/spawner'
 import { createTimer, tickTimer } from '@core/level/timer'
 import { addScore, createSession, gainLife, loseLife, type Session } from '@core/rules/session'
-import { difficultyForLoop } from '@core/rules/difficulty'
+import { difficultyForLoop, type Difficulty } from '@core/rules/difficulty'
 import { pickupArmor } from '@core/rules/armor'
 import { resolveCombat, resolveEnemyProjectiles, resolveMelee } from '@core/rules/combat'
 import { hasFallenOut, hasSunkUnderFloor } from '@core/rules/fall'
@@ -97,12 +97,17 @@ const notify = (notification: GameNotification): Effect => ({ type: 'notify', no
 const bossVariant = (levelIndex: number): BossVariant =>
   (Math.min(2, Math.floor(levelIndex / 2)) + 1) as BossVariant
 
-/** Scale a freshly-spawned enemy's HP (and HP-bar max) by the loop difficulty. */
-const scaleEnemyHp = (e: Enemy, mul: number): Enemy => {
-  if (mul === 1) return e
-  const hp = Math.max(1, Math.round(e.hp * mul))
-  if (e.maxHp === undefined) return { ...e, hp }
-  return { ...e, hp, maxHp: Math.max(1, Math.round(e.maxHp * mul)) }
+/** Scale a freshly-spawned enemy by the loop difficulty: tougher (HP + HP-bar
+ *  max) and faster (a `speedScale` the per-kind steps read for their movement). */
+const scaleEnemy = (e: Enemy, hpMul: number, speedMul: number): Enemy => {
+  let out = e
+  if (hpMul !== 1) {
+    const hp = Math.max(1, Math.round(e.hp * hpMul))
+    out =
+      e.maxHp === undefined ? { ...out, hp } : { ...out, hp, maxHp: Math.round(e.maxHp * hpMul) }
+  }
+  if (speedMul !== 1) out = { ...out, speedScale: speedMul }
+  return out
 }
 
 const spawnEnemy = (
@@ -110,7 +115,7 @@ const spawnEnemy = (
   x: number,
   y: number,
   levelIndex: number,
-  hpMul: number,
+  difficulty: Difficulty,
 ): Enemy => {
   const base = ((): Enemy => {
     switch (kind) {
@@ -132,7 +137,7 @@ const spawnEnemy = (
         return createBloated(x, y)
     }
   })()
-  return scaleEnemyHp(base, hpMul)
+  return scaleEnemy(base, difficulty.enemyHpMul, difficulty.enemySpeedMul)
 }
 
 export interface CreateMatchOptions {
@@ -343,9 +348,7 @@ export const stepMatch = (
   const spawner = spawn.spawner
   let enemies: Enemy[] = [
     ...state.enemies,
-    ...spawn.due.map((ev) =>
-      spawnEnemy(ev.kind, ev.x, ev.y, config.levelIndex, config.difficulty.enemyHpMul),
-    ),
+    ...spawn.due.map((ev) => spawnEnemy(ev.kind, ev.x, ev.y, config.levelIndex, config.difficulty)),
   ]
   const b0 = state.player.body
   const target = { x: b0.pos.x + b0.w / 2, y: b0.pos.y + b0.h / 2 }

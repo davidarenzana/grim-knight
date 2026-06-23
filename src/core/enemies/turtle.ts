@@ -49,7 +49,7 @@ export const stepTurtle = (
   const facing: 1 | -1 = target.x < center ? -1 : 1
   const moveDir = advanceDir(e.body, target.x, solids)
   const body = stepBody(
-    { ...e.body, vel: vec2(TURTLE.speed * moveDir, e.body.vel.y) },
+    { ...e.body, vel: vec2(TURTLE.speed * moveDir * (e.speedScale ?? 1), e.body.vel.y) },
     solids,
     TURTLE.gravity,
     dt,

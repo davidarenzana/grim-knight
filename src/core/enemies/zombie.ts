@@ -47,7 +47,7 @@ export const stepZombie = (
   if (state === 'walking') {
     const dir = patrolDir(e.body, e.facing, target.x, solids) // chase near, else patrol
     if (dir !== 0) facing = dir
-    vx = ZOMBIE.speed * dir
+    vx = ZOMBIE.speed * dir * (e.speedScale ?? 1)
   }
 
   const body = stepBody({ ...e.body, vel: vec2(vx, e.body.vel.y) }, solids, ZOMBIE.gravity, dt)
