@@ -539,8 +539,8 @@ audit` clean; no `eval`/`v-html`/injection sinks; `sanitizeName` whitelists `[^A
 'unsafe-inline'` for runtime canvas/`:style`, `img-src 'self' data: blob:`, `frame-ancestors 'none'`),
   plus X-Frame-Options DENY, nosniff, Referrer-Policy no-referrer, Permissions-Policy. Verified the CSP
   doesn't break the game (Playwright against dist served with the header: canvas boots, 0 violations).
-- Remaining hardening (separate PR): pin GitHub Actions to SHA + Dependabot; re-sanitize highscore `name`
-  on load (defense-in-depth; not exploitable — Vue escapes).
+- **Supply chain hardened** (A03/A08): GitHub Actions pinned to commit SHAs (`# v4`), `.github/dependabot.yml`
+  added (npm + github-actions, weekly), and highscore `name` re-sanitized on load (defense-in-depth).
 
 ## Gameplay: respawn resets the arsenal (2026-06-23) 🗡️
 
