@@ -25,21 +25,24 @@ that keeps context stable and reduces token usage**: Markdown specs (SDD), TDD o
 
 ## Tech stack
 
-| Layer           | Choice                                                  | Reason                                            |
-| --------------- | ------------------------------------------------------- | ------------------------------------------------- |
-| Language        | TypeScript (strict)                                     | Strong typing, safe refactors                     |
-| Build/dev       | **Vite**                                                | Fast HMR, first-class Vue + TS                    |
-| UI shell        | **Vue 3** (`<script setup>`, Composition API)           | Menus, HUD, pause, options                        |
-| Game render/IO  | **Phaser 3**                                            | Game loop, sprites, tilemaps, audio, input solved |
-| UI↔game state   | **Pinia** + event bus (mitt)                            | Decoupled bridge between Vue and the simulation   |
-| Tests           | **Vitest** (+ `@vitest/coverage-v8`), Vue Test Utils    | Core unit tests, component smoke tests            |
-| E2E (optional)  | Playwright                                              | Smoke of start→play→game over flow                |
-| Lint/format     | ESLint (typescript-eslint, flat config) + Prettier      | Broad standard; alt: Biome                        |
-| Hooks           | Husky + lint-staged + commitlint (Conventional Commits) | Quality on every commit                           |
-| CI              | GitHub Actions                                          | typecheck + lint + test + build                   |
-| Package manager | **pnpm**                                                | Fast, deterministic lockfile                      |
+| Layer           | Choice                                                  | Reason                                                |
+| --------------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| Language        | TypeScript (strict)                                     | Strong typing, safe refactors                         |
+| Build/dev       | **Vite**                                                | Fast HMR, first-class Vue + TS                        |
+| UI shell        | **Vue 3** (`<script setup>`, Composition API)           | Menus, HUD, pause, options                            |
+| Game render/IO  | **Phaser 3**                                            | Game loop, sprites, tilemaps, audio, input solved     |
+| UI↔game state   | **Pinia** + event bus (mitt)                            | Decoupled bridge between Vue and the simulation       |
+| Tests           | **Vitest** (+ `@vitest/coverage-v8`), Vue Test Utils    | Core unit tests, component smoke tests                |
+| E2E (optional)  | Playwright                                              | Smoke of start→play→game over flow                    |
+| Lint/format     | ESLint (typescript-eslint, flat config) + Prettier      | Broad standard; alt: Biome                            |
+| Hooks           | Husky + lint-staged + commitlint (Conventional Commits) | Quality on every commit                               |
+| CI              | GitHub Actions                                          | `quality` (typecheck+lint+test+build) + `e2e` (smoke) |
+| Deploy          | Vercel (Vite preset)                                    | Production from `main`; preview per PR                |
+| Package manager | **pnpm**                                                | Fast, deterministic lockfile                          |
 
-**Assumptions** (adjustable): Node 22, pnpm, GitHub for repo/CI/static hosting.
+**Assumptions** (adjustable): Node 22, pnpm, GitHub for repo/CI; Vercel for hosting. `main` is
+branch-protected — PRs only, and `quality` + `e2e` must pass before merge (so production never deploys
+red code). See AGENTS.md §11.
 
 ## Architecture: domain / presentation split
 
@@ -126,7 +129,7 @@ sessions (agents read fresh memory instead of reconstructing context from code).
   lives/continues/scoring; audio. Parallel agents help here (one per enemy/boss/level spec).
 - **Phase 5 — Art pass & juice:** integrate CC0/original assets over defined asset contracts; animations,
   particles, screen shake, transitions, music. Code unchanged, placeholders swapped.
-- **Phase 6 — Build & publish:** production build, asset optimization, static deploy (GitHub Pages), README.
+- **Phase 6 — Build & publish:** production build, asset optimization, deploy (**Vercel**, live), README.
   - **Code-split the Phaser chunk** (the build is one ~1.6 MB / 384 kB-gzip JS bundle, ~90% Phaser). Plan:
     1. **Lazy-load Phaser** — make `GameCanvas`/`@engine/game` a dynamic `import()` (e.g. `defineAsyncComponent`)
        so the Vue **menu boots without Phaser**; the engine chunk loads on START. Biggest perceived-load win
@@ -134,7 +137,7 @@ sessions (agents read fresh memory instead of reconstructing context from code).
        delay with a "Loading…" state or background-prefetch while on the menu.
     2. Optionally a `build.rollupOptions.output.manualChunks` **vendor split** (Phaser in its own chunk) for
        caching across deploys + to silence the >500 kB warning. Secondary — it doesn't defer the download.
-  - Deploy: static host (GitHub Pages); `base` is already `./` in `vite.config.ts`.
+  - Deploy: **done** — Vercel (Vite preset, `npm run build` → `dist`); gated by branch protection on `main`.
 
 ## Verification (end-to-end)
 
@@ -143,7 +146,7 @@ sessions (agents read fresh memory instead of reconstructing context from code).
 3. `pnpm dev` → Vue menu → start game → knight moves/jumps/throws, takes damage (armor→underwear→dead),
    HUD reacts, game over + restart work.
 4. Determinism: a core test with a seeded RNG yields the same result across runs.
-5. CI passes on push (typecheck + lint + test + build).
+5. CI green on every PR — `quality` (typecheck + lint + test + build) **and** `e2e` (smoke) — before merge to `main`.
 6. Living docs: no task is done if it left memory/`AGENTS.md` stale.
 
 ## Parallel agents

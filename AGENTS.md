@@ -68,6 +68,7 @@ src/
 > **First E2E run:** install the browser binary once with `pnpm exec playwright install chromium`.
 > `pnpm test:e2e` builds + serves the app itself (`playwright.config.ts` → `webServer`), so no dev server
 > is needed. Visual baselines (`e2e/*-snapshots/`) are OS-specific — `pnpm test:e2e:update` to regenerate.
+> CI runs **only the smoke flows** (`e2e/smoke.spec.ts`); the macOS-only visual snapshots stay local.
 
 ## 5. SDD + TDD flow (mandatory)
 
@@ -101,7 +102,7 @@ was learned.
 
 ## 7. Quick conventions
 
-- Commits: **Conventional Commits** (`feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`).
+- Commits: **Conventional Commits** (`feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`, `build:`, `ci:`).
 - Test files next to the code: `file.test.ts`. DOM tests opt into jsdom with a `// @vitest-environment jsdom` docblock (default env is `node`).
 - No `Math.random()` in `core/`: use `createRng(seed)` (reproducible determinism).
 - Import aliases: `@core/*`, `@engine/*`, `@ui/*`, `@shared/*`, `@/*`.
@@ -167,3 +168,18 @@ the §5 flow. In Phases 0-3 work serially (shared foundations).
 
 - `docs/PLAN.md` — canonical project plan and roadmap.
 - `docs/GDD.md` — full Game Design Document (levels, enemies, bosses, weapons, scoring).
+
+## 11. CI/CD & branch protection
+
+- **GitHub Actions** (`.github/workflows/ci.yml`) runs on every push to `main` and every PR, in two
+  parallel jobs:
+  - **`quality`** — `typecheck` → `lint` → `test:cov` → `build`.
+  - **`e2e`** — installs Chromium and runs the **smoke** flows (`e2e/smoke.spec.ts`). Visual-regression
+    snapshots are **not** in CI (baselines are macOS-only); run them locally with `pnpm test:e2e`.
+- **`main` is branch-protected** — no direct pushes. Open a PR; both `quality` and `e2e` must be green
+  and the branch up to date before merge (`enforce_admins` on, 0 required reviews — solo-dev friendly).
+- **Deploy:** Vercel (`vercel.json`, Vite preset) deploys **production from `main`**. Since `main` only
+  advances through a passing PR, a red CI gate keeps broken code out of production. Vercel still builds
+  **preview** deploys for branches/PRs regardless of CI.
+- **Workflow:** `git checkout -b <branch>` → commit → `git push -u origin <branch>` →
+  `gh pr create --fill` → wait for green → `gh pr merge --squash`. (Repo is **public** → Actions is free.)
