@@ -109,7 +109,8 @@ was learned.
 
 ## 8. Current status
 
-Phases 0–5 done; Phase 6 (build/deploy) next. Feature-complete greybox: 6 stages on an endless escalating loop with camera
+Phases 0–5 done and Phase 6 **shipped** (live on Vercel, CI/CD + branch protection + security headers in place);
+the only Phase 6 leftover is the optional Phaser code-split. Feature-complete: 6 stages on an endless escalating loop with camera
 scroll. Player FSM (idle/run/jump/crouch/climb/throw/hurt/die + air control), 2-hit armor; enemies
 zombie/flyer/ogre/plant and a boss (HP bar); enemy projectiles, projectile-vs-wall collision,
 **proximity-triggered spawner** (enemies wake as you approach their zone, not on a timer — so the boss no
@@ -158,7 +159,7 @@ fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch ar
 **Procedural audio** (SFX + music, on/off toggle) and an **arcade high-score table** (3-letter initials) are in.
 **Testing pyramid complete** (see `docs/TESTING-PLAN.md`): unit + headless `stepMatch` integration + Vue
 component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 290 Vitest tests green.
-Next: Phase 6 (code-split + deploy). Live detail in `memory/progress.md`.
+Deployed to production on Vercel; the only Phase 6 leftover is the optional Phaser code-split. Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 
@@ -169,6 +170,8 @@ the §5 flow. In Phases 0-3 work serially (shared foundations).
 
 - `docs/PLAN.md` — canonical project plan and roadmap.
 - `docs/GDD.md` — full Game Design Document (levels, enemies, bosses, weapons, scoring).
+- `docs/TESTING-PLAN.md` — the testing pyramid (unit + integration + component + E2E/visual).
+- `docs/ART-LEVELS-PLAN.md` — per-stage art/theme and level-design plan.
 
 ## 11. CI/CD & branch protection
 
