@@ -10,6 +10,7 @@ import {
   DAGGER,
   STARTING_WEAPONS,
   type Projectile,
+  type ProjectileCull,
 } from '@core/weapons/weapon'
 import { openChests, rollReward, createDrop, DROP_W, DROP_H, type Chest } from '@core/level/chest'
 import { createSpawner, isFinished, stepSpawner } from '@core/level/spawner'
@@ -154,6 +155,22 @@ export const createMatch = (
 }
 
 /**
+ * A `spark` VFX at the center of every projectile that was culled by hitting a
+ * wall. Shared by the enemy- and player-projectile passes (both spark on a wall
+ * hit, nowhere else).
+ */
+const sparkOnWallCull = (culled: readonly ProjectileCull[]): Effect[] =>
+  culled
+    .filter((c) => c.reason === 'wall')
+    .map((c) => ({
+      type: 'vfx',
+      name: 'spark',
+      x: c.projectile.pos.x + c.projectile.w / 2,
+      y: c.projectile.pos.y + c.projectile.h / 2,
+      scale: VFX_SCALE.sparkWall,
+    }))
+
+/**
  * Advance the match by one fixed step. Returns the next state and the effects
  * the adapter should present this tick. Faithful re-implementation of the old
  * `GameScene.tick()` orchestration, with effects as data.
@@ -206,16 +223,7 @@ export const stepMatch = (
   for (const r of stepped) if (r.fired.length) enemyProjectiles.push(...r.fired)
   const eadv = advanceProjectilesDetailed(enemyProjectiles, dt, config.bounds, config.solids)
   enemyProjectiles = eadv.alive
-  for (const c of eadv.culled) {
-    if (c.reason === 'wall')
-      effects.push({
-        type: 'vfx',
-        name: 'spark',
-        x: c.projectile.pos.x + c.projectile.w / 2,
-        y: c.projectile.pos.y + c.projectile.h / 2,
-        scale: VFX_SCALE.sparkWall,
-      })
-  }
+  effects.push(...sparkOnWallCull(eadv.culled))
 
   // 3. Throw (+ point-blank jab for arcing weapons).
   let weapon = state.weapon
@@ -237,16 +245,7 @@ export const stepMatch = (
   }
   const wadv = advanceProjectilesDetailed(weapon.projectiles, dt, config.bounds, config.solids)
   weapon = { cooldownLeft: Math.max(0, weapon.cooldownLeft - dt), projectiles: wadv.alive }
-  for (const c of wadv.culled) {
-    if (c.reason === 'wall')
-      effects.push({
-        type: 'vfx',
-        name: 'spark',
-        x: c.projectile.pos.x + c.projectile.w / 2,
-        y: c.projectile.pos.y + c.projectile.h / 2,
-        scale: VFX_SCALE.sparkWall,
-      })
-  }
+  effects.push(...sparkOnWallCull(wadv.culled))
 
   // 4. Player projectiles + jab vs enemies.
   const b = state.player.body
