@@ -6,6 +6,17 @@ A 2D arcade action-platformer inspired by the 90s classics (Ghosts'n Goblins and
 
 > Project language is **English** (code, docs, specs, UI). Development follows **SDD + TDD**.
 
+## Play & links
+
+- 🎮 **Live demo:** <https://grim-knight.vercel.app/>
+- 🖼️ **Slides (presentation):** [Google Slides](https://docs.google.com/presentation/d/1r_BM-OV1oJ5tKKbqUrzC_nWrWvQz8jUW/edit?usp=sharing)
+- 🎬 **Video walkthrough:** <!-- TODO: public video URL --> _(coming soon)_
+- 💻 **Source code:** <https://github.com/davidarenzana/grim-knight>
+- 🔐 **Login:** none — the game requires no authentication, so there is no test user/password.
+
+> This project is the deliverable for a Master's final project (TFM). The documentation, deployment
+> info, slides and video links above all live in this repository, as required.
+
 ## Stack
 
 - **TypeScript** (strict, incl. `noUncheckedIndexedAccess` / `exactOptionalPropertyTypes`) everywhere.
@@ -49,6 +60,27 @@ NES-style: move with the right hand, act with the left.
 | X             | Swap to the next weapon         |
 
 A title screen (START / SELECT STAGE) and a stage-select screen front the game.
+
+## Features
+
+- **6 stages**, each with its own visual theme (ruins / forest / cave / castle / ice / hell), side-scrolling
+  camera and a per-stage **countdown timer** (running out costs a life).
+- **Player model** — walk, jump (near-fixed arc), crouch, ladder climbing; a **2-hit armor** system
+  (`armored → underwear → dead`) with i-frames, knockback and armor pickups.
+- **Weapons** (one active, swapped via chests/drops) — **dagger, torch** (starting kit), **lance, axe**,
+  plus a magician **curse** chest that can downgrade you. Each weapon changes range, arc and fire rate.
+- **Enemies** — zombie, flyer (demon), plant (ranged), ogre, centipede, armored turtle and arcing
+  "bloated" caster; ground foes are **ledge-aware** (they turn at pits). Enemies fire their own projectiles.
+- **Bosses** — escalating boss encounters with a dedicated **HP bar** in the HUD.
+- **Endless escalating loop** — clearing stage 6 sends you around again, harder, across named difficulty
+  tiers (**MORTAL → DAMNED → INFERNAL**): tougher/faster enemies, a stricter clock and a score multiplier.
+- **Moving platforms** — kinematic platforms that oscillate along a segment and carry the rider.
+- **Chests & item drops** — random loot, weapon swaps and the risk/reward magician curse.
+- **Scoring + high-score table** — classic arcade top-ten with 3-letter initials, persisted locally.
+- **Procedural audio** — Web Audio SFX and music synthesised at runtime (no audio files shipped), with an
+  on-screen **on/off toggle** (preference persisted).
+- **Vue HUD & overlays** — score, lives, armor, active weapon, timer, level/loop, pause and game-over/victory
+  screens, all driven off the game event bus.
 
 ## Architecture
 
