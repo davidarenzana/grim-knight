@@ -562,6 +562,20 @@ audit` clean; no `eval`/`v-html`/injection sinks; `sanitizeName` whitelists `[^A
   deploys CI-green code. Flow now: branch → PR → green → squash-merge. See AGENTS.md §11.
 - **Favicon** added (`public/favicon.svg`, a red shield + gold cross; referenced from `index.html`).
 
+## Refactor: GameScene decomposition pass 2 (2026-06-24) 🧹
+
+- `GameScene` had re-grown to 453 lines as features landed, so extracted three more
+  presentation helpers along their existing seams (no behavior change) — see ADR
+  [[0007-module-decomposition-and-named-constants]]:
+  - `engine/render/scenery.ts` (`paintScenery`) — one-shot static stage (backdrop,
+    geometry, ladders, hazards, help text), painted before the dynamic pools.
+  - `engine/render/overlays.ts` (`floatReward`/`floatRewardIcon`/`showBanner`) — the
+    fire-and-forget tween overlays.
+  - `engine/hudBridge.ts` (`emitNotification`/`emitInitialHud`) — notification→bus HUD port.
+- `GameScene` is now ~267 lines (lifecycle + `runEffects` dispatch + `onWin`).
+- 290 Vitest tests + 6 Playwright E2E (incl. visual baselines) + typecheck/lint/build all green;
+  no visual change.
+
 ## Next ⏭️ (Phase 6 build polish, plus optional polish)
 
 - **Phase 6 — build optimization** (deploy itself is done; this is the leftover):
