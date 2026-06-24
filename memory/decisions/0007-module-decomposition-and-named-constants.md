@@ -32,6 +32,18 @@ hygiene/altitude pass, not an architecture change.
     juice trackers; syncs them to `MatchState` each frame
   - `engine/render/sprites.ts` — pure `applySprite` / `enemyAnim` / `knightAnim`
 
+A second pass (2026-06-24) carried the same seams further as `GameScene` re-grew
+with features (453 lines), extracting three more presentation helpers the scene
+now composes — leaving it a ~270-line orchestrator (lifecycle + `runEffects`
+dispatch + `onWin` transition):
+
+- `engine/render/scenery.ts` — `paintScenery`: the one-shot static stage (backdrop,
+  geometry, ladders, hazards, help text). Painted before the dynamic pools.
+- `engine/render/overlays.ts` — `floatReward` / `floatRewardIcon` / `showBanner`:
+  self-contained fire-and-forget tween overlays.
+- `engine/hudBridge.ts` — `emitNotification` / `emitInitialHud`: the HUD port that
+  maps `core/app` notifications (data) onto the Vue event bus.
+
 **Named constants, one place per layer (no inline magic numbers):**
 
 - `core/app/tuning.ts` — gameplay + emitted-presentation values (shake presets,
