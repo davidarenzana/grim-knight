@@ -46,6 +46,7 @@ import {
   CAMERA_FOLLOW_LERP,
   CRATE_MAX_W,
   LADDER_DRAW_PAD,
+  LADDER_TILE_SIZE,
   HELP_TEXT,
   FLOAT_LABEL,
   REWARD_ICON,
@@ -168,11 +169,15 @@ export class GameScene extends Phaser.Scene {
     }
 
     for (const l of this.config.ladders) {
-      // Drawn a touch wider than the thin hitbox so the rungs read.
+      // Drawn a touch wider than the thin hitbox so the rungs read. The square
+      // ladder texture is *tiled* vertically (not stretched) so the rung spacing
+      // stays constant whatever the ladder's height — one tile per draw-width of
+      // height, which keeps each rung square.
+      const drawW = l.w + LADDER_DRAW_PAD
       this.add
-        .image(l.x + l.w / 2, l.y, TILE.ladder)
+        .tileSprite(l.x + l.w / 2, l.y, drawW, l.h, TILE.ladder)
         .setOrigin(0.5, 0)
-        .setDisplaySize(l.w + LADDER_DRAW_PAD, l.h)
+        .setTileScale(drawW / LADDER_TILE_SIZE)
     }
 
     // Hazards (spikes/lava): painted with the theme's hazard tile; the damage

@@ -58,6 +58,8 @@ export const CAMERA_FOLLOW_LERP = 0.12
 export const CRATE_MAX_W = 200
 /** Ladders are drawn this many px wider than their thin hitbox so rungs read. */
 export const LADDER_DRAW_PAD = 12
+/** Native (square) size of the ladder texture; used to tile it without stretch. */
+export const LADDER_TILE_SIZE = 128
 
 /** On-screen help text layout. */
 export const HELP_TEXT = {
