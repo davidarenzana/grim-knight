@@ -1,6 +1,6 @@
 {
   "name": "grim-knight",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Arcade action-platformer inspired by the 90s classics (original IP). Vue 3 + Phaser 3 + TypeScript.",
