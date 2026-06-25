@@ -91,7 +91,11 @@
   `normalizeTable`) and holds no game logic. Client access goes through `src/ui/stores/leaderboard.ts`
   (same-origin `/api/scores`); the **leaderboard is the single source of truth** — there is no local cache,
   so a failed fetch/submit surfaces an error state (`scoresError`) rather than stale data (`persistence.ts`
-  now keeps only the audio preference). Never trust the client: re-validate every field server-side.
+  now keeps only the audio preference). **It is an anonymous public write endpoint, so it is hardened in
+  depth:** per-IP rate limiting (`@upstash/ratelimit`, 429), a same-origin check on POST (403), strict
+  server-side re-validation of every field (never trust the client; injection is impossible — constant Redis
+  key, JSON values), and generic `502`s that never leak the internal error. Full anti-forgery would need
+  auth (accepted limitation — see ADR 0008).
   **The handler is real-tested** (`api/scores.test.ts` runs the actual handler with a mocked Redis — GET/POST/
   validation/error paths), and `vitest.config.ts` enforces a coverage threshold on `api/**`. It is typechecked
   by its own `api/tsconfig.json`, which uses **`moduleResolution: nodenext`** to MATCH how Vercel compiles the

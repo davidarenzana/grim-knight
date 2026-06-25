@@ -48,11 +48,18 @@ installed from the Vercel Marketplace; Vercel KV first-party was retired in Dec 
 - The TFM narrative changes from "fully static, no backend" to "static SPA **+ one serverless function** for
   the global leaderboard; still no user auth and no secrets in the client." Reflected in README / AGENTS /
   GDD / glossary / architecture and `specs/highscores.md`.
-- **New attack surface:** an anonymous, client-writable endpoint. Mitigations: every field re-validated
-  server-side (`parseSubmission` rejects NaN/negative/non-integer/over-`MAX_SCORE` scores and out-of-range
-  level/loop; names sanitized to 3 `[A-Z ]`), and the table is capped at 10. **Known limitation:** without
-  auth, a hand-crafted POST with a _plausible_ score can still forge an entry — acceptable for an arcade demo;
-  documented rather than fully solved. Optional future hardening: Upstash rate-limiting.
+- **New attack surface:** an anonymous, client-writable endpoint. Mitigations (defense-in-depth, all in
+  `api/scores.ts`): (1) **per-IP rate limiting** (`@upstash/ratelimit`, 20 req / 10 s sliding window, shared
+  ephemeral cache) caps floods / Upstash-quota abuse and returns `429 + Retry-After`; (2) a **same-origin
+  check** on POST (Origin/Referer host must match the serving host) blocks another site's browser JS —
+  `403` otherwise; (3) every field re-validated server-side (`parseSubmission` rejects NaN/negative/
+  non-integer/over-`MAX_SCORE` scores and out-of-range level/loop; `sanitizeName` caps raw length then
+  coerces to 3 `[A-Z ]`), the read path re-validates via `normalizeTable`, and storage errors return a
+  **generic** `502` (the cause is logged, never returned). Injection is structurally impossible: the Redis
+  key is a constant and values are stored as JSON. **Known limitation (accepted):** without auth, a
+  hand-crafted POST with a _plausible_ score can still forge an entry, and the origin check is a speed-bump
+  (a non-browser client can omit/spoof the header) — acceptable for an arcade demo. Next step if needed:
+  a bot challenge (Vercel BotID / Cloudflare Turnstile) or a Vercel WAF rate rule at the edge.
 - **Local dev:** `pnpm dev` (Vite only) does not run the function, so the board shows empty/cached and the
   game still works; full local testing uses `vercel dev` after `vercel env pull`. The Upstash integration is
   connected once in the Vercel dashboard, which injects `KV_REST_API_URL`/`KV_REST_API_TOKEN`
