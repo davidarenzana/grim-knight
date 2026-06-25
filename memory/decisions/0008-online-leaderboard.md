@@ -30,9 +30,10 @@ installed from the Vercel Marketplace; Vercel KV first-party was retired in Dec 
   `parseSubmission` + `normalizeTable` + `MAX_SCORE` there). No duplicated logic; the golden rule (pure
   core, no IO) is intact — the function is the IO adapter, the core stays pure.
 - **Client:** `src/ui/stores/leaderboard.ts` (`fetchScores`/`postScore`) calls the **same-origin** endpoint,
-  so the CSP needs **no change** (`connect-src 'self'` already allows it). `persistence.ts` keeps the audio
-  pref and is repurposed as an **offline cache** of the last-seen table; the store (`game.ts`) goes async
-  and degrades gracefully (cached/empty board, `scoresError` flag) when the network or the store is down.
+  so the CSP needs **no change** (`connect-src 'self'` already allows it). The store (`game.ts`) goes async
+  and, when the network or store is down, surfaces an error state (`scoresError`). _(Originally `persistence.ts`
+  also held a localStorage cache of the last-seen table; that was **removed** — see the update below — so the
+  leaderboard is now the single source of truth and `persistence.ts` keeps only the audio pref.)_
 
 ### Why this over the alternatives
 
@@ -61,3 +62,23 @@ installed from the Vercel Marketplace; Vercel KV first-party was retired in Dec 
   compiles the function independently at deploy.
 - See [[0001-engine-core-ui-split]] (golden rule reused server-side) and [[0006-hexagonal-application-layer]]
   (effects/IO at the edges, pure core in the middle).
+
+## Update — 2026-06-25 (two production fixes)
+
+The endpoint shipped broken: **every request returned `FUNCTION_INVOCATION_FAILED` (500)**. Two distinct
+issues, both now fixed and guarded against regression:
+
+1. **ESM import extension (the actual crash).** The project is `"type": "module"`, so Vercel compiles the
+   function with `node16/nodenext` resolution, which **requires explicit `.js` extensions** on relative
+   imports. `import … from '../src/core/rules/highscores'` failed to resolve → the module crashed at
+   **load time**, before the handler ran. Invisible locally because the root `tsconfig` uses
+   `moduleResolution: "Bundler"`. Fix: add the `.js` extension **and** set `api/tsconfig.json` to
+   `nodenext` so `pnpm typecheck`/CI now catch it. See [[vercel-esm-import-extensions]].
+2. **No error handling + a localStorage cache that hid the failure.** The handler had no try/catch (an
+   Upstash error would have been an opaque 500), and the client fell back to a localStorage cache, so the
+   board showed stale local data instead of revealing the outage. Fix: wrap storage ops (return `502
+{error, detail}` + log), and **remove the cache** — the leaderboard is the single source of truth.
+
+**Testing gap that let it ship:** no test loaded/ran the real `api/scores.ts` (the unit tests mocked
+`fetch`). Closed by `api/scores.test.ts` (real handler + mocked Redis) and a coverage threshold on `api/**`
+in `vitest.config.ts`. Lesson: **test the integration seam itself, not just a mock of it.**

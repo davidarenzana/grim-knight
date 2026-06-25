@@ -19,16 +19,20 @@ export default defineConfig({
     // The core runs headless in 'node'. UI/DOM tests opt into jsdom per file with
     // a docblock: `// @vitest-environment jsdom` at the top of the test file.
     environment: 'node',
-    include: ['src/**/*.{test,spec}.ts'],
+    // The serverless function in `api/` is application logic (validate/insert/
+    // persist) and MUST be tested like the rest — a missing test there shipped a
+    // production crash once. Discover its tests alongside `src/`.
+    include: ['src/**/*.{test,spec}.ts', 'api/**/*.{test,spec}.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       // Report the WHOLE app so the real gap is visible (engine/UI are largely
       // untested today). `all: true` lists files even when no test imports them.
       all: true,
-      include: ['src/**/*.{ts,vue}'],
+      include: ['src/**/*.{ts,vue}', 'api/**/*.ts'],
       exclude: [
         'src/**/*.{test,spec}.ts',
+        'api/**/*.{test,spec}.ts',
         'src/**/*.d.ts',
         'src/main.ts', // app bootstrap, no logic to assert
         'src/engine/assets/**', // asset manifests/loaders (verified visually)
@@ -42,6 +46,14 @@ export default defineConfig({
           functions: 80,
           branches: 75,
           statements: 80,
+        },
+        // The one backend seam is enforced too, so it can never regress to the
+        // untested state that let `FUNCTION_INVOCATION_FAILED` ship.
+        'api/**': {
+          lines: 90,
+          functions: 90,
+          branches: 80,
+          statements: 90,
         },
       },
     },

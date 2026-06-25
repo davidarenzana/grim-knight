@@ -3,6 +3,12 @@
 > Status: **done** — all four layers (A–D) landed alongside the hexagonal review (ADR 0006).
 > Unit + headless integration (`core/app/match.test.ts`) + Vue component/store + Playwright E2E/visual
 > are all in place. This doc is kept as the rationale/reference; see `memory/progress.md` for the log.
+>
+> **Added later (ADR 0008):** the one backend seam, the `api/scores.ts` Vercel function, is now a **fifth
+> tested unit** — `api/scores.test.ts` runs the **real handler** (mocked Redis + fake req/res) over
+> GET/POST/validation/error paths, and `vitest.config.ts` enforces a coverage threshold on `api/**`. This
+> closed a gap that shipped a `FUNCTION_INVOCATION_FAILED` to production (the old tests only mocked `fetch`
+> and never loaded the handler). Lesson: **test the integration seam, not a mock of it.**
 
 ## 1. The gap (why bugs slip through)
 
@@ -80,15 +86,16 @@ is closing the engine/integration/visual gap, not deleting unit tests.
 
 ## 5. Bugs we'd have caught directly
 
-| Shipped bug                                                     | Layer that catches it                                                                                |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Enemy inside a crate → stage never clears                       | Already covered by `stages.test.ts` (added after the fact) — **keep**                                |
-| Enemy under the floor (soft-lock)                               | Layer 2 (headless match loop: "every enemy stays reachable / is culled")                             |
-| Freeze after `scene.restart` (dead pools)                       | Layer 2 (restart a match and keep stepping without throwing) + Layer 4 (E2E: kill boss → next stage) |
-| Win / transition never fires                                    | Layer 2                                                                                              |
-| Damage / knockback not applied to the player                    | Layer 2                                                                                              |
-| Floating lava / oversized buttons / static crouch / HUD overlap | Layer 4 (visual regression)                                                                          |
-| Score not rising in the UI                                      | Layer 3 (round-trip event → store → HUD)                                                             |
+| Shipped bug                                                                  | Layer that catches it                                                                                                            |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Enemy inside a crate → stage never clears                                    | Already covered by `stages.test.ts` (added after the fact) — **keep**                                                            |
+| Enemy under the floor (soft-lock)                                            | Layer 2 (headless match loop: "every enemy stays reachable / is culled")                                                         |
+| Freeze after `scene.restart` (dead pools)                                    | Layer 2 (restart a match and keep stepping without throwing) + Layer 4 (E2E: kill boss → next stage)                             |
+| Win / transition never fires                                                 | Layer 2                                                                                                                          |
+| Damage / knockback not applied to the player                                 | Layer 2                                                                                                                          |
+| Floating lava / oversized buttons / static crouch / HUD overlap              | Layer 4 (visual regression)                                                                                                      |
+| Score not rising in the UI                                                   | Layer 3 (round-trip event → store → HUD)                                                                                         |
+| Leaderboard function crashes on every request (`FUNCTION_INVOCATION_FAILED`) | `api/scores.test.ts` (real handler) for logic/error paths + `api/tsconfig.json` on `nodenext` for the ESM import-extension class |
 
 ## 6. Phased rollout
 

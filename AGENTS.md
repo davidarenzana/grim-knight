@@ -53,8 +53,9 @@ api/        Vercel serverless function (global leaderboard) — the ONE backend;
 ```
 
 `api/scores.ts` is the only backend seam: it imports the pure `core/rules/highscores.ts` (validate/insert)
-so the table rules are identical client- and server-side. It is typechecked via `api/tsconfig.json` (Node
-types), wired into `pnpm typecheck`. See ADR [[0008-online-leaderboard]].
+so the table rules are identical client- and server-side. It is real-tested (`api/scores.test.ts`) and
+typechecked via `api/tsconfig.json` (Node types, `nodenext` resolution to match Vercel — relative imports
+need a `.js` extension), wired into `pnpm typecheck`. See ADR [[0008-online-leaderboard]].
 
 ## 4. Commands
 
@@ -163,9 +164,10 @@ fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch ar
 (`engine/render/WorldRenderer`) squashes the idle pose vertically (foot-aligned) while the FSM is in
 `crouch` (the state + shrunk hitbox are real).
 **Procedural audio** (SFX + music, on/off toggle) and a **global online high-score table** (3-letter
-initials; Vercel Function + Upstash Redis, offline cache — ADR 0008) are in.
+initials; Vercel Function + Upstash Redis as the single source of truth, no local cache — ADR 0008) are in.
 **Testing pyramid complete** (see `docs/TESTING-PLAN.md`): unit + headless `stepMatch` integration + Vue
-component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 298 Vitest tests green.
+component/store + **the `api/scores.ts` handler** (Vitest) and **Playwright E2E + visual regression**
+(`e2e/`). 313 Vitest tests green.
 Deployed to production on Vercel; Phase 6 is fully done (the optional Phaser code-split was deliberately dropped). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
@@ -203,8 +205,9 @@ the §5 flow. In Phases 0-3 work serially (shared foundations).
   Vercel dashboard (Marketplace), which injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or
   `UPSTASH_REDIS_REST_URL` / `_TOKEN`) as env vars — read server-side only, never committed (`.env*` is
   gitignored; `.env.example` documents the var names). Local: `cp .env.example .env` (or `vercel env pull`)
-  then `vercel dev` runs the function alongside Vite; plain `pnpm dev` doesn't run it, so the board degrades
-  to empty/cached (by design). Free tier is ample (one JSON key, ≤2 commands/request). See ADR
-  [[0008-online-leaderboard]].
+  then `vercel dev` runs the function alongside Vite; plain `pnpm dev` doesn't run it, so the board shows an
+  error state (there is no local cache). Free tier is ample (one JSON key, ≤2 commands/request). **Gotcha:**
+  `api/` is ESM compiled by Vercel with `nodenext` resolution — relative imports need a `.js` extension; the
+  `api/tsconfig.json` mirrors this so `pnpm typecheck` catches it. See ADR [[0008-online-leaderboard]].
 - **Workflow:** `git checkout -b <branch>` → commit → `git push -u origin <branch>` →
   `gh pr create --fill` → wait for green → `gh pr merge --squash`. (Repo is **public** → Actions is free.)
