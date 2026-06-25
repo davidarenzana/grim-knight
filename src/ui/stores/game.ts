@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { bus, type ArmorState } from '@shared/events'
 import { insertScore, qualifies, sanitizeName, type HighScore } from '@core/rules/highscores'
-import { loadAudioPref, saveAudioPref, loadScores, saveScores } from './persistence'
+import { loadAudioPref, saveAudioPref, loadCachedScores, saveCachedScores } from './persistence'
+import { fetchScores, postScore } from './leaderboard'
 
 export type Screen =
   | 'menu'
@@ -35,15 +36,39 @@ export const useGameStore = defineStore('game', () => {
   /** Audio on/off (persisted). The audio adapter listens for `ui:audio`. */
   const audioOn = ref(loadAudioPref())
 
-  /** Persisted high-score table (top 10, descending). */
-  const scores = ref<HighScore[]>(loadScores())
+  /**
+   * Global high-score table (top 10, descending). Seeded from the offline cache
+   * for an instant first paint, then refreshed from the online leaderboard.
+   */
+  const scores = ref<HighScore[]>(loadCachedScores())
   /** Row index just inserted (for highlight on the table); -1 when none. */
   const lastRank = ref(-1)
   /** The run's final score awaiting initials (set when a run ends qualifying). */
   const pendingScore = ref(0)
+  /** True while a leaderboard fetch/submit is in flight (drives the spinner). */
+  const loadingScores = ref(false)
+  /** True when the last leaderboard request failed (showing cached/offline data). */
+  const scoresError = ref(false)
+
+  /** Pull the latest table from the leaderboard; fall back to the cache on failure. */
+  async function refreshScores(): Promise<void> {
+    loadingScores.value = true
+    scoresError.value = false
+    try {
+      scores.value = await fetchScores()
+    } catch {
+      scoresError.value = true
+      scores.value = loadCachedScores()
+    } finally {
+      loadingScores.value = false
+    }
+  }
 
   /** End-of-run router: jump to initials entry if the score makes the table. */
-  function finishRun(finalScore: number): void {
+  async function finishRun(finalScore: number): Promise<void> {
+    // Refresh first so the qualify check uses the live table (someone else may
+    // have set a higher score since this run started).
+    await refreshScores()
     if (qualifies(scores.value, finalScore)) {
       pendingScore.value = finalScore
       screen.value = 'enterscore'
@@ -73,9 +98,11 @@ export const useGameStore = defineStore('game', () => {
       level.value = e.level
       loop.value = e.loop
     })
-    bus.on('game:over', (e) => finishRun(e.score))
+    bus.on('game:over', (e) => void finishRun(e.score))
     // Tell the audio adapter the persisted preference at boot.
     bus.emit('ui:audio', { on: audioOn.value })
+    // Warm the leaderboard so the menu → high-scores screen is ready.
+    void refreshScores()
   }
 
   /** Flip audio on/off, persist it, and notify the audio adapter. */
@@ -107,25 +134,38 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /** Open the high-score table (from the menu); no row is highlighted. */
-  function openHighScores(): void {
-    scores.value = loadScores()
+  async function openHighScores(): Promise<void> {
     lastRank.value = -1
     screen.value = 'highscores'
+    await refreshScores()
   }
 
-  /** Commit the pending run with the typed initials, persist, show the table. */
-  function submitScore(rawInitials: string): void {
+  /** Commit the pending run with the typed initials to the leaderboard, show the table. */
+  async function submitScore(rawInitials: string): Promise<void> {
     const entry: HighScore = {
       name: sanitizeName(rawInitials),
       score: pendingScore.value,
       level: level.value,
       loop: loop.value,
     }
-    const { table, rank } = insertScore(scores.value, entry)
-    scores.value = table
-    lastRank.value = rank
-    saveScores(table)
     screen.value = 'highscores'
+    loadingScores.value = true
+    scoresError.value = false
+    try {
+      const { table, rank } = await postScore(entry)
+      scores.value = table
+      lastRank.value = rank
+    } catch {
+      // Offline: optimistically insert into the cached table so the run still
+      // shows; it syncs to the server on the next successful submit/refresh.
+      const { table, rank } = insertScore(scores.value, entry)
+      scores.value = table
+      lastRank.value = rank
+      saveCachedScores(table)
+      scoresError.value = true
+    } finally {
+      loadingScores.value = false
+    }
   }
 
   function pause(): void {
@@ -163,7 +203,10 @@ export const useGameStore = defineStore('game', () => {
     scores,
     lastRank,
     pendingScore,
+    loadingScores,
+    scoresError,
     bind,
+    refreshScores,
     toggleAudio,
     startGame,
     openLevels,

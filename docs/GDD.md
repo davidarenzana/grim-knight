@@ -84,7 +84,8 @@ less time (`timeScale`, floored at 0.55), and a score multiplier (`scoreMul`). S
 
 - Points for kills, chests, time bonus per stage, no-damage bonus.
 - Extra life at score thresholds (e.g. every 50k).
-- High-score table (local, persisted).
+- **Global online high-score table** (top-ten, 3-letter initials) — shared across all players via a Vercel
+  Function + Upstash Redis, with a `localStorage` offline cache. See ADR 0008.
 
 ## 9. Controls (default)
 
@@ -120,8 +121,8 @@ below records what made the 1.0 build versus the few design items deliberately l
 - **Levels:** all 6 stages with per-stage **visual themes** (ruins/forest/cave/castle/ice/hell), the
   **endless escalating loop** (MORTAL → DAMNED → INFERNAL), camera scroll, stage timer, moving platforms
   and the position-triggered spawner. Hazards: **jumpable pits (fall-out)** and **spike/lava contact strips**.
-- **Scoring:** points for kills/chests, the score multiplier per loop tier, and the persisted **top-ten
-  high-score table** with 3-letter initials.
+- **Scoring:** points for kills/chests, the score multiplier per loop tier, and a **global online top-ten
+  high-score table** with 3-letter initials (Vercel Function + Upstash Redis; offline cache fallback).
 - **Audio:** procedural Web Audio SFX + music synthesised at runtime, with an on/off toggle (persisted).
 - **Build / deploy:** Vite production build, GitHub Actions CI (quality + e2e) and Vercel deploy from `main`.
 

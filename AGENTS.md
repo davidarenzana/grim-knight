@@ -19,6 +19,7 @@ music or names.
 - **Phaser 3** → render, input, audio, presentation game loop.
 - **Pure-TS logic core** (`src/core/`) → physics, collisions, FSM, rules, AI. Testable.
 - **Pinia** + **mitt** (`src/shared/events.ts`) → decoupled UI ↔ game bridge.
+- **Vercel Function** (`api/scores.ts`) + **Upstash Redis** → the global online leaderboard (one backend seam).
 - **Vitest** (unit + headless integration + Vue component) · **Playwright** (E2E + visual regression, `e2e/`).
 - **ESLint + Prettier** · **Husky + lint-staged + commitlint** · **Vite** · **pnpm**.
 
@@ -48,7 +49,12 @@ src/
     assets/  sprite/tile/effect loaders
   ui/       Vue 3 DRIVING adapter (views/, components/, stores/); color tokens in style.css :root
   shared/   port contract: the `mitt` event bus that bridges engine ↔ ui
+api/        Vercel serverless function (global leaderboard) — the ONE backend; reuses core rules, no logic
 ```
+
+`api/scores.ts` is the only backend seam: it imports the pure `core/rules/highscores.ts` (validate/insert)
+so the table rules are identical client- and server-side. It is typechecked via `api/tsconfig.json` (Node
+types), wired into `pnpm typecheck`. See ADR [[0008-online-leaderboard]].
 
 ## 4. Commands
 
@@ -156,9 +162,10 @@ rectangles: each shot carries a presentation `sprite` tag in core (`spore`/`bull
 fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch art, so the renderer
 (`engine/render/WorldRenderer`) squashes the idle pose vertically (foot-aligned) while the FSM is in
 `crouch` (the state + shrunk hitbox are real).
-**Procedural audio** (SFX + music, on/off toggle) and an **arcade high-score table** (3-letter initials) are in.
+**Procedural audio** (SFX + music, on/off toggle) and a **global online high-score table** (3-letter
+initials; Vercel Function + Upstash Redis, offline cache — ADR 0008) are in.
 **Testing pyramid complete** (see `docs/TESTING-PLAN.md`): unit + headless `stepMatch` integration + Vue
-component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 290 Vitest tests green.
+component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 298 Vitest tests green.
 Deployed to production on Vercel; Phase 6 is fully done (the optional Phaser code-split was deliberately dropped). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
@@ -192,5 +199,11 @@ the §5 flow. In Phases 0-3 work serially (shared foundations).
   failed. To gate the deploy _on_ the checks, move it into a CI `deploy` job (`needs: [quality, e2e]`,
   `vercel deploy --prod`) and disable Vercel's auto-deploy. Vercel still builds **preview** deploys for
   branches/PRs regardless of CI.
+- **Leaderboard backend (`api/scores.ts`):** needs an **Upstash for Redis** store connected once from the
+  Vercel dashboard (Marketplace), which injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or
+  `UPSTASH_REDIS_REST_URL` / `_TOKEN`) as env vars — read server-side only, never committed (`*.local` is
+  gitignored). Local: `vercel env pull` then `vercel dev` runs the function alongside Vite; plain `pnpm dev`
+  doesn't run it, so the board degrades to empty/cached (by design). Free tier is ample (one JSON key,
+  ≤2 commands/request). See ADR [[0008-online-leaderboard]].
 - **Workflow:** `git checkout -b <branch>` → commit → `git push -u origin <branch>` →
   `gh pr create --fill` → wait for green → `gh pr merge --squash`. (Repo is **public** → Actions is free.)

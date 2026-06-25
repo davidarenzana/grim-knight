@@ -11,9 +11,14 @@ const slots = computed(() => Array.from({ length: MAX }, (_, i) => initials.valu
 /** Which slot the next letter fills (clamped so the last slot stays lit). */
 const cursor = computed(() => Math.min(initials.value.length, MAX - 1))
 
+/** Guards against a double Enter before the screen switches to the table. */
+const submitting = ref(false)
+
 function confirm(): void {
+  if (submitting.value) return
+  submitting.value = true
   // sanitizeName (in the store) pads short / empty initials, so any length is fine.
-  game.submitScore(initials.value)
+  void game.submitScore(initials.value)
 }
 
 function onKey(e: KeyboardEvent): void {
@@ -53,7 +58,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         }}</span>
       </div>
       <p class="hint">TYPE A-Z · ENTER TO CONFIRM</p>
-      <button class="btn-pixel is-primary" @click="confirm()">CONFIRM</button>
+      <button class="btn-pixel is-primary" :disabled="submitting" @click="confirm()">
+        CONFIRM
+      </button>
     </div>
   </div>
 </template>

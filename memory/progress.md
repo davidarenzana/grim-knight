@@ -577,6 +577,27 @@ audit` clean; no `eval`/`v-html`/injection sinks; `sanitizeName` whitelists `[^A
 - 290 Vitest tests + 6 Playwright E2E (incl. visual baselines) + typecheck/lint/build all green;
   no visual change.
 
+## Feature: global online leaderboard (2026-06-25) 🌐
+
+- High scores went from per-browser `localStorage` to a **shared global leaderboard** — so other players
+  see (and compete on) the same table. See ADR [[0008-online-leaderboard]].
+- **Backend:** `api/scores.ts` — a Vercel Function backed by **Upstash Redis** (the current "Vercel KV").
+  `GET` returns the top-ten, `POST {name,score,level,loop}` validates + inserts + returns `{table,rank}`.
+  The whole top-ten lives under one JSON key (≤2 commands/request → free-tier safe).
+- **Core reuse / golden rule intact:** added `parseSubmission` + `normalizeTable` + `MAX_SCORE` to the pure
+  `core/rules/highscores.ts`; the function imports them, so table rules are identical on client and server
+  and the function holds no game logic.
+- **Client:** new `ui/stores/leaderboard.ts` (`fetchScores`/`postScore`, same-origin `/api/scores` — no CSP
+  change). `persistence.ts` repurposed as an **offline cache**; the `game` store went async
+  (`refreshScores`, async `finishRun`/`openHighScores`/`submitScore`) with `loadingScores`/`scoresError`
+  state. Views got loading + OFFLINE states; the table degrades gracefully without the network.
+- **Validation/anti-cheat:** every field re-validated server-side (reject NaN/negative/non-integer/over-cap
+  scores, out-of-range level/loop; names sanitized). Known limit: anonymous + client-writable, so a
+  plausible forgery is still possible — documented, acceptable for an arcade demo.
+- `api/` is typechecked via `api/tsconfig.json` (wired into `pnpm typecheck`). 298 Vitest tests +
+  typecheck/lint/build all green. **Setup:** connect the Upstash store in the Vercel dashboard (injects the
+  env vars); local dev uses `vercel env pull` + `vercel dev`.
+
 ## Next ⏭️ (optional polish only — no technical leftovers)
 
 - ~~**Code-split the Phaser chunk**~~ — **DROPPED on purpose (2026-06-25).** The build is one ~1.6 MB
@@ -597,3 +618,4 @@ audit` clean; no `eval`/`v-html`/injection sinks; `sanitizeName` whitelists `[^A
 - One-way (semi-solid) platforms → ADR 0003.
 - Per-level visual themes → ADR 0004.
 - Pits (fall-out) + contact hazards → ADR 0005.
+- Global online leaderboard (Vercel Function + Upstash Redis) → ADR 0008.

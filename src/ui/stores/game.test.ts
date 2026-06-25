@@ -1,16 +1,43 @@
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { bus, type GameEvents } from '@shared/events'
+import { insertScore, parseSubmission, type HighScore } from '@core/rules/highscores'
 import { useGameStore } from './game'
 
-// The store is a pure mirror of the bus + the source of `ui:*` commands. Pinia
-// runs headless (no DOM). Reset the shared bus between tests so a previous
-// test's `bind()` listeners don't linger on the singleton.
+// The store mirrors the bus and drives the online leaderboard (`/api/scores`).
+// Pinia runs headless (no DOM). We stub `fetch` with a faithful mock of the
+// server: it stores a table in `serverTable` and inserts via the SAME pure core
+// (`insertScore`/`parseSubmission`) the real endpoint uses, so the tests exercise
+// the real client⇄server contract. Set `failNetwork` to simulate an outage.
 describe('game store', () => {
+  let serverTable: HighScore[] = []
+  let failNetwork = false
+
+  const jsonResponse = (data: unknown): Response =>
+    ({ ok: true, status: 200, json: async () => data }) as Response
+
   beforeEach(() => {
     bus.all.clear()
     setActivePinia(createPinia())
+    serverTable = []
+    failNetwork = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit): Promise<Response> => {
+        if (failNetwork) throw new Error('network down')
+        if ((init?.method ?? 'GET') === 'POST') {
+          const entry = parseSubmission(JSON.parse(String(init?.body)))
+          if (!entry) return { ok: false, status: 400, json: async () => ({}) } as Response
+          const { table, rank } = insertScore(serverTable, entry)
+          serverTable = table
+          return jsonResponse({ table, rank })
+        }
+        return jsonResponse(serverTable)
+      }),
+    )
   })
+
+  afterEach(() => vi.unstubAllGlobals())
 
   /** Capture the payload of the next `ui:*` command of the given type. */
   const capture = <K extends keyof GameEvents>(event: K): { value: GameEvents[K] | undefined } => {
@@ -60,25 +87,27 @@ describe('game store', () => {
       expect(store.bossActive).toBe(false)
     })
 
-    it('a qualifying terminal event routes to initials entry', () => {
+    it('a qualifying terminal event routes to initials entry', async () => {
       // With an empty table any score makes the top ten → enter initials first.
       const over = useGameStore()
       over.bind()
       bus.emit('game:over', { score: 999 })
-      expect(over.screen).toBe('enterscore')
+      await vi.waitFor(() => expect(over.screen).toBe('enterscore'))
       expect(over.pendingScore).toBe(999)
     })
 
-    it('a non-qualifying terminal event shows the outcome screen directly', () => {
+    it('a non-qualifying terminal event shows the outcome screen directly', async () => {
+      // Pre-fill the leaderboard with ten unbeatable runs.
+      serverTable = Array.from({ length: 10 }, () => ({
+        name: 'AAA',
+        score: 10000,
+        level: 1,
+        loop: 1,
+      }))
       const store = useGameStore()
       store.bind()
-      // Fill the table with ten unbeatable runs.
-      for (let i = 0; i < 10; i++) {
-        bus.emit('game:over', { score: 10000 })
-        store.submitScore('AAA')
-      }
       bus.emit('game:over', { score: 5 })
-      expect(store.screen).toBe('gameover')
+      await vi.waitFor(() => expect(store.screen).toBe('gameover'))
       expect(store.lastRank).toBe(-1)
     })
   })
@@ -139,20 +168,34 @@ describe('game store', () => {
       expect(audio.value).toEqual({ on: store.audioOn })
     })
 
-    it('submitScore commits the run with sanitized initials and shows the table', () => {
+    it('submitScore posts the run with sanitized initials and shows the table', async () => {
       const store = useGameStore()
       store.bind()
       bus.emit('game:level-changed', { level: 4, loop: 2 })
       bus.emit('game:over', { score: 999 })
-      store.submitScore('dav')
+      await vi.waitFor(() => expect(store.screen).toBe('enterscore'))
+      await store.submitScore('dav')
       expect(store.scores[0]).toEqual({ name: 'DAV', score: 999, level: 4, loop: 2 })
       expect(store.lastRank).toBe(0)
       expect(store.screen).toBe('highscores')
     })
 
-    it('openHighScores → highscores with no highlighted row', () => {
+    it('submitScore degrades offline: optimistic local insert + error flag', async () => {
       const store = useGameStore()
-      store.openHighScores()
+      store.bind()
+      bus.emit('game:level-changed', { level: 2, loop: 1 })
+      bus.emit('game:over', { score: 500 })
+      await vi.waitFor(() => expect(store.screen).toBe('enterscore'))
+      failNetwork = true
+      await store.submitScore('zoe')
+      expect(store.scores[0]).toEqual({ name: 'ZOE', score: 500, level: 2, loop: 1 })
+      expect(store.scoresError).toBe(true)
+      expect(store.screen).toBe('highscores')
+    })
+
+    it('openHighScores → highscores with no highlighted row', async () => {
+      const store = useGameStore()
+      await store.openHighScores()
       expect(store.screen).toBe('highscores')
       expect(store.lastRank).toBe(-1)
     })

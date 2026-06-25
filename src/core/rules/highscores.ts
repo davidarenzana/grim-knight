@@ -16,6 +16,13 @@ export interface HighScore {
 /** Classic arcade top-ten. */
 export const MAX_ENTRIES = 10
 
+/**
+ * Sane upper bound for a single run's score. Far above any legitimate run; its
+ * only job is to reject obviously forged submissions to the online leaderboard
+ * (the table is writable by any client, so the server re-validates every field).
+ */
+export const MAX_SCORE = 100_000_000
+
 /** Default initials when none are provided. */
 const DEFAULT_NAME = 'AAA'
 const NAME_LEN = 3
@@ -59,4 +66,42 @@ export const insertScore = (
   if (rank === -1) rank = tableArg.length
   const next = [...tableArg.slice(0, rank), candidate, ...tableArg.slice(rank)]
   return { table: next.slice(0, MAX_ENTRIES), rank }
+}
+
+const isInt = (v: unknown, min: number, max: number): v is number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max
+
+/**
+ * Validate an untrusted leaderboard submission (a parsed request body) into a
+ * clean `HighScore`, or `null` if it is malformed/forged. Pure: the online
+ * endpoint runs this server-side before inserting, so a hand-crafted POST with a
+ * NaN/negative/absurd score, a non-integer level/loop or a junk name is rejected
+ * or coerced rather than trusted. `name` is always sanitized to 3 `[A-Z ]` chars.
+ */
+export const parseSubmission = (body: unknown): HighScore | null => {
+  if (typeof body !== 'object' || body === null) return null
+  const b = body as Record<string, unknown>
+  if (!isInt(b.score, 0, MAX_SCORE)) return null
+  if (!isInt(b.level, 1, 99)) return null
+  if (!isInt(b.loop, 1, 9999)) return null
+  return {
+    name: sanitizeName(typeof b.name === 'string' ? b.name : ''),
+    score: b.score,
+    level: b.level,
+    loop: b.loop,
+  }
+}
+
+/**
+ * Normalize an untrusted array of entries (e.g. parsed from storage or the
+ * network) into a clean, sorted, capped table: drop malformed rows, re-sanitize
+ * names, sort descending and keep the top `MAX_ENTRIES`. Never throws.
+ */
+export const normalizeTable = (value: unknown): HighScore[] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((v) => parseSubmission(v))
+    .filter((e): e is HighScore => e !== null)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_ENTRIES)
 }

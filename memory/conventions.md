@@ -86,6 +86,12 @@
   there is no separate victory screen — clearing the quest shows an in-engine VICTORY banner and plays on.
   The stage-select choice is handed off via the store's `startLevel`, which `GameCanvas.vue` reads and passes
   to `createGame()`. Add a new screen by extending the union + a view, not by touching `GameScene`.
+- **The one backend is `api/scores.ts`** (Vercel Function + Upstash Redis — the global leaderboard). It is a
+  thin IO adapter: it **reuses** the pure `core/rules/highscores.ts` rules (`parseSubmission`/`insertScore`/
+  `normalizeTable`) and holds no game logic. It is typechecked by its own `api/tsconfig.json` (Node types),
+  wired into `pnpm typecheck`. Client access goes through `src/ui/stores/leaderboard.ts` (same-origin
+  `/api/scores`); the store stays async and falls back to the `persistence.ts` offline cache. Never trust the
+  client: re-validate every field server-side. See [[0008-online-leaderboard]].
 - **Audio is a procedural Web Audio adapter** (`engine/audio.ts`): no audio files ship; SFX/music are
   synthesized. `stepMatch` emits `{type:'sound', name}` effects (data) and the scene plays them via
   `playSfx`; the `AudioContext` is created lazily on the first gesture (browser autoplay policy — the START
