@@ -14,3 +14,4 @@ One line per file. Read this first; open only what you need. Keeping it in sync 
   - [0005-hazards-and-pits.md](./decisions/0005-hazards-and-pits.md) — fall-out (pits) and contact hazards.
   - [0006-hexagonal-application-layer.md](./decisions/0006-hexagonal-application-layer.md) — pure `core/app` use case (`stepMatch`) + effects as data; thin Phaser adapter.
   - [0007-module-decomposition-and-named-constants.md](./decisions/0007-module-decomposition-and-named-constants.md) — split GameScene/match.ts into layers; constants in tuning.ts / theme.ts / style.css tokens.
+  - [0008-online-leaderboard.md](./decisions/0008-online-leaderboard.md) — global high-score table via a Vercel Function + Upstash Redis; core rules reused server-side; offline cache fallback.

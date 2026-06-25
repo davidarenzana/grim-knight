@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_ENTRIES, insertScore, qualifies, sanitizeName, type HighScore } from './highscores'
+import {
+  MAX_ENTRIES,
+  MAX_SCORE,
+  insertScore,
+  normalizeTable,
+  parseSubmission,
+  qualifies,
+  sanitizeName,
+  type HighScore,
+} from './highscores'
 
 /** Build a descending table of `n` entries scored `base, base-step, ...`. */
 const table = (n: number, base = 1000, step = 100): HighScore[] =>
@@ -68,5 +77,58 @@ describe('highscores', () => {
     expect(sanitizeName('a1!')).toBe('A  ')
     expect(sanitizeName('')).toBe('AAA')
     expect(sanitizeName('   ')).toBe('AAA')
+  })
+
+  describe('parseSubmission (untrusted leaderboard input)', () => {
+    it('accepts a well-formed entry and sanitizes the name', () => {
+      expect(parseSubmission({ name: 'dav', score: 1200, level: 3, loop: 2 })).toEqual({
+        name: 'DAV',
+        score: 1200,
+        level: 3,
+        loop: 2,
+      })
+    })
+
+    it('rejects forged/garbage scores', () => {
+      expect(parseSubmission({ name: 'AAA', score: -1, level: 1, loop: 1 })).toBeNull()
+      expect(parseSubmission({ name: 'AAA', score: Number.NaN, level: 1, loop: 1 })).toBeNull()
+      expect(parseSubmission({ name: 'AAA', score: 1.5, level: 1, loop: 1 })).toBeNull()
+      expect(parseSubmission({ name: 'AAA', score: MAX_SCORE + 1, level: 1, loop: 1 })).toBeNull()
+      expect(parseSubmission({ name: 'AAA', score: '999', level: 1, loop: 1 })).toBeNull()
+    })
+
+    it('rejects out-of-range or non-integer level/loop', () => {
+      expect(parseSubmission({ name: 'AAA', score: 10, level: 0, loop: 1 })).toBeNull()
+      expect(parseSubmission({ name: 'AAA', score: 10, level: 1, loop: 1.5 })).toBeNull()
+    })
+
+    it('rejects non-objects', () => {
+      expect(parseSubmission(null)).toBeNull()
+      expect(parseSubmission('nope')).toBeNull()
+      expect(parseSubmission(42)).toBeNull()
+    })
+
+    it('defaults a missing/invalid name to AAA', () => {
+      expect(parseSubmission({ score: 10, level: 1, loop: 1 })?.name).toBe('AAA')
+    })
+  })
+
+  describe('normalizeTable (untrusted array)', () => {
+    it('drops malformed rows, sorts descending and caps at ten', () => {
+      const raw = [
+        { name: 'LOW', score: 100, level: 1, loop: 1 },
+        { name: 'BAD', score: -5, level: 1, loop: 1 }, // dropped
+        'junk', // dropped
+        { name: 'HI', score: 900, level: 1, loop: 1 },
+      ]
+      const t = normalizeTable(raw)
+      expect(t.map((e) => e.score)).toEqual([900, 100])
+      expect(t.map((e) => e.name)).toEqual(['HI ', 'LOW'])
+    })
+
+    it('returns [] for non-arrays', () => {
+      expect(normalizeTable(null)).toEqual([])
+      expect(normalizeTable({})).toEqual([])
+    })
   })
 })

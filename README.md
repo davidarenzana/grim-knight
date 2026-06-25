@@ -23,6 +23,8 @@ A 2D arcade action-platformer inspired by the 90s classics (Ghosts'n Goblins and
 - **Phaser 3** — rendering, input, audio, presentation game loop.
 - **Vue 3** (`<script setup>`, Composition API) — title/stage-select menus, HUD, overlays.
 - **Pinia** (UI state) + **mitt** event bus (`src/shared/events.ts`) — decoupled UI ↔ game bridge.
+- **Vercel Function** (`api/scores.ts`) + **Upstash Redis** — the global online high-score leaderboard (the
+  one backend seam; reuses the pure core for validation).
 - Pure-TS logic core (`src/core/`) — physics, collisions, FSM, rules, AI; no engine/UI deps, fully unit-tested.
 - **Vitest** (unit + headless integration + Vue component tests) · **Playwright** (E2E + visual regression, `e2e/`).
 - **ESLint + Prettier** (lint/format) · **Husky + lint-staged + commitlint** (git hooks).
@@ -76,7 +78,8 @@ A title screen (START / SELECT STAGE) and a stage-select screen front the game.
   tiers (**MORTAL → DAMNED → INFERNAL**): tougher/faster enemies, a stricter clock and a score multiplier.
 - **Moving platforms** — kinematic platforms that oscillate along a segment and carry the rider.
 - **Chests & item drops** — random loot, weapon swaps and the risk/reward magician curse.
-- **Scoring + high-score table** — classic arcade top-ten with 3-letter initials, persisted locally.
+- **Scoring + global online high-score table** — classic arcade top-ten with 3-letter initials, shared across
+  all players (Vercel Function + Upstash Redis), with a local offline cache so the board still renders offline.
 - **Procedural audio** — Web Audio SFX and music synthesised at runtime (no audio files shipped), with an
   on-screen **on/off toggle** (preference persisted).
 - **Vue HUD & overlays** — score, lives, armor, active weapon, timer, level/loop, pause and game-over/victory
@@ -92,6 +95,7 @@ src/core/     pure game logic (physics, collisions, FSM, rules, AI) — TDD
 src/engine/   Phaser adapter (renders core state, input, audio)
 src/ui/       Vue 3 shell (menus, HUD, overlays)
 src/shared/   shared types + event bus (mitt)
+api/          Vercel serverless function (global leaderboard) — the one backend; reuses core rules
 ```
 
 ## Docs & process
@@ -116,6 +120,11 @@ src/shared/   shared types + event bus (mitt)
   ships validated code. (Vercel's own build re-runs `vue-tsc` + `vite build`, so a type/build error also
   fails the deploy; tests/lint/e2e are enforced by the PR gate only.) Branches/PRs get preview deploys.
   See AGENTS.md §11 for the flow.
+- **Leaderboard backend** — the `api/scores.ts` function needs an **Upstash for Redis** store connected once
+  from the Vercel dashboard (Marketplace integration), which injects the `KV_REST_API_URL` / `KV_REST_API_TOKEN`
+  env vars (server-side only; never committed). For local development run `vercel env pull` then `vercel dev`
+  (plain `pnpm dev` doesn't run the function — the board just shows empty/cached). Free tier is ample. See
+  `memory/decisions/0008-online-leaderboard.md`.
 
 ## Credits / assets
 

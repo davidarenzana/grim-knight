@@ -10,7 +10,8 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
     <div class="panel-wood card">
       <h2 class="heading">HIGH SCORES</h2>
 
-      <ol v-if="game.scores.length" class="board">
+      <p v-if="game.loadingScores && !game.scores.length" class="empty">LOADING…</p>
+      <ol v-else-if="game.scores.length" class="board">
         <li
           v-for="(s, i) in game.scores"
           :key="i"
@@ -23,6 +24,8 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
         </li>
       </ol>
       <p v-else class="empty">NO SCORES YET — BE THE FIRST</p>
+
+      <p v-if="game.scoresError" class="offline">OFFLINE — SHOWING LAST SEEN</p>
 
       <div class="actions">
         <button class="btn-pixel is-primary" @click="game.startGame()">PLAY AGAIN</button>
@@ -107,6 +110,13 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
   margin: 2cqw 0;
   font-size: 1.9cqw;
   color: var(--wood-mid);
+}
+.offline {
+  margin: 0;
+  font-size: 1.3cqw;
+  color: var(--wood-mid);
+  opacity: 0.8;
+  letter-spacing: 1px;
 }
 .actions {
   display: flex;
