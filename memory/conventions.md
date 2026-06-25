@@ -88,10 +88,16 @@
   to `createGame()`. Add a new screen by extending the union + a view, not by touching `GameScene`.
 - **The one backend is `api/scores.ts`** (Vercel Function + Upstash Redis — the global leaderboard). It is a
   thin IO adapter: it **reuses** the pure `core/rules/highscores.ts` rules (`parseSubmission`/`insertScore`/
-  `normalizeTable`) and holds no game logic. It is typechecked by its own `api/tsconfig.json` (Node types),
-  wired into `pnpm typecheck`. Client access goes through `src/ui/stores/leaderboard.ts` (same-origin
-  `/api/scores`); the store stays async and falls back to the `persistence.ts` offline cache. Never trust the
-  client: re-validate every field server-side. See [[0008-online-leaderboard]].
+  `normalizeTable`) and holds no game logic. Client access goes through `src/ui/stores/leaderboard.ts`
+  (same-origin `/api/scores`); the **leaderboard is the single source of truth** — there is no local cache,
+  so a failed fetch/submit surfaces an error state (`scoresError`) rather than stale data (`persistence.ts`
+  now keeps only the audio preference). Never trust the client: re-validate every field server-side.
+  **The handler is real-tested** (`api/scores.test.ts` runs the actual handler with a mocked Redis — GET/POST/
+  validation/error paths), and `vitest.config.ts` enforces a coverage threshold on `api/**`. It is typechecked
+  by its own `api/tsconfig.json`, which uses **`moduleResolution: nodenext`** to MATCH how Vercel compiles the
+  ESM function — relative imports there need an explicit `.js` extension (e.g. `'../src/.../highscores.js'`),
+  and `pnpm typecheck` now fails on a missing one. See [[0008-online-leaderboard]] and
+  [[vercel-esm-import-extensions]].
 - **Audio is a procedural Web Audio adapter** (`engine/audio.ts`): no audio files ship; SFX/music are
   synthesized. `stepMatch` emits `{type:'sound', name}` effects (data) and the scene plays them via
   `playSfx`; the `AudioContext` is created lazily on the first gesture (browser autoplay policy — the START
@@ -99,7 +105,8 @@
   on/off (`localStorage`).
 - **Guard `localStorage` in the store:** `src/ui/stores/game.ts` is unit-tested in the **node** env where
   `localStorage` is undefined — wrap any access in `typeof localStorage !== 'undefined'` + try/catch (see
-  the audio preference helpers), or the store tests throw at import/setup.
+  the audio preference helpers in `persistence.ts`, the only thing kept in `localStorage` now), or the store
+  tests throw at import/setup.
 - **Phaser `Scene` already has a `renderer` property** (the WebGL/Canvas renderer). A scene field
   holding our own renderer must use a different name — `GameScene` calls it `world` (a `WorldRenderer`);
   shadowing `renderer` breaks `this`-as-`Scene` assignability across the file.

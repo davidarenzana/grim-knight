@@ -1,7 +1,7 @@
 # Spec: High score table (top-10, 3-letter initials)
 
 - **Status:** implemented
-- **Owner module(s):** `src/core/rules/highscores.ts` (pure table logic + validation), `api/scores.ts` (Vercel Function + Upstash Redis — source of truth), `src/ui/stores/leaderboard.ts` (client), `src/ui/stores/persistence.ts` (offline cache), `src/ui/stores/game.ts` (screen flow)
+- **Owner module(s):** `src/core/rules/highscores.ts` (pure table logic + validation), `api/scores.ts` (Vercel Function + Upstash Redis — single source of truth), `src/ui/stores/leaderboard.ts` (client), `src/ui/stores/game.ts` (screen flow). `src/ui/stores/persistence.ts` keeps only the audio preference — no score cache.
 - **Related:** scoring-lives.md, GDD §8 (scoring), ADR 0008 (online leaderboard)
 
 ## Summary
@@ -11,8 +11,8 @@ player's three-letter initials, sorted by score (descending) and capped at ten. 
 table math and validation (does a score qualify? where does it land? is a submission well-formed?). The
 source of truth is the Vercel Function `api/scores.ts` (Upstash Redis, the whole top-ten under one JSON
 key), which **reuses the same pure core** to validate and insert. The client (`leaderboard.ts`) calls the
-same-origin `/api/scores`; `persistence.ts` keeps a `localStorage` offline cache so the board still renders
-without the network; the UI store owns the screen flow.
+same-origin `/api/scores` and is the **single source of truth — there is no local cache**: if the network or
+store is unavailable the board shows an error state rather than stale data. The UI store owns the screen flow.
 
 ## Scenarios (Given / When / Then)
 
@@ -87,12 +87,13 @@ without the network; the UI store owns the screen flow.
 - **Then** the server validates + inserts via the pure core, persists the new table to Redis, and returns
   `{ table, rank }` with the 0-based rank of the new row
 
-### Scenario: offline degradation
+### Scenario: leaderboard unreachable
 
 - **Given** the network (or the store) is unavailable
 - **When** the player opens the board or submits a run
-- **Then** the game does not crash: the board shows the cached/last-seen table (or empty) with an OFFLINE
-  note, and a submit optimistically inserts into the cache to sync on the next successful request
+- **Then** the game does not crash: the board shows an error state (`scoresError`) — "couldn't reach the
+  leaderboard" — and the failed submit is NOT recorded locally (the leaderboard is the single source of
+  truth; there is no cache or optimistic insert)
 
 ## Acceptance criteria
 

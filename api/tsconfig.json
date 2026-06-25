@@ -3,6 +3,13 @@
   "compilerOptions": {
     "types": ["node"],
     "lib": ["ES2022"],
+    // Match how Vercel compiles the function (ESM, "type": "module"). The root
+    // config uses "Bundler" resolution, which tolerates extensionless relative
+    // imports — but Vercel uses node16/nodenext, which does NOT. Mirroring it
+    // here makes `pnpm typecheck` fail locally/in CI on a missing `.js`
+    // extension, instead of shipping a FUNCTION_INVOCATION_FAILED to prod.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "noEmit": true
   },
   "include": ["**/*.ts", "../src/core/rules/highscores.ts"]
