@@ -137,7 +137,8 @@ sessions (agents read fresh memory instead of reconstructing context from code).
        delay with a "Loading…" state or background-prefetch while on the menu.
     2. Optionally a `build.rollupOptions.output.manualChunks` **vendor split** (Phaser in its own chunk) for
        caching across deploys + to silence the >500 kB warning. Secondary — it doesn't defer the download.
-  - Deploy: **done** — Vercel (Vite preset, `npm run build` → `dist`); gated by branch protection on `main`.
+  - Deploy: **done** — live at <https://grim-knight.vercel.app/> — Vercel (Vite preset, `npm run build` →
+    `dist`); gated by branch protection on `main`.
 
 ## Verification (end-to-end)
 

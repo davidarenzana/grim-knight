@@ -5,7 +5,6 @@ import { createStepper, type Stepper } from '@core/sim/loop'
 import { type Player } from '@core/fsm/player'
 import { nextOwnedWeapon } from '@core/weapons/weapon'
 import { LEVELS } from '@core/level/level'
-import { type ChestReward } from '@core/level/chest'
 import { type Session } from '@core/rules/session'
 import { difficultyForLoop } from '@core/rules/difficulty'
 import {
@@ -15,7 +14,6 @@ import {
   type MatchConfig,
   type MatchState,
   type Effect,
-  type GameNotification,
 } from '@core/app'
 import {
   preloadSprites,
@@ -25,33 +23,16 @@ import {
   preloadEnemyProjectiles,
   createEnemyProjectileAnims,
 } from '@engine/assets/sprites'
-import { preloadTiles, bgKey, groundKey, hazardKey, TILE } from '@engine/assets/tiles'
-import {
-  preloadEffects,
-  createEffectAnims,
-  preloadIcons,
-  playEffect,
-  rewardIcon,
-} from '@engine/assets/effects'
+import { preloadTiles } from '@engine/assets/tiles'
+import { preloadEffects, createEffectAnims, preloadIcons, playEffect } from '@engine/assets/effects'
 import { bus } from '@shared/events'
 import { playSfx, startMusic, stopMusic } from '@engine/audio'
 import { createKeymap, readInput, swapJustPressed, type Keymap } from '@engine/input/keymap'
 import { WorldRenderer } from '@engine/render/WorldRenderer'
-import {
-  UI_FONT,
-  COLOR,
-  DEPTH,
-  DURATION,
-  BANNER,
-  CAMERA_FOLLOW_LERP,
-  CRATE_MAX_W,
-  LADDER_DRAW_PAD,
-  HELP_TEXT,
-  FLOAT_LABEL,
-  REWARD_ICON,
-  STAGE_CLEAR_MS,
-  SEED_MIX,
-} from '@engine/render/theme'
+import { paintScenery } from '@engine/render/scenery'
+import { floatReward, floatRewardIcon, showBanner } from '@engine/render/overlays'
+import { emitInitialHud, emitNotification } from '@engine/hudBridge'
+import { CAMERA_FOLLOW_LERP, REWARD_ICON, STAGE_CLEAR_MS, SEED_MIX } from '@engine/render/theme'
 
 /** Registry key the first GameScene reads to learn which stage to start at. */
 export const START_LEVEL_KEY = 'startLevel'
@@ -147,39 +128,9 @@ export class GameScene extends Phaser.Scene {
     this.prev = this.state.player
     this.stepper = createStepper(FIXED_DT)
 
-    // Static full-screen backdrop behind the world.
-    this.cameras.main.setBackgroundColor(COLOR.cameraBackground)
-    this.add
-      .image(0, 0, bgKey(level.theme))
-      .setOrigin(0, 0)
-      .setDisplaySize(this.scale.width, view)
-      .setScrollFactor(0)
-      .setDepth(DEPTH.backdrop)
-
-    // Geometry: small solids = wooden crate; everything else (ground + one-way
-    // ledges) = the grassy ground tile, so floating platforms are clearly drawn.
-    for (const s of this.config.solids) {
-      if (s.x + s.w <= 0 || s.x >= level.worldWidth) continue // skip boundary walls
-      if (!s.oneWay && s.w < CRATE_MAX_W) {
-        this.add.image(s.x, s.y, TILE.crate).setOrigin(0, 0).setDisplaySize(s.w, s.h)
-      } else {
-        this.add.tileSprite(s.x, s.y, s.w, s.h, groundKey(level.theme)).setOrigin(0, 0)
-      }
-    }
-
-    for (const l of this.config.ladders) {
-      // Drawn a touch wider than the thin hitbox so the rungs read.
-      this.add
-        .image(l.x + l.w / 2, l.y, TILE.ladder)
-        .setOrigin(0.5, 0)
-        .setDisplaySize(l.w + LADDER_DRAW_PAD, l.h)
-    }
-
-    // Hazards (spikes/lava): painted with the theme's hazard tile; the damage
-    // check itself lives in stepMatch.
-    for (const h of this.config.hazards) {
-      this.add.tileSprite(h.x, h.y, h.w, h.h, hazardKey(level.theme)).setOrigin(0, 0)
-    }
+    // Static scenery (backdrop, geometry, ladders, hazards, help text). Painted
+    // before the dynamic pools so it sits behind the moving sprites.
+    paintScenery(this, this.config, level, view)
 
     // (Re)build the dynamic render pools (knight, platforms, entity sprites).
     // scene.restart() destroys all GameObjects, so the renderer starts fresh.
@@ -190,25 +141,6 @@ export class GameScene extends Phaser.Scene {
     // vertically), following the knight.
     this.cameras.main.setBounds(0, 0, level.worldWidth, worldHeight)
     this.cameras.main.startFollow(this.world.knight, true, CAMERA_FOLLOW_LERP, CAMERA_FOLLOW_LERP)
-
-    // Fixed on-screen help, pinned to the bottom so it never overlaps the Vue
-    // HUD (lives/score/time) which sits along the top of the canvas.
-    this.add
-      .text(
-        HELP_TEXT.x,
-        view - HELP_TEXT.bottomMargin,
-        `${level.name.toUpperCase()}   MOVE ←→  JUMP ↑  CROUCH ↓  THROW Z  SWAP X`,
-        {
-          fontFamily: UI_FONT,
-          fontSize: HELP_TEXT.fontSize,
-          color: COLOR.helpText,
-          backgroundColor: COLOR.helpBackground,
-          padding: HELP_TEXT.padding,
-        },
-      )
-      .setScrollFactor(0)
-      .setOrigin(0, 1)
-      .setDepth(DEPTH.helpText)
 
     this.keys = createKeymap(this.input.keyboard!)
 
@@ -223,13 +155,7 @@ export class GameScene extends Phaser.Scene {
     })
 
     // Initial HUD state (read from the freshly-built match).
-    bus.emit('game:ready')
-    bus.emit('game:armor-changed', { armor: this.state.player.armor.state })
-    bus.emit('game:lives-changed', { lives: this.state.session.lives })
-    bus.emit('game:score-changed', { score: this.state.session.score })
-    bus.emit('game:weapon-changed', { weapon: this.state.activeWeapon.id })
-    bus.emit('game:time-changed', { secondsLeft: this.state.timer.secondsLeft })
-    bus.emit('game:level-changed', { level: this.levelIndex + 1, loop: this.loop })
+    emitInitialHud(this.state, this.levelIndex, this.loop)
   }
 
   update(time: number, delta: number): void {
@@ -283,126 +209,14 @@ export class GameScene extends Phaser.Scene {
         case 'float':
           // The sparkle burst comes through as its own `vfx` effect; here we pop
           // the reward icon (a touch above the label) and the floating label.
-          this.floatRewardIcon(e.x, e.y + REWARD_ICON.iconOffsetY, e.reward)
-          this.floatReward(e.x, e.y, e.label, e.color)
+          floatRewardIcon(this, e.x, e.y + REWARD_ICON.iconOffsetY, e.reward)
+          floatReward(this, e.x, e.y, e.label, e.color)
           break
         case 'notify':
-          this.emitNotification(e.notification)
+          emitNotification(e.notification)
           break
       }
     }
-  }
-
-  /** Map an application notification onto the UI event bus. */
-  private emitNotification(n: GameNotification): void {
-    switch (n.kind) {
-      case 'score':
-        bus.emit('game:score-changed', { score: n.score })
-        break
-      case 'lives':
-        bus.emit('game:lives-changed', { lives: n.lives })
-        break
-      case 'armor':
-        bus.emit('game:armor-changed', { armor: n.armor })
-        break
-      case 'weapon':
-        bus.emit('game:weapon-changed', { weapon: n.weapon })
-        break
-      case 'time':
-        bus.emit('game:time-changed', { secondsLeft: n.secondsLeft })
-        break
-      case 'level':
-        bus.emit('game:level-changed', { level: n.level, loop: n.loop })
-        break
-      case 'boss-hp':
-        bus.emit('game:boss-hp', { hp: n.hp, maxHp: n.maxHp })
-        break
-      case 'boss-cleared':
-        bus.emit('game:boss-cleared')
-        break
-      case 'over':
-        bus.emit('game:over', { score: n.score })
-        break
-    }
-  }
-
-  /**
-   * Pop a chest reward's icon out of the chest: it scales up with a little
-   * bounce, then drifts up and fades. Weapons show their projectile art, the
-   * rest show a dungeon item icon (heart/coin/gem/star).
-   */
-  private floatRewardIcon(x: number, y: number, reward: ChestReward): void {
-    const icon = rewardIcon(reward)
-    const spr = this.add
-      .image(x, y, icon.key, icon.frame)
-      .setOrigin(0.5, 0.5)
-      .setDepth(DEPTH.rewardIcon)
-      .setScale(REWARD_ICON.startScale)
-    if (icon.tint !== undefined) spr.setTint(icon.tint)
-    this.tweens.add({
-      targets: spr,
-      scale: REWARD_ICON.popScale,
-      y: y - REWARD_ICON.popRiseY,
-      duration: DURATION.rewardIconPop,
-      ease: 'Back.out',
-      onComplete: () => {
-        this.tweens.add({
-          targets: spr,
-          y: y - REWARD_ICON.fadeRiseY,
-          alpha: 0,
-          duration: DURATION.rewardIconFade,
-          ease: 'Cubic.in',
-          onComplete: () => spr.destroy(),
-        })
-      },
-    })
-  }
-
-  /** A short-lived label that floats up and fades (chest pickups). */
-  private floatReward(x: number, y: number, label: string, color: string): void {
-    const t = this.add
-      .text(x, y - FLOAT_LABEL.startOffsetY, label, {
-        fontFamily: UI_FONT,
-        fontSize: FLOAT_LABEL.fontSize,
-        color,
-        stroke: COLOR.textStroke,
-        strokeThickness: FLOAT_LABEL.strokeThickness,
-      })
-      .setOrigin(0.5, 1)
-      .setDepth(DEPTH.floatLabel)
-    this.tweens.add({
-      targets: t,
-      y: y - FLOAT_LABEL.riseY,
-      scale: { from: FLOAT_LABEL.startScale, to: 1 },
-      alpha: { from: 1, to: 0 },
-      duration: DURATION.floatLabel,
-      ease: 'Cubic.out',
-      onComplete: () => t.destroy(),
-    })
-  }
-
-  /** A centered banner (e.g. "STAGE CLEAR!") that pops in and holds. */
-  private showBanner(text: string): void {
-    const cam = this.cameras.main
-    const banner = this.add
-      .text(cam.width / 2, cam.height / 2, text, {
-        fontFamily: UI_FONT,
-        fontSize: BANNER.fontSize,
-        color: COLOR.bannerText,
-        stroke: COLOR.textStroke,
-        strokeThickness: BANNER.strokeThickness,
-        align: 'center',
-        lineSpacing: BANNER.lineSpacing,
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(DEPTH.banner)
-    this.tweens.add({
-      targets: banner,
-      scale: { from: BANNER.startScale, to: 1 },
-      duration: DURATION.banner,
-      ease: 'Back.out',
-    })
   }
 
   /**
@@ -421,7 +235,7 @@ export class GameScene extends Phaser.Scene {
     const activeWeapon = this.state.activeWeapon.id
 
     if (!lastLevel) {
-      this.showBanner('STAGE CLEAR!')
+      showBanner(this, 'STAGE CLEAR!')
       const next = {
         levelIndex: this.levelIndex + 1,
         loop: this.loop,
@@ -441,7 +255,7 @@ export class GameScene extends Phaser.Scene {
       this.loop === 1
         ? `VICTORY!\nTHE CURSE DEEPENS — ${nextTier}`
         : `${nextTier}!\nTHE LOOP TIGHTENS`
-    this.showBanner(banner)
+    showBanner(this, banner)
     const next = { levelIndex: 0, loop: nextLoop, session, ownedWeapons, activeWeapon }
     this.time.delayedCall(STAGE_CLEAR_MS, () => this.scene.restart(next))
   }
