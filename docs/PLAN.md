@@ -130,15 +130,15 @@ sessions (agents read fresh memory instead of reconstructing context from code).
 - **Phase 5 — Art pass & juice:** integrate CC0/original assets over defined asset contracts; animations,
   particles, screen shake, transitions, music. Code unchanged, placeholders swapped.
 - **Phase 6 — Build & publish:** production build, asset optimization, deploy (**Vercel**, live), README.
-  - **Code-split the Phaser chunk** (the build is one ~1.6 MB / 384 kB-gzip JS bundle, ~90% Phaser). Plan:
-    1. **Lazy-load Phaser** — make `GameCanvas`/`@engine/game` a dynamic `import()` (e.g. `defineAsyncComponent`)
-       so the Vue **menu boots without Phaser**; the engine chunk loads on START. Biggest perceived-load win
-       (the player sits on the title screen first; Phaser isn't needed until `playing`). Mask the first-START
-       delay with a "Loading…" state or background-prefetch while on the menu.
-    2. Optionally a `build.rollupOptions.output.manualChunks` **vendor split** (Phaser in its own chunk) for
-       caching across deploys + to silence the >500 kB warning. Secondary — it doesn't defer the download.
   - Deploy: **done** — live at <https://grim-knight.vercel.app/> — Vercel (Vite preset, `npm run build` →
     `dist`); gated by branch protection on `main`.
+  - **Code-split the Phaser chunk — DROPPED (deliberate, 2026-06-25).** The build is one ~1.6 MB /
+    384 kB-gzip JS bundle (~90% Phaser). Decided **not** to split it: ~384 kB gzip is normal for a game
+    bundle, the app loads fast in practice, and the player sits on the title screen first anyway. Vite's
+    > 500 kB warning is about the _uncompressed_ size and is generic web-content advice, not relevant to a
+    > game canvas. If load time ever becomes a real problem, the original plan was: (1) lazy-load Phaser via a
+    > dynamic `import()` of `GameCanvas`/`@engine/game` so the Vue menu boots without it; (2) optionally a
+    > `manualChunks` vendor split for cross-deploy caching.
 
 ## Verification (end-to-end)
 

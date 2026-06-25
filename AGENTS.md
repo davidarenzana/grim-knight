@@ -110,7 +110,7 @@ was learned.
 ## 8. Current status
 
 Phases 0–5 done and Phase 6 **shipped** (live on Vercel, CI/CD + branch protection + security headers in place);
-the only Phase 6 leftover is the optional Phaser code-split. Feature-complete: 6 stages on an endless escalating loop with camera
+Phase 6 is fully done (the optional Phaser code-split was deliberately dropped — see progress.md). Feature-complete: 6 stages on an endless escalating loop with camera
 scroll. Player FSM (idle/run/jump/crouch/climb/throw/hurt/die + air control), 2-hit armor; enemies
 zombie/flyer/ogre/plant and a boss (HP bar); enemy projectiles, projectile-vs-wall collision,
 **proximity-triggered spawner** (enemies wake as you approach their zone, not on a timer — so the boss no
@@ -159,7 +159,7 @@ fallback). **Crouch has no sprite sheet** — the knight pack ships no Crouch ar
 **Procedural audio** (SFX + music, on/off toggle) and an **arcade high-score table** (3-letter initials) are in.
 **Testing pyramid complete** (see `docs/TESTING-PLAN.md`): unit + headless `stepMatch` integration + Vue
 component/store (Vitest) and **Playwright E2E + visual regression** (`e2e/`). 290 Vitest tests green.
-Deployed to production on Vercel; the only Phase 6 leftover is the optional Phaser code-split. Live detail in `memory/progress.md`.
+Deployed to production on Vercel; Phase 6 is fully done (the optional Phaser code-split was deliberately dropped). Live detail in `memory/progress.md`.
 
 ## 9. Parallel agents
 
