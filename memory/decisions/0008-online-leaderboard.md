@@ -55,7 +55,8 @@ installed from the Vercel Marketplace; Vercel KV first-party was retired in Dec 
 - **Local dev:** `pnpm dev` (Vite only) does not run the function, so the board shows empty/cached and the
   game still works; full local testing uses `vercel dev` after `vercel env pull`. The Upstash integration is
   connected once in the Vercel dashboard, which injects `KV_REST_API_URL`/`KV_REST_API_TOKEN`
-  (or `UPSTASH_REDIS_REST_URL`/`_TOKEN`) — read by `api/scores.ts`, never committed (`*.local` is gitignored).
+  (or `UPSTASH_REDIS_REST_URL`/`_TOKEN`) — read by `api/scores.ts`, never committed (`.env*` is gitignored;
+  `.env.example` documents the var names). Production reads them from Vercel's env, not from any repo file.
 - `api/` is typechecked via its own `api/tsconfig.json` (Node types) wired into `pnpm typecheck`; Vercel
   compiles the function independently at deploy.
 - See [[0001-engine-core-ui-split]] (golden rule reused server-side) and [[0006-hexagonal-application-layer]]

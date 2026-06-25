@@ -122,9 +122,10 @@ api/          Vercel serverless function (global leaderboard) — the one backen
   See AGENTS.md §11 for the flow.
 - **Leaderboard backend** — the `api/scores.ts` function needs an **Upstash for Redis** store connected once
   from the Vercel dashboard (Marketplace integration), which injects the `KV_REST_API_URL` / `KV_REST_API_TOKEN`
-  env vars (server-side only; never committed). For local development run `vercel env pull` then `vercel dev`
-  (plain `pnpm dev` doesn't run the function — the board just shows empty/cached). Free tier is ample. See
-  `memory/decisions/0008-online-leaderboard.md`.
+  env vars (server-side only; never committed — `.env*` is gitignored, see `.env.example`). Production reads
+  these from Vercel, not from any repo file. For local development `cp .env.example .env` (or `vercel env pull`)
+  then `vercel dev` (plain `pnpm dev` doesn't run the function — the board just shows empty/cached). Free tier
+  is ample. See `memory/decisions/0008-online-leaderboard.md`.
 
 ## Credits / assets
 

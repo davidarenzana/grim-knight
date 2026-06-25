@@ -201,9 +201,10 @@ the §5 flow. In Phases 0-3 work serially (shared foundations).
   branches/PRs regardless of CI.
 - **Leaderboard backend (`api/scores.ts`):** needs an **Upstash for Redis** store connected once from the
   Vercel dashboard (Marketplace), which injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or
-  `UPSTASH_REDIS_REST_URL` / `_TOKEN`) as env vars — read server-side only, never committed (`*.local` is
-  gitignored). Local: `vercel env pull` then `vercel dev` runs the function alongside Vite; plain `pnpm dev`
-  doesn't run it, so the board degrades to empty/cached (by design). Free tier is ample (one JSON key,
-  ≤2 commands/request). See ADR [[0008-online-leaderboard]].
+  `UPSTASH_REDIS_REST_URL` / `_TOKEN`) as env vars — read server-side only, never committed (`.env*` is
+  gitignored; `.env.example` documents the var names). Local: `cp .env.example .env` (or `vercel env pull`)
+  then `vercel dev` runs the function alongside Vite; plain `pnpm dev` doesn't run it, so the board degrades
+  to empty/cached (by design). Free tier is ample (one JSON key, ≤2 commands/request). See ADR
+  [[0008-online-leaderboard]].
 - **Workflow:** `git checkout -b <branch>` → commit → `git push -u origin <branch>` →
   `gh pr create --fill` → wait for green → `gh pr merge --squash`. (Repo is **public** → Actions is free.)
