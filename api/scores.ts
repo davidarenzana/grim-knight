@@ -5,7 +5,7 @@ import {
   normalizeTable,
   parseSubmission,
   type HighScore,
-} from '../src/core/rules/highscores'
+} from '../src/core/rules/highscores.js'
 
 /**
  * Online leaderboard endpoint (Vercel Function + Upstash Redis).
