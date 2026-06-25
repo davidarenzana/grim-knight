@@ -6,6 +6,9 @@
 
 ## 1. The gap (why bugs slip through)
 
+> Historical snapshot — these are the **pre-refactor** numbers that motivated the plan. `GameScene.ts` was
+> later split (engine extraction + ADR 0006/0007) down to ~260 lines and all four test layers landed.
+
 | Fact                                       | Evidence                                                                                      |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------- |
 | Coverage measures **`src/core/**` only\*\* | `vitest.config.ts` → `coverage.include`. The "80% green" ignores engine and UI.               |

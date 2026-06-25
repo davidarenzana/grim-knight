@@ -4,7 +4,9 @@ import type { ArmorState } from '@core/rules/armor'
 /**
  * Event bus that decouples the simulation (Phaser/core) from the UI (Vue/Pinia).
  * - The game EMITS `game:*` events that the UI consumes to render the HUD.
- * - The UI EMITS `ui:*` commands that the game consumes (pause, restart...).
+ * - The UI EMITS `ui:*` commands that the game consumes (pause, resume, audio).
+ *   Start/restart/quit are driven by mounting/unmounting `GameCanvas` (the
+ *   `screen` state), not by the bus, so no command event is needed for them.
  * Neither side imports the other directly.
  */
 
@@ -23,11 +25,8 @@ export type GameEvents = {
   'game:boss-cleared': void
   'game:over': { score: number }
 
-  'ui:start': { level?: number }
   'ui:pause': void
   'ui:resume': void
-  'ui:restart': void
-  'ui:quit': void
   /** Audio on/off toggle (the audio adapter mutes its master gain). */
   'ui:audio': { on: boolean }
 }

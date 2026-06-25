@@ -84,13 +84,11 @@ describe('game store', () => {
   })
 
   describe('UI actions switch screens and emit ui:* commands', () => {
-    it('startGame → playing, startLevel 0, ui:start', () => {
+    it('startGame → playing, startLevel 0', () => {
       const store = useGameStore()
-      const started = capture('ui:start')
       store.startGame()
       expect(store.screen).toBe('playing')
       expect(store.startLevel).toBe(0)
-      expect(started.value).toEqual({})
     })
 
     it('openLevels → levels (no command)', () => {
@@ -99,13 +97,11 @@ describe('game store', () => {
       expect(store.screen).toBe('levels')
     })
 
-    it('startAtLevel(i) → playing, startLevel i, ui:start{level:i}', () => {
+    it('startAtLevel(i) → playing, startLevel i', () => {
       const store = useGameStore()
-      const started = capture('ui:start')
       store.startAtLevel(3)
       expect(store.screen).toBe('playing')
       expect(store.startLevel).toBe(3)
-      expect(started.value).toEqual({ level: 3 })
     })
 
     it('backToMenu → menu', () => {
@@ -161,16 +157,12 @@ describe('game store', () => {
       expect(store.lastRank).toBe(-1)
     })
 
-    it('restart → playing + ui:restart; quitToMenu → menu + ui:quit', () => {
+    it('restart → playing; quitToMenu → menu', () => {
       const store = useGameStore()
-      const restarted = fired('ui:restart')
-      const quit = fired('ui:quit')
       store.restart()
       expect(store.screen).toBe('playing')
-      expect(restarted.value).toBe(true)
       store.quitToMenu()
       expect(store.screen).toBe('menu')
-      expect(quit.value).toBe(true)
     })
   })
 })

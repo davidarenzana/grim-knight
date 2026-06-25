@@ -29,10 +29,10 @@ Clearing a level (wave finished + all enemies dead) advances to the next level, 
 - **When** the win condition triggers
 - **Then** the scene restarts on the next level, keeping lives and score, emitting `game:level-changed`
 
-### Scenario: winning the game
+### Scenario: clearing the final level (endless loop)
 
 - **Given** the player clears the final level
-- **Then** `game:won` is emitted
+- **Then** the campaign loops back to stage 1 at a higher difficulty tier (no terminal win); see `endless-loop.md`
 
 ## Acceptance criteria
 

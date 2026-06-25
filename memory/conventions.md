@@ -81,9 +81,11 @@
   `jump`, `down`); the physical keys are an engine concern. Current scheme is NES-style — arrows/WASD move,
   `Z`/`Space` throw (`attack`), `X` swaps weapon. Remapping keys never touches `core/` or its specs.
 - **Screen flow lives in the Vue store, not the engine:** `src/ui/stores/game.ts` holds a `Screen` union
-  (`menu | levels | playing | paused | gameover | won`); `App.vue` renders the matching view. The engine only
-  emits `game:over`/`game:won` (the store flips the screen) and reads `consumeStartLevel()` for the
-  stage-select choice. Add a new screen by extending the union + a view, not by touching `GameScene`.
+  (`menu | levels | playing | paused | gameover | enterscore | highscores`); `App.vue` renders the matching
+  view. The campaign is an endless loop, so a run only ever ends on `game:over` (the store flips the screen);
+  there is no separate victory screen — clearing the quest shows an in-engine VICTORY banner and plays on.
+  The stage-select choice is handed off via the store's `startLevel`, which `GameCanvas.vue` reads and passes
+  to `createGame()`. Add a new screen by extending the union + a view, not by touching `GameScene`.
 - **Audio is a procedural Web Audio adapter** (`engine/audio.ts`): no audio files ship; SFX/music are
   synthesized. `stepMatch` emits `{type:'sound', name}` effects (data) and the scene plays them via
   `playSfx`; the `AudioContext` is created lazily on the first gesture (browser autoplay policy — the START
