@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege: CI only reads the repo (checkout). No write scope is needed.
+permissions:
+  contents: read
+
 jobs:
   quality:
     runs-on: ubuntu-latest

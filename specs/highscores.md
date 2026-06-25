@@ -1,15 +1,15 @@
 # Spec: High score table (top-10, 3-letter initials)
 
-- **Status:** in progress
-- **Owner module(s):** `src/core/rules/highscores.ts` (pure table logic), `src/ui/stores/game.ts` (persistence + flow)
-- **Related:** scoring-lives.md, GDD §8 (scoring), the audio-pref `localStorage` pattern in `game.ts`
+- **Status:** implemented
+- **Owner module(s):** `src/core/rules/highscores.ts` (pure table logic), `src/ui/stores/persistence.ts` (localStorage), `src/ui/stores/game.ts` (screen flow)
+- **Related:** scoring-lives.md, GDD §8 (scoring), the audio-pref `localStorage` pattern in `persistence.ts`
 
 ## Summary
 
 A classic arcade ranking: the ten highest scores ever achieved, each tagged with the player's
 three-letter initials. The table is sorted by score (descending) and capped at ten entries.
 The pure core owns the table math (does a score qualify? where does it land? how do initials get
-sanitized?); the UI store owns persistence (`localStorage`, key `grim:highscores`) and the screen flow.
+sanitized?); `persistence.ts` owns persistence (`localStorage`, key `grim:highscores`) and the UI store owns the screen flow.
 
 ## Scenarios (Given / When / Then)
 

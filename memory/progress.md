@@ -51,7 +51,7 @@
 - `src/ui/stores/game.test.ts`: smoke tests for the bus↔store bridge (Pinia, headless).
 - 84 Vitest tests green; typecheck/lint/build green; dev server boots (HTTP 200). **Playable greybox loop end-to-end.**
 
-### Phase 4 (in progress) — Full structure rollout
+### Phase 4 (done) — Full structure rollout
 
 - Generalized enemy model: `core/enemies/enemy.ts` (shared `Enemy`, `EnemyKind`, `EnemyTarget`, `hitEnemy`).
   Per-kind step routed by `stepEnemy` in `core/enemies/index.ts`. `stepX(e, target{x,y}, solids, dt)` signature.
@@ -93,7 +93,7 @@
   spawns compressed ×0.65); clearing loop 2 → `game:won` ("True Victory"). `loop` carried via `scene.restart`.
 - HUD shows STAGE level-loop; win screen shows the true ending on loop 2.
 
-### Phase 5 (in progress) — art & juice, and polish
+### Phase 5 (done) — art & juice, and polish
 
 - **Weapon variety** (core, TDD): `weapon.ts` now models **arc** (per-projectile gravity `ay` + upward
   `launchVy`) and **limited reach** (`maxRange` + per-projectile `traveled`, culled past range).

@@ -88,7 +88,6 @@ export const useGameStore = defineStore('game', () => {
   function startGame(): void {
     startLevel.value = 0
     screen.value = 'playing'
-    bus.emit('ui:start', {})
   }
 
   /** Open the stage-select screen. */
@@ -100,7 +99,6 @@ export const useGameStore = defineStore('game', () => {
   function startAtLevel(index: number): void {
     startLevel.value = index
     screen.value = 'playing'
-    bus.emit('ui:start', { level: index })
   }
 
   /** Return to the title screen from level select. */
@@ -142,12 +140,10 @@ export const useGameStore = defineStore('game', () => {
 
   function restart(): void {
     screen.value = 'playing'
-    bus.emit('ui:restart')
   }
 
   function quitToMenu(): void {
     screen.value = 'menu'
-    bus.emit('ui:quit')
   }
 
   return {

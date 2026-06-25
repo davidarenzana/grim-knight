@@ -7,7 +7,8 @@
 ## Summary
 
 Tracks the arcade session: remaining lives, score and high-level state. Losing the last life ends the
-game; finishing the run wins it.
+game. The campaign is an endless loop (see `endless-loop.md`), so there is no terminal win state — a run
+ends only on game over.
 
 ## Scenarios (Given / When / Then)
 
@@ -46,7 +47,7 @@ game; finishing the run wins it.
 - [x] `createSession` starts at `STARTING_LIVES` lives, 0 score, `playing`.
 - [x] `loseLife` decrements; reaching 0 sets `gameover`.
 - [x] `addScore`/`loseLife` are no-ops once not `playing`.
-- [x] `win` sets state `won`. Pure and deterministic.
+- [x] `gainLife` adds a life (pickups / score thresholds); all transitions are pure and deterministic.
 
 ## Test mapping
 

@@ -104,22 +104,27 @@ Entry flow: a title screen (START / SELECT STAGE) and a stage-select screen fron
 Greybox vertical slice (player + 1 enemy + 1 stage + 1 boss) first, then fill the table above reusing the
 established systems. Art and audio come last (asset contracts defined per spec).
 
-## 11. Implementation status (as of 2026-06-20)
+## 11. Implementation status (v1.0, shipped 2026-06-25)
 
-This GDD is the **design target**; the game is built incrementally, so some of the above is still
-aspirational. What's actually in the build today:
+This GDD is the **design target**. The game shipped as **v1.0** (live on Vercel, full CI/CD); the list
+below records what made the 1.0 build versus the few design items deliberately left as future scope.
 
-- **Player / armor / weapons:** implemented — lance, dagger, torch, axe, plus the magician **curse** chest.
-  **Shield is designed but not yet implemented.**
-- **Enemies:** zombie, flyer, plant, ogre **plus** centipede (fast crawler), turtle (armored ranged),
-  bloated (arcing-bolt caster). The "crow/bat swarm" is not built. Ground enemies are ledge-aware (turn
-  at pits).
-- **Bosses:** currently **three escalating variant skins** (one per pair of stages: more HP + a wider/faster
-  spread volley), not yet the six unique boss designs/patterns listed in §5 — those remain the target.
-- **Levels:** all 6 stages exist with per-stage **visual themes** (ruins/forest/cave/castle/ice/hell), the
-  **double loop**, camera scroll, stage timer, and the position-triggered spawner. Hazards implemented so
-  far are **jumpable pits (fall-out)** and **spike/lava contact strips**; the §6 hazards like rising water,
-  crushers, wind gusts and collapsing floors are still design-only.
-- **Scoring:** points for kills/chests implemented; **time bonus, no-damage bonus, score-threshold extra
-  lives and the high-score table are not yet built.**
-- **Pending (Phase 5/6):** audio, the richer boss/hazard designs above, and build/deploy.
+**Shipped in 1.0:**
+
+- **Player / armor / weapons:** lance, dagger, torch, axe, plus the magician **curse** chest. 2-hit armor
+  (armored → underwear → dead) with i-frames, knockback and armor pickups.
+- **Enemies:** zombie, flyer, plant, ogre, centipede (fast crawler), turtle (armored ranged) and bloated
+  (arcing-bolt caster). Ground enemies are ledge-aware (turn at pits) and fire their own projectiles.
+- **Bosses:** **three escalating variant skins** (one per pair of stages: more HP + a wider/faster spread
+  volley), with a dedicated HUD HP bar.
+- **Levels:** all 6 stages with per-stage **visual themes** (ruins/forest/cave/castle/ice/hell), the
+  **endless escalating loop** (MORTAL → DAMNED → INFERNAL), camera scroll, stage timer, moving platforms
+  and the position-triggered spawner. Hazards: **jumpable pits (fall-out)** and **spike/lava contact strips**.
+- **Scoring:** points for kills/chests, the score multiplier per loop tier, and the persisted **top-ten
+  high-score table** with 3-letter initials.
+- **Audio:** procedural Web Audio SFX + music synthesised at runtime, with an on/off toggle (persisted).
+- **Build / deploy:** Vite production build, GitHub Actions CI (quality + e2e) and Vercel deploy from `main`.
+
+**Deliberate future scope (designed above, not in 1.0):** the **Shield** weapon, the **crow/bat swarm**
+enemy, the **six unique boss designs/patterns** of §5 (1.0 ships three reused variant skins instead), and
+the richer §6 hazards (rising water, crushers, wind gusts, collapsing floors).

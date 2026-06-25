@@ -1,8 +1,8 @@
 # Spec: Endless loop — escalating difficulty tiers
 
-- **Status:** in progress
+- **Status:** implemented
 - **Owner module(s):** `src/core/rules/difficulty.ts`, `src/core/app/match.ts`
-- **Related:** GDD §8 (loops/scoring), session.md, AGENTS.md §8
+- **Related:** GDD §8 (loops/scoring), scoring-lives.md, AGENTS.md §8
 
 ## Summary
 
