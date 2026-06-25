@@ -1,12 +1,11 @@
 import { normalizeTable, type HighScore } from '@core/rules/highscores'
-import { saveCachedScores } from './persistence'
 
 /**
  * Client for the online leaderboard. Talks to the same-origin Vercel Function at
- * `/api/scores` (allowed by the CSP `connect-src 'self'`), which is the source of
- * truth for high scores. Every response is re-validated through the pure core
- * (`normalizeTable`) and written through to the offline cache, so the board can
- * still render the last-seen table when the network is down.
+ * `/api/scores` (allowed by the CSP `connect-src 'self'`), which is the SINGLE
+ * source of truth for high scores. Every response is re-validated through the
+ * pure core (`normalizeTable`). There is no local cache: if a request fails the
+ * caller surfaces an error state rather than showing stale data.
  */
 const ENDPOINT = '/api/scores'
 
@@ -20,14 +19,12 @@ export interface ScoreSubmission {
 
 /**
  * Fetch the global top-ten. Throws on network/HTTP failure so the caller can
- * surface an error state and fall back to `loadCachedScores()`.
+ * surface an error state.
  */
 export async function fetchScores(): Promise<HighScore[]> {
   const res = await fetch(ENDPOINT, { headers: { accept: 'application/json' } })
   if (!res.ok) throw new Error(`GET ${ENDPOINT} -> ${res.status}`)
-  const table = normalizeTable((await res.json()) as unknown)
-  saveCachedScores(table)
-  return table
+  return normalizeTable((await res.json()) as unknown)
 }
 
 /**

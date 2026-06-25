@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { bus, type ArmorState } from '@shared/events'
-import { insertScore, qualifies, sanitizeName, type HighScore } from '@core/rules/highscores'
-import { loadAudioPref, saveAudioPref, loadCachedScores, saveCachedScores } from './persistence'
+import { qualifies, sanitizeName, type HighScore } from '@core/rules/highscores'
+import { loadAudioPref, saveAudioPref } from './persistence'
 import { fetchScores, postScore } from './leaderboard'
 
 export type Screen =
@@ -37,28 +37,28 @@ export const useGameStore = defineStore('game', () => {
   const audioOn = ref(loadAudioPref())
 
   /**
-   * Global high-score table (top 10, descending). Seeded from the offline cache
-   * for an instant first paint, then refreshed from the online leaderboard.
+   * Global high-score table (top 10, descending) from the online leaderboard —
+   * the single source of truth. Empty until the first fetch resolves.
    */
-  const scores = ref<HighScore[]>(loadCachedScores())
+  const scores = ref<HighScore[]>([])
   /** Row index just inserted (for highlight on the table); -1 when none. */
   const lastRank = ref(-1)
   /** The run's final score awaiting initials (set when a run ends qualifying). */
   const pendingScore = ref(0)
   /** True while a leaderboard fetch/submit is in flight (drives the spinner). */
   const loadingScores = ref(false)
-  /** True when the last leaderboard request failed (showing cached/offline data). */
+  /** True when the last leaderboard request failed (board shows an error state). */
   const scoresError = ref(false)
 
-  /** Pull the latest table from the leaderboard; fall back to the cache on failure. */
+  /** Pull the latest table from the leaderboard; flag an error on failure. */
   async function refreshScores(): Promise<void> {
     loadingScores.value = true
     scoresError.value = false
     try {
       scores.value = await fetchScores()
     } catch {
+      // No local cache: keep whatever is in memory and surface the error.
       scoresError.value = true
-      scores.value = loadCachedScores()
     } finally {
       loadingScores.value = false
     }
@@ -156,12 +156,9 @@ export const useGameStore = defineStore('game', () => {
       scores.value = table
       lastRank.value = rank
     } catch {
-      // Offline: optimistically insert into the cached table so the run still
-      // shows; it syncs to the server on the next successful submit/refresh.
-      const { table, rank } = insertScore(scores.value, entry)
-      scores.value = table
-      lastRank.value = rank
-      saveCachedScores(table)
+      // The leaderboard is the single source of truth: if the submit fails the
+      // run was not recorded, so surface the error rather than faking a table.
+      lastRank.value = -1
       scoresError.value = true
     } finally {
       loadingScores.value = false

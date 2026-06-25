@@ -79,7 +79,8 @@ A title screen (START / SELECT STAGE) and a stage-select screen front the game.
 - **Moving platforms** — kinematic platforms that oscillate along a segment and carry the rider.
 - **Chests & item drops** — random loot, weapon swaps and the risk/reward magician curse.
 - **Scoring + global online high-score table** — classic arcade top-ten with 3-letter initials, shared across
-  all players (Vercel Function + Upstash Redis), with a local offline cache so the board still renders offline.
+  all players (Vercel Function + Upstash Redis) as the single source of truth; if the leaderboard is
+  unreachable the board shows an error state rather than stale local data.
 - **Procedural audio** — Web Audio SFX and music synthesised at runtime (no audio files shipped), with an
   on-screen **on/off toggle** (preference persisted).
 - **Vue HUD & overlays** — score, lives, armor, active weapon, timer, level/loop, pause and game-over/victory
@@ -124,7 +125,7 @@ api/          Vercel serverless function (global leaderboard) — the one backen
   from the Vercel dashboard (Marketplace integration), which injects the `KV_REST_API_URL` / `KV_REST_API_TOKEN`
   env vars (server-side only; never committed — `.env*` is gitignored, see `.env.example`). Production reads
   these from Vercel, not from any repo file. For local development `cp .env.example .env` (or `vercel env pull`)
-  then `vercel dev` (plain `pnpm dev` doesn't run the function — the board just shows empty/cached). Free tier
+  then `vercel dev` (plain `pnpm dev` doesn't run the function — the board just shows an error state). Free tier
   is ample. See `memory/decisions/0008-online-leaderboard.md`.
 
 ## Credits / assets

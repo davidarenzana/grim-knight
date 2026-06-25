@@ -39,31 +39,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   res.setHeader('Cache-Control', 'no-store')
   const redis = getRedis()
 
-  if (req.method === 'GET') {
-    // Degrade to an empty board if the store isn't wired up yet, so the game
-    // still loads before the Upstash integration is connected.
-    const table = redis ? await readTable(redis) : []
-    res.status(200).json(table)
-    return
-  }
-
-  if (req.method === 'POST') {
-    if (!redis) {
-      res.status(503).json({ error: 'leaderboard storage not configured' })
+  try {
+    if (req.method === 'GET') {
+      // Degrade to an empty board if the store isn't wired up yet, so the game
+      // still loads before the Upstash integration is connected.
+      const table = redis ? await readTable(redis) : []
+      res.status(200).json(table)
       return
     }
-    const entry = parseSubmission(req.body)
-    if (!entry) {
-      res.status(400).json({ error: 'invalid score submission' })
+
+    if (req.method === 'POST') {
+      if (!redis) {
+        res.status(503).json({ error: 'leaderboard storage not configured' })
+        return
+      }
+      const entry = parseSubmission(req.body)
+      if (!entry) {
+        res.status(400).json({ error: 'invalid score submission' })
+        return
+      }
+      const current = await readTable(redis)
+      const { table, rank } = insertScore(current, entry)
+      await redis.set(KEY, table)
+      res.status(200).json({ table, rank })
       return
     }
-    const current = await readTable(redis)
-    const { table, rank } = insertScore(current, entry)
-    await redis.set(KEY, table)
-    res.status(200).json({ table, rank })
-    return
-  }
 
-  res.setHeader('Allow', 'GET, POST')
-  res.status(405).json({ error: 'method not allowed' })
+    res.setHeader('Allow', 'GET, POST')
+    res.status(405).json({ error: 'method not allowed' })
+  } catch (err) {
+    // A storage failure (bad/expired credentials, deleted DB, Upstash outage)
+    // must not crash the function with an opaque FUNCTION_INVOCATION_FAILED.
+    // Log the real cause for the Vercel runtime logs and return a clear,
+    // debuggable JSON error so the client can show an honest error state.
+    const detail = err instanceof Error ? err.message : String(err)
+    console.error('[api/scores] storage error:', detail)
+    res.status(502).json({ error: 'leaderboard storage unavailable', detail })
+  }
 }

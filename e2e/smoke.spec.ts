@@ -39,10 +39,12 @@ test('keyboard input drives the running game without crashing', async ({ page })
 })
 
 test('HIGH SCORES → the ranking opens and returns to the menu', async ({ page }) => {
+  // `vite preview` serves the static build and does NOT run the Vercel function,
+  // so stub the leaderboard with an empty board for deterministic empty-state copy.
+  await page.route('**/api/scores', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }),
+  )
   await page.goto('/')
-  // Start from a clean table so the empty-state copy is deterministic.
-  await page.evaluate(() => localStorage.removeItem('grim:highscores'))
-  await page.reload()
   await page.getByRole('button', { name: 'HIGH SCORES' }).click()
   await expect(page.getByRole('heading', { name: 'HIGH SCORES' })).toBeVisible()
   await expect(page.getByText(/NO SCORES YET/)).toBeVisible()
