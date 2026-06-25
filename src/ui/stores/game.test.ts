@@ -180,7 +180,7 @@ describe('game store', () => {
       expect(store.screen).toBe('highscores')
     })
 
-    it('submitScore degrades offline: optimistic local insert + error flag', async () => {
+    it('submitScore surfaces an error when the leaderboard is unreachable (no local fallback)', async () => {
       const store = useGameStore()
       store.bind()
       bus.emit('game:level-changed', { level: 2, loop: 1 })
@@ -188,8 +188,11 @@ describe('game store', () => {
       await vi.waitFor(() => expect(store.screen).toBe('enterscore'))
       failNetwork = true
       await store.submitScore('zoe')
-      expect(store.scores[0]).toEqual({ name: 'ZOE', score: 500, level: 2, loop: 1 })
+      // The leaderboard is the single source of truth: a failed submit is NOT
+      // recorded locally — it just flags an error.
       expect(store.scoresError).toBe(true)
+      expect(store.lastRank).toBe(-1)
+      expect(store.scores).toHaveLength(0)
       expect(store.screen).toBe('highscores')
     })
 

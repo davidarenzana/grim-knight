@@ -23,9 +23,12 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
           <span class="pts">{{ String(s.score).padStart(6, '0') }}</span>
         </li>
       </ol>
+      <p v-else-if="game.scoresError" class="empty">COULDN'T REACH THE LEADERBOARD</p>
       <p v-else class="empty">NO SCORES YET — BE THE FIRST</p>
 
-      <p v-if="game.scoresError" class="offline">OFFLINE — SHOWING LAST SEEN</p>
+      <p v-if="game.scoresError && game.scores.length" class="error">
+        COULDN'T REFRESH — SHOWING LAST SEEN
+      </p>
 
       <div class="actions">
         <button class="btn-pixel is-primary" @click="game.startGame()">PLAY AGAIN</button>
@@ -111,11 +114,11 @@ const ordinal = (i: number): string => String(i + 1).padStart(2, '0')
   font-size: 1.9cqw;
   color: var(--wood-mid);
 }
-.offline {
+.error {
   margin: 0;
   font-size: 1.3cqw;
-  color: var(--wood-mid);
-  opacity: 0.8;
+  color: var(--blood);
+  opacity: 0.85;
   letter-spacing: 1px;
 }
 .actions {
