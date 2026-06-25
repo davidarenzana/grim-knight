@@ -33,7 +33,12 @@ const NAME_LEN = 3
  * ones. Empty or fully-invalid input falls back to `AAA`. Never throws.
  */
 export const sanitizeName = (raw: string): string => {
-  const letters = (raw ?? '').toUpperCase().replace(/[^A-Z]/g, '')
+  // Cap the raw length BEFORE processing: only the first 3 letters survive, so a
+  // huge untrusted string (an online submission) must never cost CPU to upper-case.
+  const letters = (raw ?? '')
+    .slice(0, 64)
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '')
   if (letters.length === 0) return DEFAULT_NAME
   return letters.slice(0, NAME_LEN).padEnd(NAME_LEN, ' ')
 }
