@@ -182,8 +182,15 @@ the §5 flow. In Phases 0-3 work serially (shared foundations).
     snapshots are **not** in CI (baselines are macOS-only); run them locally with `pnpm test:e2e`.
 - **`main` is branch-protected** — no direct pushes. Open a PR; both `quality` and `e2e` must be green
   and the branch up to date before merge (`enforce_admins` on, 0 required reviews — solo-dev friendly).
-- **Deploy:** Vercel (`vercel.json`, Vite preset) deploys **production from `main`**. Since `main` only
-  advances through a passing PR, a red CI gate keeps broken code out of production. Vercel still builds
-  **preview** deploys for branches/PRs regardless of CI.
+- **Deploy:** Vercel (`vercel.json`, Vite preset) deploys **production from `main`**. The deploy is
+  triggered by the push to `main` and runs **independently of / in parallel with** the GitHub checks —
+  Vercel does **not** wait on them. So the gate is at the **merge**, not at the deploy: branch protection
+  means only CI-green code reaches `main`, and Vercel only deploys from `main`, so production only ever
+  ships validated code. Caveats: Vercel's build re-runs `vue-tsc` + `vite build` (a type/build error fails
+  the deploy too), but it does **not** run Vitest/ESLint/Playwright — those are enforced solely by the PR
+  gate; and Vercel does not consult the post-merge `main` CI run, so it would deploy even if that run
+  failed. To gate the deploy _on_ the checks, move it into a CI `deploy` job (`needs: [quality, e2e]`,
+  `vercel deploy --prod`) and disable Vercel's auto-deploy. Vercel still builds **preview** deploys for
+  branches/PRs regardless of CI.
 - **Workflow:** `git checkout -b <branch>` → commit → `git push -u origin <branch>` →
   `gh pr create --fill` → wait for green → `gh pr merge --squash`. (Repo is **public** → Actions is free.)

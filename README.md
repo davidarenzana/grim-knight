@@ -107,9 +107,15 @@ src/shared/   shared types + event bus (mitt)
 - **GitHub Actions** (`.github/workflows/ci.yml`) runs on every PR and push to `main`: a `quality` job
   (typecheck + lint + test + build) and an `e2e` job (Playwright **smoke** flows; the macOS-only visual
   snapshots stay local).
-- **`main` is branch-protected** — no direct pushes. Open a PR; `quality` + `e2e` must pass before merge.
-- **Deploy: [Vercel](https://vercel.com/)** (Vite preset) ships production from `main`, so a red CI gate
-  keeps broken code out of production. Branches/PRs get preview deploys. See AGENTS.md §11 for the flow.
+- **`main` is branch-protected** — no direct pushes. Open a PR; `quality` + `e2e` must pass (and the
+  branch be up to date) before merge.
+- **Deploy: [Vercel](https://vercel.com/)** (Vite preset) ships production from `main`. The deploy is
+  triggered by the push to `main` and runs independently of (in parallel with) the GitHub checks — Vercel
+  does **not** wait on them. The gate is therefore at the **merge**, not the deploy: branch protection
+  means only CI-green code can reach `main`, and Vercel only deploys from `main`, so production only ever
+  ships validated code. (Vercel's own build re-runs `vue-tsc` + `vite build`, so a type/build error also
+  fails the deploy; tests/lint/e2e are enforced by the PR gate only.) Branches/PRs get preview deploys.
+  See AGENTS.md §11 for the flow.
 
 ## Credits / assets
 
