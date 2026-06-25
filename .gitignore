@@ -5,6 +5,11 @@ coverage
 *.local
 .DS_Store
 
+# local env / secrets (Upstash leaderboard credentials, etc.) — never commit
+.env
+.env.*
+!.env.example
+
 # editor
 .vscode/*
 !.vscode/extensions.json
