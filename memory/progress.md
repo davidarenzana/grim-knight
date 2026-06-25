@@ -528,7 +528,8 @@ pyramid (unit + headless `stepMatch` integration + Vue component/store + Playwri
 
 ## In progress 🔧
 
-- Nothing active. Phase 6 deploy is **live on Vercel**; the remaining Phase 6 item is build/code-split.
+- Nothing active. Phase 6 is **fully done** (live on Vercel); the Phaser code-split was deliberately
+  dropped (2026-06-25) — see Next. Only optional post-launch polish remains.
 
 ## Security: OWASP Top 10 2025 review + headers (2026-06-23) 🔒
 
@@ -576,16 +577,14 @@ audit` clean; no `eval`/`v-html`/injection sinks; `sanitizeName` whitelists `[^A
 - 290 Vitest tests + 6 Playwright E2E (incl. visual baselines) + typecheck/lint/build all green;
   no visual change.
 
-## Next ⏭️ (Phase 6 build polish, plus optional polish)
+## Next ⏭️ (optional polish only — no technical leftovers)
 
-- **Phase 6 — build optimization** (deploy itself is done; this is the leftover):
-  - **Code-split the Phaser chunk.** Build is one ~1.6 MB (384 kB gzip) JS bundle, ~90% Phaser.
-    1. **Lazy-load Phaser**: dynamic-`import()` `GameCanvas`/`@engine/game` (e.g. `defineAsyncComponent`) so
-       the Vue menu boots without Phaser; the engine chunk loads on START (biggest perceived-load win — the
-       player sits on the title screen first). Mask the first-START delay with a "Loading…"/background prefetch.
-    2. Optional `manualChunks` vendor split (Phaser → own chunk) for cross-deploy caching + to silence the
-       > 500 kB warning (secondary; doesn't defer the download).
-  - ~~Static deploy~~ **Done** — deployed on **Vercel** (not GitHub Pages). See the CI/CD section above.
+- ~~**Code-split the Phaser chunk**~~ — **DROPPED on purpose (2026-06-25).** The build is one ~1.6 MB
+  (384 kB gzip) bundle, ~90% Phaser. Decided not to split: 384 kB gzip is normal for a game, the app loads
+  fast in practice, and the player sits on the title screen first anyway. Vite's >500 kB warning is about
+  the _uncompressed_ size (generic web-content advice, not relevant to a game canvas). If load ever becomes
+  a real issue, the plan was lazy-loading Phaser via a dynamic `import()` of `GameCanvas`/`@engine/game`
+  (Vue menu boots without it) plus an optional `manualChunks` vendor split. **Phase 6 is fully done.**
 - **Optional polish (post-launch, if wanted):** more juice (particles on kill, transition fades);
   time/no-damage score bonuses + extra lives at score thresholds (reuse `gainLife`); torch ground-fire
   hazard; richer boss/hazard designs from the GDD (unique boss patterns; water/crushers/wind/collapsing
