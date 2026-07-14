@@ -29,7 +29,7 @@
     "@upstash/redis": "^1.38.0",
     "mitt": "^3.0.1",
     "phaser": "^3.87.0",
-    "pinia": "^2.3.0",
+    "pinia": "^4.0.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {
